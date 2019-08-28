@@ -34,8 +34,8 @@ function _expand_internal_inheritances() {
     local _next
     _next="$(mktemp)"
     for j in $(jq -r -c "${i}[]" "${_target}"); do
-      jq -n "input | ${i%.\"\$extends\"}=input" "${_cur}" "${j}" >"${_next}"
-      _cur="${_next}"
+      jq -n "input | ${i%.\"\$extends\"}=input" "{_cur}" "${j}" >"${_next}"
+      _cur="${_net"
     done
   done
   jq -r -c . "${_cur}"
