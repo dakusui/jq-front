@@ -1,0 +1,54 @@
+== powerjson: JSON with inheritance and templating
+A shell script library to implement inheritance and reference in JSON
+
+`powerjson` is a simple tool to give your JSON files a power of inheritance and templating.
+
+=== POWERJSON_PATH Environment variable
+
+(t.b.d.)
+
+=== Format
+
+==== External Inheritance
+
+[source, json]
+----
+{
+  "$extends": ["A.json"]
+}
+----
+
+==== Internal Inheritance
+
+[source, json]
+.U.json
+----
+{
+  "a": {
+    "$extends": [ "A.json" ],
+    "a": "valueInU"
+  }
+}
+----
+
+==== Private nodes
+
+You can define nodes that can be inherited by other nodes inside the same JSON file with a following style.
+
+[source, json]
+.P.json
+----
+{
+  "$private": {
+    "nodeA": {
+    },
+    "nodeB": {
+    }
+  },
+  "a": {
+    "$extends": ["nodeA"]
+  }
+}
+----
+
+
