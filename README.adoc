@@ -296,7 +296,7 @@ When it is searching for a file during internal inheritance resolution, it first
 
 ===== Default value
 
-`.:./powerjson/builtin`
+`.`
 
 ==== POWERJSON_TEMPLATING_ENABLED
 
