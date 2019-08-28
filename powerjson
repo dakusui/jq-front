@@ -1,6 +1,6 @@
 #!/bin/bash -eu
 
-_POWERJSON_PATH=${POWERJSON_PATH:-".:./powerjson/builtin"}
+_POWERJSON_PATH=${POWERJSON_PATH:-"."}
 _POWERJSON_TEMPLATING_ENABLED=${POWERJSON_TEMPLATING_ENABLED:-"yes"}
 _POWERJSON_DEBUG=${POWERJSON_DEBUG:-"disabled"}
 
@@ -211,6 +211,7 @@ function powerjson() {
   local _tmp
   local _private_nodes_dir
   local _out
+  local _target
   _tmp="$(mktemp)"
   expand_external_inheritances "${_target}" "${_POWERJSON_PATH}" >"${_tmp}"
   _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
@@ -227,37 +228,40 @@ function usage_exit() {
   abort "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET"
 }
 
-function parse_opt() {
+function main() {
   # Call getopt to validate the provided input.
-  options=$(getopt -o he --long help --long enable-templating -- "$@") || {
+  options=$(getopt -o hde --long help,disable-templating,enable-templating -- "$@") || {
     usage_exit
   }
-
   eval set -- "$options"
   while true; do
-    case "$1" in
+    case "${1}" in
     -h | --help)
       usage_exit
       ;;
     -d | --disable-templating)
-       shift
       _POWERJSON_TEMPLATING_ENABLED=no
+      shift
       ;;
     -e | --enable-templating)
-       shift
       _POWERJSON_TEMPLATING_ENABLED=yes
+      shift
       ;;
     --)
       shift
       break
       ;;
+    *)
+      abort "Internal error!"
+      ;;
     esac
-    shift
   done
-  echo "${@}"
   if [[ $# == 0 ]]; then
     usage_exit
   fi
+  _target="${1}"
+
+  powerjson "${_target}" "${_POWERJSON_TEMPLATING_ENABLED}"
 }
 
-powerjson "${1}" "${_POWERJSON_TEMPLATING_ENABLED}"
+main "${@}"
