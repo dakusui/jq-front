@@ -11,6 +11,18 @@ For instance, under a situation, where we need to generate similar but slightly 
 
 `powerjson` is a tool to cope with such challenges by introducing inheritance and templating into JSON files.
 
+== Installation
+
+Place the file `powerjson` somewhere on your `PATH`.
+
+== Usage
+
+[source, bash]
+----
+powerjson [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET
+----
+
+
 == Features
 
 With `powerjson`, you can build a JSON object reusing other JSON objects.
@@ -55,7 +67,12 @@ A usage example is as follows.
 }
 ----
 
-This will be rendered into the following JSON object.
+----
+powerjson I.json
+----
+
+`I.json` will be rendered into the following JSON object with this command line.
+
 
 [source, json]
 .External Inheritance output
@@ -203,6 +220,9 @@ Following is a such an example.
 
 In this example, the version to be released next is `2.12.0`, however the version under the development for it has a suffix `-SNAPSHOT`
 
+To follow the principle of D-R-Y, how should we fix it?
+Templating is a feature to offer a solution to this challenge.
+
 We can describe this relationship by using the templating feature of `powerjson`.
 
 [source, json]
@@ -236,6 +256,9 @@ And this will result in an output below.
   "snapshotVersion": "2.12.0-2019-08-28"
 }
 ----
+
+This feature can be disabled by `-d` (`--disable-templating`) option.
+And to enable it explicitly, you can use `-e` (`--enable-templating`) in case `POWERJSON_TEMPLATING_ENABLED` is set to `no`.
 
 ==== Built-in `powerjson` functions
 
