@@ -4,7 +4,7 @@
 
 == Background and Introduction
 
-Despite that there are criticisms to use JSON as system configuration information's format<<cr>>, JSON still has its beauty such as rich tool supports, good balance between machine's and human's readability and writability, clarity and simplicity in syntax, etc.
+Despite that there are criticisms to use JSON<<json>> as system configuration information's format<<cr>>, JSON still has its beauty such as rich tool supports, good balance between machine's and human's readability and writability, clarity and simplicity in syntax, etc.
 
 However, surely it has some weaknesses when we try to define data structure.
 For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.footnote:[This is not merely a weakness of JSON but also other notations even YAML. YAML has a way to reference another object node from one, still it cannot embed a string value of a text node in another by itself.]
@@ -217,7 +217,7 @@ We can describe this relationship by using the templating feature of `powerjson`
 Once you render this file with `powerjson`, you will get the first file (Version file).
 
 `$ref` is a built-in function of `powerjson`, which expands the value of the node specified by the path given as an argument.
-Not only built-in functions but also any commands (bash expressions) can be used here.
+Not only built-in functions but also any commands (bash expressions) valid on a platform on which `powerjson` is running can be used here.
 
 For instance, following is a valid input to `powerjson`.
 [source, json]
@@ -237,13 +237,27 @@ And this will result in an output below.
 }
 ----
 
-==== Built-in ```powerjson``` functions
+==== Built-in `powerjson` functions
 
-===== ```ref``` function
-(t.b.d.)
+===== `ref` function
 
-===== ```self``` function
-(t.b.d.)
+A function that returns a value of a node specified by an argument.
+This function can only work from inside "Work(2)" file.
+
+- parameter:
+  * `_path`: path to a node in the file "Work(2)"
+- returned value:
+  * A value of a node specified by `_path`
+
+
+===== `self` function
+
+A function that returns a path to a file "Work(2)"
+This function can only work from inside "Work(2)" file.
+
+- parameter: (none)
+- returned value:
+  * A path to "Work(2)" file.
 
 
 === Environment variables
@@ -384,8 +398,5 @@ include::LICENSE[]
 == References
 
 - [[[cr]]] Thayne McCombs. https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/[Why JSON isn’t a Good Configuration Language]: 2018.
-- [[[pp]]] Andy Hunt & Dave Thomas. The Pragmatic Programmer:
-From Journeyman to Master. Addison-Wesley. 1999.
-- [[[gof,2]]] Erich Gamma, Richard Helm, Ralph Johnson & John Vlissides. Design Patterns:
-Elements of Reusable Object-Oriented Software. Addison-Wesley. 1994.
 - [[[yaml]]] en.wikipedia.org. https://en.wikipedia.org/wiki/YAML[YAML]: 2019
+- [[[json]]] json.org. http://www.json.org/[JSON]:2019
