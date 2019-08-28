@@ -179,23 +179,35 @@ And `P.json` will result in following output.
 
 === Templating
 
+Sometimes we need to compose a value of text node from a value of another.
+Following is a such an example.
+
+[source, json]
+.Version file
+----
+{
+  "releaseVersion": "2.12.0",
+  "snapshotVersion": "2.12.0-SNAPSHOT"
+}
+----
+
+In this example, the version to be released next is `2.12.0`, however the version under the development for it has a suffix `-SNAPSHOT`
+
+We can describe this relationship by using the templating feature of `powerjson`.
+
 [source, json]
 .T.json
 ----
 {
-  "versionStem": "2.12.0",
-  "snapshotVersion": "$(ref .versionStem)-SNAPSHOT"
+  "releaseVersion": "2.12.0",
+  "snapshotVersion": "$(ref .releaseVersion)-SNAPSHOT"
 }
 ----
 
-[source, json]
-.Templating output
-----
-{
-  "versionStem": "2.12.0",
-  "snapshotVersion": "2.12.0-SNAPSHOT"
-}
-----
+Once you render this file with `powerjson`, you will get the first file (Version file).
+
+`$ref` is a built-in function of `powerjson`.
+
 
 === Environment variables
 
@@ -279,11 +291,14 @@ Designs of those components will be described in the rest of this section.
 
 === External inheritance
 
-(t.b.d.)
+'External inheritance' composes a new JSON file from a given one by expanding the files provided through the top-level `$extends` attribute.
+
+At the end of this process, the attribute is removed and copied to the output, "Work(1)" in the diagram.
 
 === Private node materialization
 
-(t.b.d.)
+If the file, "Work(1)" has `$private` attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
+The temporary directory is called 'private node directory'.
 
 === Internal inheritance
 
