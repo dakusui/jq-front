@@ -1,0 +1,4 @@
+{
+  "versionStem": "2.12.0",
+  "snapshotVersion": "$(ref .versionStem)-SNAPSHOT"
+}

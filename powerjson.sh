@@ -1,8 +1,8 @@
 #!/bin/bash -eu
 
 _POWERJSON_PATH=${POWERJSON_PATH:-".:./powerjson/builtin"}
-_POWERJSON_TEMPLATING_ENABLED=${POWERJSON_TEMPLATING_ENABLED:-"no"}
-_POWERJSON_DEBUG=${POWER_JSON_DEBUG:-"disabled"}
+_POWERJSON_TEMPLATING_ENABLED=${POWERJSON_TEMPLATING_ENABLED:-"yes"}
+_POWERJSON_DEBUG=${POWERJSON_DEBUG:-"disabled"}
 
 function _remove_meta_nodes() {
   local _target="${1}"
@@ -160,7 +160,7 @@ function materialize_private_nodes() {
   _ret="$(mktemp -d)"
   # Intentional single quotes for jq.
   # shellcheck disable=SC2016
-  if [[ $(has_value_at '."$private"') == 'T' ]]; then
+  if [[ $(has_value_at '."$private"' "${_content}") == 'T' ]]; then
     # shellcheck disable=SC2016
     for i in $(keys_of '."$private"' "${_content}"); do
       echo "${_content}" | jq '."$private".'"${i}" >"${i}"
@@ -240,11 +240,15 @@ function parse_opt() {
       usage_exit
       ;;
     -d | --disable-templating)
+       shift
       _POWERJSON_TEMPLATING_ENABLED=no
-      break
       ;;
     -e | --enable-templating)
+       shift
       _POWERJSON_TEMPLATING_ENABLED=yes
+      ;;
+    --)
+      shift
       break
       ;;
     esac

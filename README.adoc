@@ -1,39 +1,148 @@
-== powerjson: JSON with inheritance and templating
-A shell script library to implement inheritance and reference in JSON
+= powerjson: JSON with inheritance and templating
 
 `powerjson` is a simple tool to give your JSON files a power of inheritance and templating.
 
-=== POWERJSON_PATH Environment variable
+== Background and Introduction
 
-(t.b.d.)
+Despite that there are criticisms to use JSON as system configuration information's format<<cr>>, JSON still has its beauty such as rich tool supports, good balance between machine's and human's readability and writability, clarity and simplicity in syntax, etc.
 
-=== Format
+However, surely it has some weaknesses when we try to define data structure.
+For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.footnote:[This is not merely a weakness of JSON but all so other notations even YAML. YAML has a way to reference another object node from one, still it cannot embed a string value of a text node in another by itself.]
 
-==== External Inheritance
+== Features
+
+With `powerjson`, you can build a JSON object reusing other JSON objects.
+To specify JSON objects to be referenced, `powerjson` searches for keys which have special names in a given object.
+`$extends` and `$private` are keywords used for this purpose.
+
+Basic features offered by the product are following
+
+* External Inheritance
+* Internal Inheritance
+* Templating
+
+And usage of them will be discussed in this section.
+
+In this section, we introduce features of the product using following data.
+
+* link:examples/A.json[A.json]
+* link:examples/AA.json[AA.json]
+* link:examples/B.json[B.json]
+* link:examples/T.json[T.json]
+
+=== External Inheritance
+
+In programming languages, inheritance is an indispensable technique to reuse a component.
+`powerjson` offers it for the purpose.
+A usage example is as follows.
 
 [source, json]
+.I.json
 ----
 {
-  "$extends": ["A.json"]
+  "$extends": [ "A.json" ],
+  "o": "hello world"
 }
 ----
 
-==== Internal Inheritance
+This will be rendered into the following JSON object.
 
 [source, json]
-.U.json
+.External Inheritance output
+----
+{
+  "a": "A",
+  "o": "hello world"
+}
+----
+
+As you see in the example, the attribute `o` whose value is set to `"A"` in `A.json`, is overridden by the value in `I.json`.
+
+Multiple inheritance is also supported by `powerjson`.
+Just by listing file names of JSONs to be inherited, multiple inheritance happens, like `"$extends": ["A.json", "B.json"]`.
+When both `A.json` and `B.json` have attributes at the same path, `A.json` side's value will be used.
+
+[source, json]
+.J.json
+----
+{
+  "$extends": [ "A.json", "B.json" ]
+}
+----
+
+That is, `J.json` will be rendered into following output.
+
+[source, json]
+.External Multiple Inheritance output
+----
+{
+  "a": "A",
+  "b": "B",
+  "o": "A"
+}
+----
+
+As it is so in normal programming language that supports multiple inheritance, avoiding diamond inheritance is a good idea.
+Multiple inheritance was implemented to cope with a situation where you want to reuse two JSON objects defined for completely different purposes.
+For instance, one is for authentication information and the other is for GUI flavor.
+
+JSON objects that are inherited can also inherit some other JSON files.
+
+[source, json]
+.K.json
+----
+{
+  "$extends": [ "AA.json", "B.json" ]
+}
+----
+
+That is, `K.json` is rendered into a following JSON file.
+
+[source, json]
+.External Inheritance output (2)
+----
+{
+  "a": "A",
+  "aa": "AA",
+  "b": "B",
+  "o": "A"
+}
+----
+
+CAUTION: Ensure that inheritance hierarchy does not have any cyclic dependencies.
+Behaviour for this situation is not defined and it will result in stack overflow.
+
+
+=== Internal Inheritance
+
+"Internal Inheritance" refers to an inheritance happens on an internal (object) node of a given JSON file.
+Although it is implemented as a separate mechanism from the external one as it will be discussed in "Design" section, it behaves almost the same as the "external" one.
+
+[source, json]
+.L.json
 ----
 {
   "a": {
     "$extends": [ "A.json" ],
-    "a": "valueInU"
+    "a": "L"
   }
 }
 ----
 
-==== Private nodes
+[source, json]
+.Internal Inheritance output
+----
+{
+  "a": {
+    "a": "L",
+    "o": "A"
+  }
+}
+----
 
-You can define nodes that can be inherited by other nodes inside the same JSON file with a following style.
+As it worked for External Inheritance, multiple inheritance works also for Internal Inheritance.
+
+However, for internal nodes, you can also reference "private" nodes not only external files.
 
 [source, json]
 .P.json
@@ -41,14 +150,171 @@ You can define nodes that can be inherited by other nodes inside the same JSON f
 {
   "$private": {
     "nodeA": {
+       "aa": "aa"
     },
     "nodeB": {
     }
   },
   "a": {
-    "$extends": ["nodeA"]
+    "$extends": ["nodeA"],
+    "a": "a"
   }
 }
 ----
 
+These nodes can be referenced through "internal inheritance feature" as shown in the example.
+Note that you do not need to specify `.json` extension.
+And `P.json` will result in following output.
 
+[source, json]
+.Private Node Inheritance output
+----
+{
+  "a": {
+    "aa": "aa",
+    "a": "a"
+  }
+}
+----
+
+=== Templating
+
+[source, json]
+.T.json
+----
+{
+  "versionStem": "2.12.0",
+  "snapshotVersion": "$(ref .versionStem)-SNAPSHOT"
+}
+----
+
+[source, json]
+.Templating output
+----
+{
+  "versionStem": "2.12.0",
+  "snapshotVersion": "2.12.0-SNAPSHOT"
+}
+----
+
+=== Environment variables
+
+You can control behaviours of `powerjson` by setting environment variables described in this section.
+
+==== POWERJSON_PATH
+
+From directories listed in `POWERJSON_PATH`, `powerjson` searches for requested file.
+Entries in the variable is separated by colons(`:`).
+
+When it is searching for a file during internal inheritance resolution, it first searches for private node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
+
+===== Default value
+
+`.:./powerjson/builtin`
+
+==== POWERJSON_TEMPLATING_ENABLED
+
+You can enable `powerjson` 's templating feature by setting this environment variable's value to `yes`.
+If any other value is set to the variable, it will not be executed.
+
+===== Default value
+
+`yes`
+
+
+==== POWERJSON_DEBUG
+
+If this variable is set to `enabled`, debug information will be printed to `stderr`.
+
+===== Default value
+`disabled`
+
+== Design
+
+Following is a diagram that illustrates `powerjson` 's processing pipeline design.
+
+[ditaa]
+.powerjson's pipeline
+----
+
+          external inheritance             private node materialization
+                 +----+                             +-----+
+   +-------------+ {o}+-=----------+   +------------+ {o} +-=------------+
+   |             +----+            |   |            +-----+              | 0...n
+   V                               V   V                                 V
++------+                         +-------+                         +------------+
+|Source|                         |Work(1)|                         |PrivateNodes|
+|{d}   |                         |{d}    |                         |{d}         |
++------+                         +-------+                         +------------+
+                                     ^        internal inheritance       ^
+                                     |              +-----+              |
+                                     +--------------+ {o} +--------------+
+                                                    +--+--+
+                                                       |
+                                                       :
+                                                       V
+                                                   +---+---+
+                                                   |Work(2)|
+                                                   |{d}    |
+                                                   +---+---+
+                                                       ^
+                                                       |
+                                                       |
+                                                    +--+--+
+                                                    | {o} | templating(optional)
+                                                    +--+--+
++----+       +----+                                    |
+|A{o}+-=---->+B{o}| (A writes to B)                    :
++----+       +----+                                    V
+                                                   +---+---+
++----+       +----+                                |Output |
+|A{o}+------>+B{o}| (A reads from B)               |{d}    |
++----+       +----+                                +---+---+
+
+----
+
+As shown, it consists of four main components, which are "external inheritance", "private node materialization", "internal inheritance", and "templating".
+
+Designs of those components will be described in the rest of this section.
+
+=== External inheritance
+
+(t.b.d.)
+
+=== Private node materialization
+
+(t.b.d.)
+
+=== Internal inheritance
+
+(t.b.d.)
+
+=== Templating
+
+(t.b.d.)
+
+
+=== Limitations and Future Work
+
+* Currently, almost no validation is performed by `powerjson`.
+Probably, it is preferable to create an external tool (or independent module) to validate an input JSON file.
+* Cyclic inheritance is not checked and such a model will result in a stack-overflow.
+* Handling of characters that need escaping on templating is naive.
+
+== Authors
+
+* **Hrioshi Ukai** - *Initial work* - https://github.com/dakusui[dakusui]
+
+== License
+
+* See link:LICENSE[LICENSE]
+
+[bibliography]
+== References
+
+- [[[cr]]] Thayne McCombs. https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/[Why JSON isn’t a Good Configuration Language]: 2018.
+- [[[pp]]] Andy Hunt & Dave Thomas. The Pragmatic Programmer:
+From Journeyman to Master. Addison-Wesley. 1999.
+- [[[gof,2]]] Erich Gamma, Richard Helm, Ralph Johnson & John Vlissides. Design Patterns:
+Elements of Reusable Object-Oriented Software. Addison-Wesley. 1994.
+- [[[yaml]]] en.wikipedia.org. https://en.wikipedia.org/wiki/YAML[YAML]: 2019
