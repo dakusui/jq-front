@@ -1,8 +1,8 @@
 #!/bin/bash -eu
 
-# shellcheck disable=SC1090
-source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
-export POWERJSON_PATH=".:./powerjson/builtin"
+_POWERJSON_PATH=${POWERJSON_PATH:-".:./powerjson/builtin"}
+_POWERJSON_TEMPLATING_ENABLED=${POWERJSON_TEMPLATING_ENABLED:-"no"}
+_POWERJSON_DEBUG=${POWER_JSON_DEBUG:-"disabled"}
 
 function _remove_meta_nodes() {
   local _target="${1}"
@@ -53,6 +53,12 @@ function abort() {
     _i=$((_i + 1))
   done
   return 1
+}
+
+function debug() {
+  if [[ ${_POWERJSON_DEBUG:-""} == "enabled" ]]; then
+    message "DEBUG:${1}"
+  fi
 }
 
 function message() {
@@ -152,10 +158,14 @@ function materialize_private_nodes() {
   debug "begin:materialize_private_nodes"
   _content="$(cat "${_target}")"
   _ret="$(mktemp -d)"
+  # Intentional single quotes for jq.
   # shellcheck disable=SC2016
-  for i in $(keys_of '."$private"' "${_content}"); do
-    echo "${_content}" | jq '."$private".'"${i}" >"${i}"
-  done
+  if [[ $(has_value_at '."$private"') == 'T' ]]; then
+    # shellcheck disable=SC2016
+    for i in $(keys_of '."$private"' "${_content}"); do
+      echo "${_content}" | jq '."$private".'"${i}" >"${i}"
+    done
+  fi
   echo "${_ret}"
   debug "end:materialize_private_nodes"
 }
@@ -202,10 +212,10 @@ function powerjson() {
   local _private_nodes_dir
   local _out
   _tmp="$(mktemp)"
-  expand_external_inheritances "${_target}" "${POWERJSON_PATH}" >"${_tmp}"
+  expand_external_inheritances "${_target}" "${_POWERJSON_PATH}" >"${_tmp}"
   _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
   _out=$(mktemp)
-  expand_internal_inheritances "${_tmp}" "${_private_nodes_dir}:${POWERJSON_PATH}" >"${_out}"
+  expand_internal_inheritances "${_tmp}" "${_private_nodes_dir}:${_POWERJSON_PATH}" >"${_out}"
   if [[ "${_templating}" == "yes" ]]; then
     perform_templating "${_out}"
   else
@@ -214,12 +224,12 @@ function powerjson() {
 }
 
 function usage_exit() {
-  abort "Usage: $0 [-h|--help] [] TARGET"
+  abort "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET"
 }
 
 function parse_opt() {
   # Call getopt to validate the provided input.
-  options=$(getopt -o he --long help --long enable-_templating -- "$@") || {
+  options=$(getopt -o he --long help --long enable-templating -- "$@") || {
     usage_exit
   }
 
@@ -229,8 +239,12 @@ function parse_opt() {
     -h | --help)
       usage_exit
       ;;
-    --)
-      shift
+    -d | --disable-templating)
+      _POWERJSON_TEMPLATING_ENABLED=no
+      break
+      ;;
+    -e | --enable-templating)
+      _POWERJSON_TEMPLATING_ENABLED=yes
       break
       ;;
     esac
@@ -242,5 +256,4 @@ function parse_opt() {
   fi
 }
 
-powerjson "${1}" "yes"
-# perform_templating "A.json"
+powerjson "${1}" "${_POWERJSON_TEMPLATING_ENABLED}"
