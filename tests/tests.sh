@@ -1,8 +1,8 @@
 #!/bin/bash -eu
 
 _JF="${1:?Specify 'jf' to test in absolute path}"
-_TEST_ROOT_DIR=${2:?Specify a directory in which test dirs are stored.}
-JF_PATH=.:$(pwd)/base
+_TEST_ROOT_DIR="${2:?Specify a directory in which test dirs are stored.}"
+JF_PATH=.:${_TEST_ROOT_DIR}/base
 export JF_PATH
 
 function runtest() {
@@ -10,11 +10,10 @@ function runtest() {
   local _diff
   local _ret=0
   echo -n "executing test:'${_dirname}':..."
-  cd "${_dirname}"
-  rm -f test-output*
-  ${_JF} input.json > test-output.json
-  diff <(jq -S . expected.json) <(jq -S . test-output.json) > test-output.diff
-  _diff=$(cat test-output.diff)
+  ${_JF} "${_dirname}/input.json" > "${_dirname}/test-output".json
+  diff <(jq -S . "${_dirname}/expected.json") <(jq -S . "${_dirname}/test-output.json") >\
+   "${_dirname}/test-output.diff"
+  _diff=$(cat "${_dirname}/test-output.diff")
   if [[ -z ${_diff} ]]; then
     echo "PASSED" >&2
   else
@@ -23,8 +22,11 @@ function runtest() {
     ${_diff}
     ---" >&2
   fi
-  cd ..
   return ${_ret}
+}
+
+function clean() {
+  find "${_TEST_ROOT_DIR}" -name 'test-output*' -exec rm {} \;
 }
 
 function main() {
@@ -45,4 +47,5 @@ function main() {
   fi
 }
 
+clean
 main || exit 1
