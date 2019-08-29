@@ -1,6 +1,6 @@
-= powerjson: JSON with inheritance and templating
+= jf: JSON with inheritance and templating
 
-`powerjson` is a simple tool to give your JSON files a power of inheritance and templating.
+`jf` is a simple tool to give your JSON files a power of inheritance and templating.
 
 == Background and Introduction
 
@@ -9,24 +9,24 @@ Despite that there are criticisms to use JSON<<json>> as system configuration in
 However, surely it has some weaknesses when we try to define data structure.
 For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.footnote:[This is not merely a weakness of JSON but also other notations even YAML. YAML has a way to reference another object node from one, still it cannot embed a string value of a text node in another by itself.]
 
-`powerjson` is a tool to cope with such challenges by introducing inheritance and templating into JSON files.
+`jf` is a tool to cope with such challenges by introducing inheritance and templating into JSON files.
 
 == Installation
 
-Place the file `powerjson` somewhere on your `PATH`.
+Place the file `jf` somewhere on your `PATH`.
 
 == Usage
 
 [source, bash]
 ----
-powerjson [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET
+jf [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET
 ----
 
 
 == Features
 
-With `powerjson`, you can build a JSON object reusing other JSON objects.
-To specify JSON objects to be referenced, `powerjson` searches for keys which have special names in a given object.
+With `jf`, you can build a JSON object reusing other JSON objects.
+To specify JSON objects to be referenced, `jf` searches for keys which have special names in a given object.
 `$extends` and `$private` are keywords used for this purpose.
 
 Basic features offered by the product are following
@@ -55,7 +55,7 @@ include::examples/T.json[]
 === External Inheritance
 
 In programming languages, inheritance is an indispensable technique to reuse a component.
-`powerjson` offers it for the purpose.
+`jf` offers it for the purpose.
 A usage example is as follows.
 
 [source, json]
@@ -68,7 +68,7 @@ A usage example is as follows.
 ----
 
 ----
-powerjson I.json
+jf I.json
 ----
 
 `I.json` will be rendered into the following JSON object with this command line.
@@ -85,7 +85,7 @@ powerjson I.json
 
 As you see in the example, the attribute `o` whose value is set to `"A"` in `A.json`, is overridden by the value in `I.json`.
 
-Multiple inheritance is also supported by `powerjson`.
+Multiple inheritance is also supported by `jf`.
 Just by listing file names of JSONs to be inherited, multiple inheritance happens, like `"$extends": ["A.json", "B.json"]`.
 When both `A.json` and `B.json` have attributes at the same path, `A.json` side's value will be used.
 
@@ -223,7 +223,7 @@ In this example, the version to be released next is `2.12.0`, however the versio
 To follow the principle of D-R-Y, how should we fix it?
 Templating is a feature to offer a solution to this challenge.
 
-We can describe this relationship by using the templating feature of `powerjson`.
+We can describe this relationship by using the templating feature of `jf`.
 
 [source, json]
 .T.json
@@ -234,12 +234,12 @@ We can describe this relationship by using the templating feature of `powerjson`
 }
 ----
 
-Once you render this file with `powerjson`, you will get the first file (Version file).
+Once you render this file with `jf`, you will get the first file (Version file).
 
-`$ref` is a built-in function of `powerjson`, which expands the value of the node specified by the path given as an argument.
-Not only built-in functions but also any commands (bash expressions) valid on a platform on which `powerjson` is running can be used here.
+`$ref` is a built-in function of `jf`, which expands the value of the node specified by the path given as an argument.
+Not only built-in functions but also any commands (bash expressions) valid on a platform on which `jf` is running can be used here.
 
-For instance, following is a valid input to `powerjson`.
+For instance, following is a valid input to `jf`.
 [source, json]
 ----
 {
@@ -258,9 +258,9 @@ And this will result in an output below.
 ----
 
 This feature can be disabled by `-d` (`--disable-templating`) option.
-And to enable it explicitly, you can use `-e` (`--enable-templating`) in case `POWERJSON_TEMPLATING_ENABLED` is set to `no`.
+And to enable it explicitly, you can use `-e` (`--enable-templating`) in case `JF_TEMPLATING_ENABLED` is set to `no`.
 
-==== Built-in `powerjson` functions
+==== Built-in `jf` functions
 
 ===== `ref` function
 
@@ -285,11 +285,11 @@ This function can only work from inside "Work(2)" file.
 
 === Environment variables
 
-You can control behaviours of `powerjson` by setting environment variables described in this section.
+You can control behaviours of `jf` by setting environment variables described in this section.
 
-==== POWERJSON_PATH
+==== JF_PATH
 
-From directories listed in `POWERJSON_PATH`, `powerjson` searches for requested file.
+From directories listed in `JF_PATH`, `jf` searches for requested file.
 Entries in the variable is separated by colons(`:`).
 
 When it is searching for a file during internal inheritance resolution, it first searches for private node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
@@ -298,9 +298,9 @@ When it is searching for a file during internal inheritance resolution, it first
 
 `.`
 
-==== POWERJSON_TEMPLATING_ENABLED
+==== JF_TEMPLATING_ENABLED
 
-You can enable `powerjson` 's templating feature by setting this environment variable's value to `yes`.
+You can enable `jf` 's templating feature by setting this environment variable's value to `yes`.
 If any other value is set to the variable, it will not be executed.
 
 ===== Default value
@@ -308,7 +308,7 @@ If any other value is set to the variable, it will not be executed.
 `yes`
 
 
-==== POWERJSON_DEBUG
+==== JF_DEBUG
 
 If this variable is set to `enabled`, debug information will be printed to `stderr`.
 
@@ -317,10 +317,10 @@ If this variable is set to `enabled`, debug information will be printed to `stde
 
 == Design
 
-Following is a diagram that illustrates `powerjson` 's processing pipeline design.
+Following is a diagram that illustrates `jf` 's processing pipeline design.
 
 [ditaa]
-.powerjson's pipeline
+.jf's pipeline
 ----
 
           external inheritance             private node materialization
@@ -386,7 +386,7 @@ Internal inheritance mechanism is a bit more complicated than the external one.
 2. Overlay the JSON object created in the step. 1 with an original JSON object.
 3. Remove nodes, i.e., `$extends` and `$private` nodes from the JSON object created in the step 2.
 
-'Private node directory' is inserted before the first entry of `POWERJSON_PATH` environment variable when a file to be expanded is searched during the step 1. b.
+'Private node directory' is inserted before the first entry of `JF_PATH` environment variable when a file to be expanded is searched during the step 1. b.
 
 === Templating
 
@@ -401,7 +401,7 @@ And this causes expansions of bash expressions inside the content of "Work(2)" a
 
 === Limitations and Future Work
 
-* Currently, almost no validation is performed by `powerjson`.
+* Currently, almost no validation is performed by `jf`.
 Probably, it is preferable to create an external tool (or independent module) to validate an input JSON file.
 * Cyclic inheritance is not checked and such a model will result in a stack-overflow.
 * Handling of characters that need escaping on templating is naive.
