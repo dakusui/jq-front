@@ -54,4 +54,5 @@ dkms.conf
 # Custom entries
 *~
 .idea/
-
+test-output.json
+test-output.diff
