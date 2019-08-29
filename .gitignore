@@ -55,4 +55,4 @@ dkms.conf
 *~
 .idea/
 test-output.json
-test.diff
+test-output.diff
