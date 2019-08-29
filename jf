@@ -1,0 +1,277 @@
+#!/bin/bash -eu
+
+_JF_PATH=${JF_PATH:-"."}
+_JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
+_JF_DEBUG=${JF_DEBUG:-"disabled"}
+
+function _remove_meta_nodes() {
+  local _target="${1}"
+  local _cur
+  _cur="$(mktemp)"
+  cp "${_target}" "${_cur}"
+  for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
+    local _next
+    _next="$(mktemp)"
+    jq ".|del(${i})" "${_cur}" >"${_next}"
+    _cur="${_next}"
+  done
+  jq '.|del(."$private")' "${_cur}"
+}
+
+function _merge_object_nodes() {
+  local _a="${1}"
+  local _b="${2}"
+  jq -s '.[0] * .[1]' "${_a}" "${_b}"
+}
+
+function _expand_internal_inheritances() {
+  local _target="${1}"
+  local _private_nodes_dir="${2}"
+  local _cur
+  local _in
+  _cur="$(mktemp)"
+  echo '{}' >"${_cur}"
+  for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
+    local _next
+    _next="$(mktemp)"
+    for j in $(jq -r -c "${i}[]" "${_target}"); do
+      local _jj
+      _jj="$(search_file_in "${j}" "${_private_nodes_dir}")"
+      jq -n "input | ${i%.\"\$extends\"}=input" "${_cur}" "${_jj}" >"${_next}"
+      _cur="${_next}"
+    done
+  done
+  jq -r -c . "${_cur}"
+}
+
+####
+# Used when a condition is not met and a program should NOT go on.
+function abort() {
+  local _message="${1}"
+  message "ERROR:${_message}"
+  local _i=0
+  local _e
+  while _e="$(caller $_i)"; do
+    message "  at ${_e}"
+    _i=$((_i + 1))
+  done
+  return 1
+}
+
+function debug() {
+  if [[ ${_JF_DEBUG:-""} == "enabled" ]]; then
+    message "DEBUG:${1}"
+  fi
+}
+
+function message() {
+  local _message="${1}"
+  echo "${_message}" >&2
+}
+
+function all_paths() {
+  local _json="${1}"
+  echo "${_json}" | jq -r -c 'path(..)|[.[]]|map(if type=="number" then "["+tostring+"]" else "\""+tostring+"\"" end)|join(".")|gsub("\\.\\[";"[")|"."+tostring'
+}
+
+function has_value_at() {
+  local _path="${1}"
+  local _json="${2}"
+  local _val
+  _val=$(echo "${_json}" | jq "${_path}|select(.)")
+  if [[ -z ${_val} ]]; then
+    echo "F"
+  else
+    echo "T"
+  fi
+}
+
+function value_at() {
+  local _path="${1}" # A path from which the output is retrieved.
+  local _json="${2}" # JSON content
+  if [[ $(has_value_at "${_path}" "${_json}") == 'T' ]]; then
+    echo "${_json}" | jq -r -c "${_path}" || abort "Failed to access '${_path}'."
+  else
+    if [ -z ${3+x} ]; then
+      abort "Failed to access '${_path}' and default value for it was not given."
+    else
+      echo "${3}"
+    fi
+  fi
+}
+
+function keys_of() {
+  local _path="${1}" # A path from which the output is retrieved.
+  local _json="${2}" # JSON content
+  echo "${_json}" | jq -r -c "${_path} | keys[]" || abort "Failed to access keys of '${_path}' in '${_json}'"
+}
+
+function search_file_in() {
+  local _target="${1}"
+  local _path="${2}"
+  if [[ "${_target}" == /* ]]; then
+    echo "${_target}"
+    return 0
+  fi
+  IFS=':' read -r -a _arr <<<"${_path}"
+  for i in "${_arr[@]}"; do
+    local _ret="${i}/${_target}"
+    if [[ -e "${_ret}" ]]; then
+      echo "${_ret}"
+      return 0
+    fi
+  done
+  abort "File '${_target}' was not found in '${_path}'"
+}
+
+function expand_external_inheritances() {
+  local _target="${1}"
+  local _path="${2}"
+  local _in
+  debug "begin:expand_external_inheritances"
+  ####
+  # This is intentionally using single quotes to pass quoted path expression to jq.
+  # shellcheck disable=SC2016
+  local _parents
+  local _cur
+  _cur="$(mktemp)"
+  _in="$(search_file_in "${_target}" "${_path}")" || abort "${_target} was not found in ${_path}"
+  debug "writing ${_in} to ${_cur}"
+  cat "${_in}" >"${_cur}"
+  # shellcheck disable=SC2016
+  # this is intentionally suppressing expansion to pass the value to jq.
+  if [[ $(has_value_at '."$extends"' "$(cat "${_in}")") == 'T' ]]; then
+    _parents=$(value_at '."$extends"[]' "$(cat "${_in}")")
+    local i
+    for i in $_parents; do
+      local _next
+      local _tmp
+      _next=$(mktemp)
+      _tmp=$(mktemp)
+      expand_external_inheritances "$i" "${_path}" >"${_tmp}"
+      _merge_object_nodes "${_tmp}" "${_cur}" >"${_next}"
+      _cur="${_next}"
+    done
+  fi
+  jq -r -c '.|del(.["$extends"])' "$(search_file_in "${_cur}" "${_path}")"
+  debug "end:expand_external_inheritances"
+}
+
+function materialize_private_nodes() {
+  local _target="${1}"
+  local _content
+  local _ret
+  debug "begin:materialize_private_nodes"
+  _content="$(cat "${_target}")"
+  _ret="$(mktemp -d)"
+  # Intentional single quotes for jq.
+  # shellcheck disable=SC2016
+  if [[ $(has_value_at '."$private"' "${_content}") == 'T' ]]; then
+    # shellcheck disable=SC2016
+    for i in $(keys_of '."$private"' "${_content}"); do
+      echo "${_content}" | jq '."$private".'"${i}" > "${_ret}/${i}"
+    done
+  fi
+  echo "${_ret}"
+  debug "end:materialize_private_nodes"
+}
+
+function expand_internal_inheritances() {
+  local _target="${1}"
+  local _private_nodes_dir="${2}"
+  local _expanded
+  local _clean
+  debug "begin:expand_internal_inheritances"
+  _expanded="$(mktemp)"
+  _clean="$(mktemp)"
+
+  _expand_internal_inheritances "${_target}" "${_private_nodes_dir}" >"${_expanded}"
+  _remove_meta_nodes "${_target}" >"${_clean}"
+  _merge_object_nodes "${_expanded}" "${_clean}"
+  debug "end:expand_internal_inheritances"
+}
+
+function perform_templating() {
+  debug "begin:perform_templating"
+  local _src_file="${1}"
+  local _content
+  local _ret
+  _content=$(cat "${_src_file}" | sed -r 's/\"/\\\"/g')
+  _ret=$(eval "echo \"${_content}\"")
+  echo "${_ret}"
+  debug "end:perform_templating"
+}
+
+function ref() {
+  local _path="${1}"
+  value_at "${_path}" "$(cat "$(self)")"
+}
+
+function self() {
+  echo "${_out}"
+}
+
+function jf() {
+  local _target="${1}"
+  local _templating="${2}"
+  local _tmp
+  local _private_nodes_dir
+  local _out
+  local _target
+  _tmp="$(mktemp)"
+  expand_external_inheritances "${_target}" "${_JF_PATH}" >"${_tmp}"
+  _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
+  _out=$(mktemp)
+  expand_internal_inheritances "${_tmp}" "${_private_nodes_dir}:${_JF_PATH}" >"${_out}"
+  if [[ "${_templating}" == "yes" ]]; then
+    perform_templating "${_out}"
+  else
+    cat "${_out}"
+  fi
+}
+
+function usage_exit() {
+  abort "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET"
+}
+
+function main() {
+  # Call getopt to validate the provided input.
+  options=$(getopt -o hde --long help,disable-templating,enable-templating -- "$@") || {
+    usage_exit
+  }
+  eval set -- "$options"
+  while true; do
+    case "${1}" in
+    -h | --help)
+      usage_exit
+      ;;
+    -d | --disable-templating)
+      _JF_TEMPLATING_ENABLED=no
+      shift
+      ;;
+    -e | --enable-templating)
+      _JF_TEMPLATING_ENABLED=yes
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      abort "Internal error!"
+      ;;
+    esac
+  done
+  if [[ $# == 0 ]]; then
+    usage_exit
+  fi
+  _target="${1}"
+
+  jf "${_target}" "${_JF_TEMPLATING_ENABLED}"
+}
+
+debug "_JF_PATH=${_JF_PATH}"
+debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
+debug "_JF_DEBUG=${_JF_DEBUG}"
+
+main "${@}"
