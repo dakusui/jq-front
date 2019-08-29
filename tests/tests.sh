@@ -11,9 +11,10 @@ function runtest() {
   local _ret=0
   echo -n "executing test:'${_dirname}':..."
   cd "${_dirname}"
+  rm -f test-output*
   ${_JF} input.json > test-output.json
-  diff <(jq -S . expected.json) <(jq -S . test-output.json) > test.diff
-  _diff=$(cat test.diff)
+  diff <(jq -S . expected.json) <(jq -S . test-output.json) > test-output.diff
+  _diff=$(cat test-output.diff)
   if [[ -z ${_diff} ]]; then
     echo "PASSED" >&2
   else
