@@ -1,6 +1,6 @@
 = jf: JSON with inheritance and templating
 
-`jf` is a simple tool to give your JSON files a power of inheritance and templating.
+`jf`, which stands for "jq-front", is a simple tool to give your JSON files a power of inheritance and templating.
 
 == Background and Introduction
 
@@ -410,7 +410,7 @@ Probably, it is preferable to create an external tool (or independent module) to
 
 * **Hrioshi Ukai** - *Initial work* - https://github.com/dakusui[dakusui]
 
-== License
+== link:LICENSE[License]
 
 [source, text]
 ----
