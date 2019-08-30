@@ -7,5 +7,5 @@ bash -eu "tests/tests.sh" "$(pwd)/jf" "$(pwd)/tests"
 echo ""
 
 echo "BUILDING DOCKER IMAGE:"
-docker build -t jf .
+docker build -t dakusui/jf .
 

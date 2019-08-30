@@ -1,4 +1,4 @@
-function jf-docker() {
+function jf() {
   local _target=${1}
   local _jf_path
   docker run -i \
@@ -7,5 +7,5 @@ function jf-docker() {
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG} \
     -e JF_CWD="$(pwd)" \
-    jf "${@}"
+    dakusui/jf "${@}"
 }
