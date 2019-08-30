@@ -13,15 +13,57 @@ For instance, under a situation, where we need to generate similar but slightly 
 
 == Installation
 
+=== Ubuntu
 Place the file `jf` somewhere on your `PATH`.
+Followings will be required to run `jf`
+
+* `jq`
+* `bash`
+
+=== With Docker
+
+Add the following entry to your `.bashrc` or a file sourced through it.
+[source, bash]
+include::jf_aliases[]
+
+
 
 == Usage
 
-[source, bash]
-----
+```sh
 jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [TARGET]
-----
+```
 
+=== Example
+Let's prepare files from which you want to create a new JSON by extending.
+```sh
+$ echo '{"yourname":"Mark"}' > name.json
+$ cat name.json
+{"yourname":"Mark"}
+
+$ echo '{"greeting":"Hello"}' > greeting.json
+$ cat greeting.json
+{"greeting":"Hello"}
+```
+
+Now, let's try `jf`.
+```sh
+$ echo '{
+    "$extends": [
+      "greeting.json",
+      "name.json"
+    ],
+    "sayHello": "$(ref .greeting), $(ref .yourname). Toady is $(date). How are you doing?"
+  }
+  ' | jf
+  {
+    "yourname": "Mark",
+    "greeting": "Hello",
+    "sayHello": "Hello, Mark. Toady is Fri Aug 30 22:04:40 UTC 2019. How are you doing?"
+  }
+$
+```
+Doesn't it seem useful? Have fun!
 
 == Features
 
