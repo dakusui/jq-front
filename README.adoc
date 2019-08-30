@@ -34,7 +34,7 @@ function jf() {
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jf "${@}"
+    dakusui/jf:v0.1 "${@}"
 }
 ----
 
