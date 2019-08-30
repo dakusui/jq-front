@@ -1,0 +1,11 @@
+function jf-docker() {
+  local _target=${1}
+  local _jf_path
+  docker run -i \
+    -v /:/var/lib/jf \
+    -e JF_PATH_BASE="/var/lib/jf" \
+    -e JF_PATH="${JF_PATH}" \
+    -e JF_DEBUG=${JF_DEBUG} \
+    -e JF_CWD="$(pwd)" \
+    jf "${@}"
+}

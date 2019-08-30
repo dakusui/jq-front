@@ -1,14 +1,33 @@
 #!/bin/bash -eu
 
-_JF_PATH=${JF_PATH:-"."}
-_JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
-_JF_DEBUG=${JF_DEBUG:-"disabled"}
+function _mangle_path() {
+  local _path="${1}"
+  local _path_base="${2}"
+  local _ret=""
+  IFS=":" read -r -a _arr <<< "${_path}"
+  for i in "${_arr[@]}"; do
+    local _cur="${_path_base}"
+    if [[ ${i} == .* ]]; then
+      _cur="${_cur}/${i/./${_JF_CWD}}"
+    else
+      _cur="${_cur}${i}"
+    fi
+    if [[ "${_ret}" == "" ]]; then
+      _ret="${_cur}"
+    else
+      _ret="${_ret}:${_cur}"
+    fi
+  done
+  echo "${_ret}"
+}
 
 function _remove_meta_nodes() {
   local _target="${1}"
   local _cur
   _cur="$(mktemp)"
   cp "${_target}" "${_cur}"
+  # Intentional single quote to find a keyword that starts with '$'
+  # shellcheck disable=SC2016
   for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
     local _next
     _next="$(mktemp)"
@@ -31,6 +50,8 @@ function _expand_internal_inheritances() {
   local _in
   _cur="$(mktemp)"
   echo '{}' >"${_cur}"
+  # Intentional single quote to find a keyword that starts with '$'
+  # shellcheck disable=SC2016
   for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
     local _next
     _next="$(mktemp)"
@@ -196,7 +217,7 @@ function perform_templating() {
   local _src_file="${1}"
   local _content
   local _ret
-  _content=$(cat "${_src_file}" | sed -r 's/\"/\\\"/g')
+  _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
   _ret=$(eval "echo \"${_content}\"")
   echo "${_ret}"
   debug "end:perform_templating"
@@ -239,46 +260,51 @@ function main() {
   options=$(getopt -o hde --long help,disable-templating,enable-templating -- "$@") || {
     usage_exit
   }
-  eval set -- "$options"
-  while true; do
-    case "${1}" in
-    -h | --help)
-      usage_exit
-      ;;
-    -d | --disable-templating)
-      _JF_TEMPLATING_ENABLED=no
-      shift
-      ;;
-    -e | --enable-templating)
-      _JF_TEMPLATING_ENABLED=yes
-      shift
-      ;;
-    --)
-      shift
-      break
-      ;;
-    *)
-      abort "Internal error!"
-      ;;
-    esac
-  done
-  if [[ $# == 0 ]]; then
-    usage_exit
+  if [[ $# -gt 0 ]]; then
+    eval set -- "$options"
+    while true; do
+      case "${1}" in
+      -h | --help)
+        usage_exit
+        ;;
+      -d | --disable-templating)
+        _JF_TEMPLATING_ENABLED=no
+        shift
+        ;;
+      -e | --enable-templating)
+        _JF_TEMPLATING_ENABLED=yes
+        shift
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        abort "Internal error!"
+        ;;
+      esac
+    done
   fi
-  _target="${1}"
-
+  if [[ $# == 0 ]]; then
+    _target="$(mktemp)"
+    cat > "${_target}"
+  else
+    _target="${1}"
+  fi
   jf "${_target}" "${_JF_TEMPLATING_ENABLED}"
 }
 
+_JF_CWD="${JF_CWD:-""}"
+_JF_PATH_BASE=${JF_PATH_BASE:-""}
+_JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
+_JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
+_JF_DEBUG=${JF_DEBUG:-"disabled"}
+
+debug "_JF_CWD=${_JF_CWD}"
+debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
 debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
 
-if [[ $# == 0 ]]; then
-  _in="$(mktemp)"
-  cat > "${_in}"
-  main "${_in}"
-else
-  main "${@}"
-fi
+main "${@}"
 
