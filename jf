@@ -274,4 +274,11 @@ debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
 
-main "${@}"
+if [[ $# == 0 ]]; then
+  _in="$(mktemp)"
+  cat > "${_in}"
+  main "${_in}"
+else
+  main "${@}"
+fi
+
