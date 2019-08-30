@@ -19,7 +19,7 @@ Place the file `jf` somewhere on your `PATH`.
 
 [source, bash]
 ----
-jf [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET
+jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [TARGET]
 ----
 
 
