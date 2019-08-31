@@ -57,3 +57,4 @@ dkms.conf
 .asciidoctor
 test-output.json
 test-output.diff
+\?
