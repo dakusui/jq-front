@@ -54,5 +54,6 @@ dkms.conf
 # Custom entries
 *~
 .idea/
+.asciidoctor
 test-output.json
 test-output.diff
