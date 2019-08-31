@@ -1,0 +1,63 @@
+{
+  "$id": "https://raw.githubusercontent.com/dakusui/jf/master/jf-schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "jf",
+  "type": [
+    "object",
+    "array",
+    "string",
+    "number",
+    "boolean",
+    "null"
+  ],
+  "definitions": {
+    "internalNode": {
+      "type": [
+        "object",
+        "array",
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ],
+      "propertyNames": {
+        "pattern": "^((\\$extends)|[^$].*$|$)"
+      },
+      "properties": {
+        "$extends": {
+          "$ref": "#/definitions/$extends"
+        }
+      },
+      "patternProperties": {
+        "^([^$].*$|$)": {
+          "$ref": "#/definitions/internalNode"
+        }
+      }
+    },
+    "$extends": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Files that are extended by this JSON object."
+    }
+  },
+  "propertyNames": {
+    "pattern": "^((\\$extends|\\$private)|[^$].*$|$)"
+  },
+  "properties": {
+    "$extends": {
+      "$ref": "#/definitions/$extends"
+    },
+    "$private": {
+      "type": "object",
+      "description": "Object nodes that can be extended by nodes inside this JSON object."
+    }
+  },
+  "patternProperties": {
+     "^([^$].*$|$)": {
+       "$ref": "#/definitions/internalNode"
+     }
+  }
+}
+
