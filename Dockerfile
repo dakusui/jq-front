@@ -1,7 +1,8 @@
-
-From ubuntu:18.04
+FROM ubuntu:18.04
 RUN apt-get update && \
     apt-get install jq -y && \
+    apt-get install npm -y && \
+    npm install -g ajv-cli && \
     mkdir -p /var/lib/jf && \
     mkdir -p /app
 COPY ./jf /app
