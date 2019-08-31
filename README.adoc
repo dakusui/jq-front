@@ -372,7 +372,7 @@ If this variable is set to `enabled`, debug information will be printed to `stde
 
 Following is a diagram that illustrates `jf` 's processing pipeline design.
 
-[ditaa]
+[ditaa, target="images/pipeline"]
 .jf's pipeline
 ----
 
