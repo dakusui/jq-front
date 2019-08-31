@@ -24,19 +24,8 @@ Followings will be required to run `jf`
 Add a following entry to your `.bashrc` or a file sourced through it.
 
 [source, bash]
-----
-function jf() {
-  local _target=${1}
-  local _jf_path
-  docker run -i \
-    -v /:/var/lib/jf \
-    -e JF_PATH_BASE="/var/lib/jf" \
-    -e JF_PATH="${JF_PATH}" \
-    -e JF_DEBUG=${JF_DEBUG} \
-    -e JF_CWD="$(pwd)" \
-    dakusui/jf "${@}"
-}
-----
+include::jf_aliases[]
+
 
 
 == Usage
@@ -372,7 +361,7 @@ If this variable is set to `enabled`, debug information will be printed to `stde
 
 Following is a diagram that illustrates `jf` 's processing pipeline design.
 
-[ditaa, target="images/pipeline"]
+[ditaa]
 .jf's pipeline
 ----
 
