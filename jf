@@ -4,7 +4,7 @@ function _mangle_path() {
   local _path="${1}"
   local _path_base="${2}"
   local _ret=""
-  IFS=":" read -r -a _arr <<< "${_path}"
+  IFS=":" read -r -a _arr <<<"${_path}"
   for i in "${_arr[@]}"; do
     local _cur="${_path_base}"
     if [[ ${i} == .* ]]; then
@@ -58,6 +58,7 @@ function _expand_internal_inheritances() {
     for j in $(jq -r -c "${i}[]" "${_target}"); do
       local _jj
       _jj="$(search_file_in "${j}" "${_private_nodes_dir}")"
+      validate_jf_json "${_jj}"
       jq -n "input | ${i%.\"\$extends\"}=input" "${_cur}" "${_jj}" >"${_next}"
       _cur="${_next}"
     done
@@ -66,7 +67,7 @@ function _expand_internal_inheritances() {
 }
 
 ####
-# Used when a condition is not met and a program should NOT go on.
+# Used when a condition is not met and a program SHOULD NOT go on.
 function abort() {
   local _message="${1}"
   message "ERROR:${_message}"
@@ -145,8 +146,34 @@ function search_file_in() {
   abort "File '${_target}' was not found in '${_path}'"
 }
 
+function _validate_jf_json_with() {
+  local _in="${1}"
+  local _mode="${2}"
+  local _out=
+  {
+    _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
+  } || {
+    message "Validation for '${_in}' was failed:\n${_out}"
+    return 1
+  }
+}
+
+function validate_jf_json() {
+  local _in="${1}"
+  if [[ "${_JF_VALIDATION}" == "no" ]]; then
+    return 0
+  elif [[ "${_JF_VALIDATION}" == "strict" ]]; then
+    _validate_jf_json_with "${_in}" "strict" || return 1
+  elif [[ "${_JF_VALIDATION}" == "lenient" ]]; then
+    _validate_jf_json_with "${_in}" "lenient" || return 1
+  else
+    message "Unknown validation mode:'${_JF_VALIDATION}' was set."
+    exit 1
+  fi
+}
+
 function expand_external_inheritances() {
-  local _target="${1}"
+  cal _target="${1}"
   local _path="${2}"
   local _in
   debug "begin:expand_external_inheritances"
@@ -157,6 +184,7 @@ function expand_external_inheritances() {
   local _cur
   _cur="$(mktemp)"
   _in="$(search_file_in "${_target}" "${_path}")" || abort "${_target} was not found in ${_path}"
+  validate_jf_json "${_in}" || abort "Validation failed"
   debug "writing ${_in} to ${_cur}"
   cat "${_in}" >"${_cur}"
   # shellcheck disable=SC2016
@@ -190,7 +218,7 @@ function materialize_private_nodes() {
   if [[ $(has_value_at '."$private"' "${_content}") == 'T' ]]; then
     # shellcheck disable=SC2016
     for i in $(keys_of '."$private"' "${_content}"); do
-      echo "${_content}" | jq '."$private".'"${i}" > "${_ret}/${i}"
+      echo "${_content}" | jq '."$private".'"${i}" >"${_ret}/${i}"
     done
   fi
   echo "${_ret}"
@@ -252,12 +280,12 @@ function jf() {
 }
 
 function usage_exit() {
-  abort "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET"
+  abort "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET"
 }
 
 function main() {
   # Call getopt to validate the provided input.
-  options=$(getopt -o hde --long help,disable-templating,enable-templating -- "$@") || {
+  options=$(getopt -o hde --long help,disable-templating,enable-templating,validation: -- "$@") || {
     usage_exit
   }
   if [[ $# -gt 0 ]]; then
@@ -275,6 +303,11 @@ function main() {
         _JF_TEMPLATING_ENABLED=yes
         shift
         ;;
+      --validation)
+        _JF_VALIDATION=$2
+        shift
+        shift
+        ;;
       --)
         shift
         break
@@ -287,7 +320,7 @@ function main() {
   fi
   if [[ $# == 0 ]]; then
     _target="$(mktemp)"
-    cat > "${_target}"
+    cat >"${_target}"
   else
     _target="${1}"
   fi
@@ -295,16 +328,18 @@ function main() {
 }
 
 _JF_CWD="${JF_CWD:-""}"
+_JF_SCHEMA_DIR="$(dirname "$(readlink --canonicalize "${0}")")/schema"
 _JF_PATH_BASE=${JF_PATH_BASE:-""}
 _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 _JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
+_JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
 
 debug "_JF_CWD=${_JF_CWD}"
 debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
 debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
+debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
 
 main "${@}"
-

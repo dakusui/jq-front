@@ -1,0 +1,22 @@
+{
+  "$extends": [
+    "A.json"
+  ],
+  "$private": {
+    "privateNodeText": "textNode",
+    "privateNodeArray": [],
+    "privateNodeObject": {},
+    "privateNodeNumeric": 1.234,
+    "privateNodeBoolean": true,
+    "privateNodeNull": null
+  },
+  "$unknown": {
+    "$unknown": {}
+  },
+  "rootNodeText": "textNode",
+  "rootNodeArray": [],
+  "rootNodeObject": {},
+  "rootNodeNumeric": 1.234,
+  "rootNodeBoolean": true,
+  "rootNodeNull": null
+}

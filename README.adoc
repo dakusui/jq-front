@@ -33,7 +33,7 @@ include::jf_aliases[]
 == Usage
 
 ```sh
-jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [TARGET]
+jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]
 ```
 
 === Example
