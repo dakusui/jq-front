@@ -19,14 +19,20 @@ function execute_package() {
 }
 
 function execute_test() {
-  bash -eu "tests/tests.sh" "$(pwd)/jf" "$(pwd)/tests"
+  local _target_tests="${1:-*}"
+  bash -eu "tests/tests.sh" "$(pwd)/jf" "$(pwd)/tests" "${_target_tests}"
+}
+
+function execute_release() {
+  docker login
 }
 
 function execute_stage() {
   local _stage="${1}"
+  shift
   message "EXECUTING:${_stage}..."
   {
-    "execute_${_stage}" && message "DONE:${_stage}"
+    "execute_${_stage}" "${@}" && message "DONE:${_stage}"
   } || {
     message "FAILED:${_stage}"
     return 1
@@ -39,7 +45,9 @@ function main() {
     main doc test package
   fi
   for i in "$@"; do
-    execute_stage "${i}" || exit 1
+    local _args
+    IFS=':' read -r -a _args <<<"${i}"
+    execute_stage "${_args[@]}" || exit 1
   done
 }
 

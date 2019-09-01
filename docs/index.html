@@ -500,7 +500,7 @@ Followings will be required by <code>jf</code></p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">function jf() {
+<pre class="highlight"><code class="language-bash" data-lang="bash">function jf-docker() {
   local _target=${1}
   docker run -i \
     -v /:/var/lib/jf \
@@ -508,7 +508,7 @@ Followings will be required by <code>jf</code></p>
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jf:v0.1 "${@}"
+    dakusui/jf:"${JF_DOCKER_TAG:-v0.1}" "${@}"
 }</code></pre>
 </div>
 </div>
@@ -520,7 +520,7 @@ Followings will be required by <code>jf</code></p>
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [TARGET]</code></pre>
+<pre class="highlight"><code class="language-sh" data-lang="sh">jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
 </div>
 </div>
 <div class="sect2">
@@ -1166,7 +1166,7 @@ SOFTWARE.</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-08-31 19:06:54 UTC
+Last updated 2019-09-01 23:14:35 UTC
 </div>
 </div>
 </body>

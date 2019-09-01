@@ -3,6 +3,7 @@ set -eu
 
 _JF="${1:?Specify 'jf' to test in absolute path}"
 _TEST_ROOT_DIR="${2:?Specify a directory in which test dirs are stored.}"
+_TARGET_TESTS="${3:-*}"
 JF_PATH=.:${_TEST_ROOT_DIR}/base
 export JF_PATH
 
@@ -103,18 +104,25 @@ function clean() {
 }
 
 function main() {
-  local failed
-  failed=0
+  local failed=0
+  local skipped=0
+  local numtests=0
   echo "${_TEST_ROOT_DIR}" 1>&2
   while IFS= read -r -d '' i
   do
-    runtest "${i}" || failed=$((failed + 1))
+    numtests=$((numtests + 1))
+    if [[ "x${i}" == x${_TARGET_TESTS} ]]; then
+      runtest "${i}" || failed=$((failed + 1))
+    else
+      skipped=$((skipped + 1))
+      echo "Skipping ${i}"
+    fi
   done <   <(find "${_TEST_ROOT_DIR}" -type f -name test.json -print0)
 
   if [[ $failed == 0 ]]; then
-    echo "all tests passed"
+    echo "No test failed (total=${numtests}; skipped=${skipped})"
   else
-    echo "$failed test(s) FAILED"
+    echo "$failed test(s) FAILED (total=${numtests}; skipped=${skipped})"
     return 1
   fi
 }
