@@ -1,10 +1,14 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1090
+# source = ./shared.sh
+source "$(dirname "$(readlink -f "${0}")")/shared.sh"
 
 function _mangle_path() {
   local _path="${1}"
   local _path_base="${2}"
   local _ret=""
-  IFS=":" read -r -a _arr <<< "${_path}"
+  IFS=":" read -r -a _arr <<<"${_path}"
   for i in "${_arr[@]}"; do
     local _cur="${_path_base}"
     if [[ ${i} == .* ]]; then
@@ -24,19 +28,24 @@ function _mangle_path() {
 function _remove_meta_nodes() {
   local _target="${1}"
   local _cur
-  _cur="$(mktemp)"
-  cp "${_target}" "${_cur}"
-  # Intentional single quote to find a keyword that starts with '$'
-  # shellcheck disable=SC2016
-  for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
-    local _next
-    _next="$(mktemp)"
-    jq ".|del(${i})" "${_cur}" >"${_next}"
-    _cur="${_next}"
-  done
-  jq '.|del(."$private")' "${_cur}"
+  local _content
+  _content="$(cat "${_target}")"
+  if [[ $(is_object "${_content}") == true ]]; then
+    _cur="$(mktemp_with_content "$(cat "${_target}")")"
+    # Intentional single quote to find a keyword that starts with '$'
+    # shellcheck disable=SC2016
+    for i in $(all_paths "${_content}" | grep '"$extends"$'); do
+      local _next
+      _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
+      _cur="${_next}"
+    done
+    jq '.|del(."$private")' "${_cur}"
+  else
+    echo "${_content}"
+  fi
 }
 
+# Latter overrides former
 function _merge_object_nodes() {
   local _a="${1}"
   local _b="${2}"
@@ -45,89 +54,44 @@ function _merge_object_nodes() {
 
 function _expand_internal_inheritances() {
   local _target="${1}"
-  local _private_nodes_dir="${2}"
+  local _validation_mode="${2}"
+  local _private_nodes_dir="${3}"
   local _cur
   local _in
-  _cur="$(mktemp)"
-  echo '{}' >"${_cur}"
+  _cur=$(mktemp_with_content '{}')
+  debug "(begin:_expand_internal_inheritances:1)"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
-    local _next
-    _next="$(mktemp)"
+    debug "->_expand_internal_inheritances:2:${i})"
     for j in $(jq -r -c "${i}[]" "${_target}"); do
+      local _next
       local _jj
+      debug "-->_expand_internal_inheritances:3:${j})"
       _jj="$(search_file_in "${j}" "${_private_nodes_dir}")"
-      jq -n "input | ${i%.\"\$extends\"}=input" "${_cur}" "${_jj}" >"${_next}"
+      validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
+      local _merged_piece
+      local _p
+      _p="${i%.\"\$extends\"}"
+      local _cur_content
+      _cur_content="$(cat "${_cur}")"
+      if [[ $(has_value_at "${_p}" "${_cur_content}") == true ]]; then
+        local _cur_piece
+        _cur_piece=$(mktemp_with_content "$(echo "${_cur_content}" | jq "${_p}")")
+        _merged_piece=$(mktemp_with_content "$(_merge_object_nodes "${_cur_piece}" "${_jj}")")
+      else
+        _merged_piece=${_jj}
+      fi
+      _next=$(mktemp_with_content "$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")") ||
+        abort "failed on node replacing; _cur=$(cat "${_cur}"); _merged_piece=$(cat "${_merged_piece}")"
       _cur="${_next}"
     done
   done
+  debug "(end:_expand_internal_inheritances:1)"
   jq -r -c . "${_cur}"
 }
 
-####
-# Used when a condition is not met and a program should NOT go on.
-function abort() {
-  local _message="${1}"
-  message "ERROR:${_message}"
-  local _i=0
-  local _e
-  while _e="$(caller $_i)"; do
-    message "  at ${_e}"
-    _i=$((_i + 1))
-  done
-  return 1
-}
-
-function debug() {
-  if [[ ${_JF_DEBUG:-""} == "enabled" ]]; then
-    message "DEBUG:${1}"
-  fi
-}
-
-function message() {
-  local _message="${1}"
-  echo "${_message}" >&2
-}
-
-function all_paths() {
-  local _json="${1}"
-  echo "${_json}" | jq -r -c 'path(..)|[.[]]|map(if type=="number" then "["+tostring+"]" else "\""+tostring+"\"" end)|join(".")|gsub("\\.\\[";"[")|"."+tostring'
-}
-
-function has_value_at() {
-  local _path="${1}"
-  local _json="${2}"
-  local _val
-  _val=$(echo "${_json}" | jq "${_path}|select(.)")
-  if [[ -z ${_val} ]]; then
-    echo "F"
-  else
-    echo "T"
-  fi
-}
-
-function value_at() {
-  local _path="${1}" # A path from which the output is retrieved.
-  local _json="${2}" # JSON content
-  if [[ $(has_value_at "${_path}" "${_json}") == 'T' ]]; then
-    echo "${_json}" | jq -r -c "${_path}" || abort "Failed to access '${_path}'."
-  else
-    if [ -z ${3+x} ]; then
-      abort "Failed to access '${_path}' and default value for it was not given."
-    else
-      echo "${3}"
-    fi
-  fi
-}
-
-function keys_of() {
-  local _path="${1}" # A path from which the output is retrieved.
-  local _json="${2}" # JSON content
-  echo "${_json}" | jq -r -c "${_path} | keys[]" || abort "Failed to access keys of '${_path}' in '${_json}'"
-}
-
-function search_file_in() {
+function _search_file_in() {
   local _target="${1}"
   local _path="${2}"
   if [[ "${_target}" == /* ]]; then
@@ -142,39 +106,83 @@ function search_file_in() {
       return 0
     fi
   done
-  abort "File '${_target}' was not found in '${_path}'"
+  quit "File '${_target}' was not found in '${_path}'"
+}
+
+function search_file_in() {
+  local _target="${1}"
+  local _path="${2}"
+  IFS=':' read -r -a _arr <<<"${_target}"
+  if [[ ${#_arr[@]} -le 1 ]]; then
+    _search_file_in "${1}" "${2}"
+    return $?
+  elif [[ ${#_arr[@]} -gt 1 ]]; then
+    local _f
+    _f="$(_search_file_in "${_arr[1]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
+    debug "plugin command line=" "${_arr[0]}" "${_f}" "${_arr[@]:2}"
+    mktemp_with_content "$("${_arr[0]}" "${_f}" "${_arr[@]:2}")"
+    return $?
+  fi
+}
+
+function _validate_jf_json_with() {
+  local _in="${1}"
+  local _mode="${2}"
+  local _out=
+  {
+    _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
+  } || abort "Validation for '${_in}' was failed:\n${_out}"
+}
+
+function validate_jf_json() {
+  local _in="${1}"
+  local _mode="${2}"
+  if [[ "${_mode}" == "no" ]]; then
+    return 0
+  elif [[ "${_mode}" == "strict" ]]; then
+    _validate_jf_json_with "${_in}" "strict" || return 1
+  elif [[ "${_mode}" == "lenient" ]]; then
+    _validate_jf_json_with "${_in}" "lenient" || return 1
+  else
+    message "Unknown validation mode:'${_mode}' was set."
+    exit 1
+  fi
 }
 
 function expand_external_inheritances() {
   local _target="${1}"
-  local _path="${2}"
+  local _validation_mode="${2}"
+  local _path="${3}"
   local _in
-  debug "begin:expand_external_inheritances"
+  debug "begin:expand_external_inheritances:target=${_target}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
-  local _parents
   local _cur
-  _cur="$(mktemp)"
-  _in="$(search_file_in "${_target}" "${_path}")" || abort "${_target} was not found in ${_path}"
-  debug "writing ${_in} to ${_cur}"
-  cat "${_in}" >"${_cur}"
-  # shellcheck disable=SC2016
-  # this is intentionally suppressing expansion to pass the value to jq.
-  if [[ $(has_value_at '."$extends"' "$(cat "${_in}")") == 'T' ]]; then
-    _parents=$(value_at '."$extends"[]' "$(cat "${_in}")")
-    local i
-    for i in $_parents; do
-      local _next
-      local _tmp
-      _next=$(mktemp)
-      _tmp=$(mktemp)
-      expand_external_inheritances "$i" "${_path}" >"${_tmp}"
-      _merge_object_nodes "${_tmp}" "${_cur}" >"${_next}"
-      _cur="${_next}"
-    done
+  local _content
+  _in="$(search_file_in "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
+  debug "validating ${_in}"
+  validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
+  debug "...validated"
+  _content="$(cat "${_in}")"
+  _cur="$(mktemp_with_content "${_content}")"
+  if [[ $(is_object "${_content}") == true ]]; then
+    # shellcheck disable=SC2016
+    # this is intentionally suppressing expansion to pass the value to jq.
+    if [[ $(has_value_at '."$extends"' "${_content}") == true ]]; then
+      local i
+      while IFS= read -r i; do
+        local _next
+        local _tmp
+        _tmp=$(mktemp_with_content "$(expand_external_inheritances "$i" "${_validation_mode}" "${_path}")")
+        _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
+        _cur="${_next}"
+      done <<< "$(value_at '."$extends"[]' "${_content}")"
+    fi
+    jq -r -c '.|del(.["$extends"])' "$(search_file_in "${_cur}" "${_path}")"
+  else
+    cat "$(search_file_in "${_cur}" "${_path}")"
   fi
-  jq -r -c '.|del(.["$extends"])' "$(search_file_in "${_cur}" "${_path}")"
   debug "end:expand_external_inheritances"
 }
 
@@ -187,10 +195,10 @@ function materialize_private_nodes() {
   _ret="$(mktemp -d)"
   # Intentional single quotes for jq.
   # shellcheck disable=SC2016
-  if [[ $(has_value_at '."$private"' "${_content}") == 'T' ]]; then
+  if [[ $(has_value_at '."$private"' "${_content}") == true ]]; then
     # shellcheck disable=SC2016
     for i in $(keys_of '."$private"' "${_content}"); do
-      echo "${_content}" | jq '."$private".'"${i}" > "${_ret}/${i}"
+      echo "${_content}" | jq '."$private".''"'"${i}"'"' >"${_ret}/${i}"
     done
   fi
   echo "${_ret}"
@@ -199,17 +207,37 @@ function materialize_private_nodes() {
 
 function expand_internal_inheritances() {
   local _target="${1}"
-  local _private_nodes_dir="${2}"
+  local _validation_mode="${2}"
+  local _private_nodes_dir="${3}"
   local _expanded
+  local _expanded_clean
   local _clean
   debug "begin:expand_internal_inheritances"
-  _expanded="$(mktemp)"
-  _clean="$(mktemp)"
-
-  _expand_internal_inheritances "${_target}" "${_private_nodes_dir}" >"${_expanded}"
-  _remove_meta_nodes "${_target}" >"${_clean}"
-  _merge_object_nodes "${_expanded}" "${_clean}"
+  debug "step(1):main"
+  _expanded=$(mktemp_with_content "$(_expand_internal_inheritances "${_target}" "${_validation_mode}" "${_private_nodes_dir}")")
+  debug "step(2a):remove meta nodes from target"
+  _clean=$(mktemp_with_content "$(_remove_meta_nodes "${_target}")")
+  debug "step(2b):remove meta nodes from expanded"
+  _expanded_clean=$(mktemp_with_content "$(_remove_meta_nodes "${_expanded}")")
+  debug "step(3):merge object nodes"
+  _merge_object_nodes "${_expanded_clean}" "${_clean}"
   debug "end:expand_internal_inheritances"
+}
+
+function expand_inheritances_of_private_nodes() {
+  local _private_nodes_dir="${1}"
+  local _templating="${2}"
+  local _jf_path="${3}"
+  debug "begin: expand_inheritances_of_private_nodes in ${_private_nodes_dir}"
+  while IFS= read -r -d '' i; do
+    local _tmp
+    local _f="${i}"
+    debug "expanding inheritance of private node:${i}"
+    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "${_templating}" "no" "${_private_nodes_dir}:${_jf_path}")")"
+    cp "${_tmp}" "${_f}"
+    debug "...expanded"
+  done < <(find "${_private_nodes_dir}" -type f -maxdepth 1 -print0)
+  debug "end:   expand_inheritances_of_private_nodes"
 }
 
 function perform_templating() {
@@ -232,18 +260,28 @@ function self() {
   echo "${_out}"
 }
 
-function jf() {
+function run_jf() {
   local _target="${1}"
   local _templating="${2}"
-  local _tmp
-  local _private_nodes_dir
+  local _jf_path="${4}"
   local _out
-  local _target
-  _tmp="$(mktemp)"
-  expand_external_inheritances "${_target}" "${_JF_PATH}" >"${_tmp}"
-  _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
-  _out=$(mktemp)
-  expand_internal_inheritances "${_tmp}" "${_private_nodes_dir}:${_JF_PATH}" >"${_out}"
+  _target="$(search_file_in "${_target}" "${_jf_path}")"
+  if [[ $(is_object "$(cat "${_target}")") == true ]]; then
+    local _tmp
+    local _validation_mode="${3}"
+    local _private_nodes_dir
+    # If we use mktemp_with_content here, somehow an error happens. Let's fix it later.
+    _tmp="$(mktemp)"
+    expand_external_inheritances "${_target}" "${_validation_mode}" "${_jf_path}" >"${_tmp}"
+    _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
+    expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
+      "${_templating}" \
+      "${_private_nodes_dir}:${_jf_path}"
+    _out=$(mktemp_with_content "$(expand_internal_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")")
+  else
+    debug "non object file:${_target}"
+    _out="$(mktemp_with_content "$(cat "${_target}")")"
+  fi
   if [[ "${_templating}" == "yes" ]]; then
     perform_templating "${_out}"
   else
@@ -252,12 +290,12 @@ function jf() {
 }
 
 function usage_exit() {
-  abort "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] TARGET"
+  abort "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET"
 }
 
 function main() {
   # Call getopt to validate the provided input.
-  options=$(getopt -o hde --long help,disable-templating,enable-templating -- "$@") || {
+  options=$(getopt -o hde --long help,disable-templating,enable-templating,validation: -- "$@") || {
     usage_exit
   }
   if [[ $# -gt 0 ]]; then
@@ -275,6 +313,11 @@ function main() {
         _JF_TEMPLATING_ENABLED=yes
         shift
         ;;
+      --validation)
+        _JF_VALIDATION=$2
+        shift
+        shift
+        ;;
       --)
         shift
         break
@@ -286,25 +329,26 @@ function main() {
     done
   fi
   if [[ $# == 0 ]]; then
-    _target="$(mktemp)"
-    cat > "${_target}"
+    _target="$(mktemp_with_content "$(cat)")"
   else
     _target="${1}"
   fi
-  jf "${_target}" "${_JF_TEMPLATING_ENABLED}"
+  run_jf "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
-_JF_CWD="${JF_CWD:-""}"
+_JF_CWD="${JF_CWD:-"$(pwd)"}"
+_JF_SCHEMA_DIR="$(dirname "$(readlink --canonicalize "${0}")")/schema"
 _JF_PATH_BASE=${JF_PATH_BASE:-""}
 _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 _JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
+_JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
 
 debug "_JF_CWD=${_JF_CWD}"
 debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
 debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
+debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
 
 main "${@}"
-

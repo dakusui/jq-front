@@ -1,0 +1,10 @@
+{
+  "$private": {
+    "hello-world": {
+      "HELLO": "WORLD"
+    }
+  },
+  "a": {
+    "$extends": ["hello-world"]
+  }
+}

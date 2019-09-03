@@ -1,0 +1,4 @@
+{
+  "$extends": [ "bash:S.sh:hello world" ],
+  "o": "hello world"
+}

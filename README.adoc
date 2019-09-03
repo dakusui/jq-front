@@ -15,10 +15,12 @@ For instance, under a situation, where we need to generate similar but slightly 
 
 === Ubuntu
 Place the file `jf` somewhere on your `PATH`.
-Followings will be required to run `jf`
+Followings will be required by `jf`
 
 * `jq`
 * `bash`
+* `npm`
+  ** `ajv-cli`
 
 === With Docker
 Add a following entry to your `.bashrc` or a file sourced through it.
@@ -31,7 +33,7 @@ include::jf_aliases[]
 == Usage
 
 ```sh
-jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [TARGET]
+jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]
 ```
 
 === Example
@@ -443,9 +445,9 @@ And this causes expansions of bash expressions inside the content of "Work(2)" a
 
 === Limitations and Future Work
 
-* Currently, almost no validation is performed by `jf`.
+* Currently, almost no validation is performed by `jf`. (https://github.com/dakusui/jf/issues/23[Issue-23])
 Probably, it is preferable to create an external tool (or independent module) to validate an input JSON file.
-* Cyclic inheritance is not checked and such a model will result in a stack-overflow.
+* Cyclic dependencies are not checked and such a model will result in a stack-overflow.
 * Handling of characters that need escaping on templating is naive.
 
 == Authors
