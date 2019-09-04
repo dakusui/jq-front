@@ -1,7 +1,7 @@
 {
   "i": {
     "$extends": [
-      "bash:S.sh:hello world"
+      "S.sh;bash;hello world"
     ],
     "o": "hello world"
   }

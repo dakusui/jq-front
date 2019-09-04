@@ -97,15 +97,15 @@ function _expand_internal_inheritances() {
 function read_file_from_path() {
   local _target="${1}"
   local _path="${2}"
-  IFS=':' read -r -a _arr <<<"${_target}"
+  IFS=';' read -r -a _arr <<<"${_target}"
   if [[ ${#_arr[@]} -le 1 ]]; then
     search_file_in "${1}" "${2}"
     return $?
   elif [[ ${#_arr[@]} -gt 1 ]]; then
     local _f
-    _f="$(search_file_in "${_arr[1]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
-    debug "plugin command line=" "${_arr[0]}" "${_f}" "${_arr[@]:2}"
-    mktemp_with_content "$("${_arr[0]}" "${_f}" "${_arr[@]:2}")"
+    _f="$(search_file_in "${_arr[0]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
+    debug "plugin command line=" "${_arr[1]}" "${_f}" "${_arr[@]:2}"
+    mktemp_with_content "$("${_arr[1]}" "${_f}" "${_arr[@]:2}")"
     return $?
   fi
 }

@@ -1,4 +1,4 @@
 {
-  "$extends": [ "bash:S.sh:hello world" ],
+  "$extends": [ "S.sh;bash;hello world" ],
   "o": "hello world"
 }
