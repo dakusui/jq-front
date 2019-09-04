@@ -108,6 +108,10 @@ function execute_stage() {
 
 function main() {
   if [[ $# == 0 ]]; then
+    main doc test
+    return 0
+  fi
+  if [[ ${1} == PACKAGE ]]; then
     main doc test package
     return 0
   fi
@@ -122,7 +126,7 @@ function main() {
   for i in "$@"; do
     local _args
     IFS=':' read -r -a _args <<<"${i}"
-    execute_stage "${_args[@]}" || exit 1
+    time execute_stage "${_args[@]}" || exit 1
   done
 }
 
