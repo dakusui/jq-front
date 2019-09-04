@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -eu
 
 JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
@@ -88,10 +89,19 @@ function _expand_internal_inheritances() {
       _next=$(mktemp_with_content "$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")") ||
         abort "failed on node replacing; _cur=$(cat "${_cur}"); _merged_piece=$(cat "${_merged_piece}")"
       _cur="${_next}"
-    done <<< "$(jq -r -c "${i}[]" "${_target}")"
+    done <<<"$(jq -r -c "${i}[]" "${_target}")"
   done
   debug "(end:_expand_internal_inheritances:1)"
   jq -r -c . "${_cur}"
+}
+
+function _validate_jf_json_with() {
+  local _in="${1}"
+  local _mode="${2}"
+  local _out=
+  {
+    _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
+  } || abort "Validation for '${_in}' was failed:\n${_out}"
 }
 
 function read_file_from_path() {
@@ -104,19 +114,12 @@ function read_file_from_path() {
   elif [[ ${#_arr[@]} -gt 1 ]]; then
     local _f
     _f="$(search_file_in "${_arr[0]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
-    debug "plugin command line=" "${_arr[1]}" "${_f}" "${_arr[@]:2}"
-    mktemp_with_content "$("${_arr[1]}" "${_f}" "${_arr[@]:2}")"
+    export -f find_file
+    export -f search_file_in
+    export _JF_PATH
+    mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
     return $?
   fi
-}
-
-function _validate_jf_json_with() {
-  local _in="${1}"
-  local _mode="${2}"
-  local _out=
-  {
-    _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
-  } || abort "Validation for '${_in}' was failed:\n${_out}"
 }
 
 function validate_jf_json() {
@@ -162,7 +165,7 @@ function expand_external_inheritances() {
         _tmp=$(mktemp_with_content "$(expand_external_inheritances "$i" "${_validation_mode}" "${_path}")")
         _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
         _cur="${_next}"
-      done <<< "$(value_at '."$extends"[]' "${_content}")"
+      done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
     jq -r -c '.|del(.["$extends"])' "$(read_file_from_path "${_cur}" "${_path}")"
   else
@@ -236,13 +239,35 @@ function perform_templating() {
   debug "end:perform_templating"
 }
 
+####
+#
+# Function intended to be used on templating
+#
 function ref() {
   local _path="${1}"
   value_at "${_path}" "$(cat "$(self)")"
 }
 
+####
+#
+# Function intended to be used on templating
+#
 function self() {
   echo "${_out}"
+}
+
+####
+#
+# Function intended to be used on 'script inheritance'.
+# Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
+# In case it is not found, 1 will be returned
+#
+function find_file() {
+  local _target="${1}"
+  search_file_in "${_target}" "${_JF_PATH}" || {
+    return $?
+  }
+  return 0
 }
 
 function run_jf() {

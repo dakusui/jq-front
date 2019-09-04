@@ -4,10 +4,9 @@ set -eu
 _JF="${1:?Specify 'jf' to test in absolute path}"
 _TEST_ROOT_DIR="${2:?Specify a directory in which test dirs are stored.}"
 _TARGET_TESTS="${3:-*}"
-JF_PATH=.:${_TEST_ROOT_DIR}/base
+_JF_PATH=.:${_TEST_ROOT_DIR}/base
 JF_BASEDIR="$(dirname "$(dirname "${0}")")"
 export JF_BASEDIR
-export JF_PATH
 
 function run_normal_test() {
   local _testfile="${1}"
@@ -135,6 +134,9 @@ function runtest() {
   local _test_type
   _test_type="$(jq -r -c ".testType" "${_test_json}")" || return 1
   echo -n "executing test(${_test_type}):'${_dirname#${_TEST_ROOT_DIR}/}':..." >&2
+
+  export JF_PATH
+  JF_PATH=${_JF_PATH}:$(dirname "${_test_json}")
   "run_${_test_type}_test" "${_test_json}" || return 1
 }
 
