@@ -10,10 +10,10 @@ function _test_package() {
   # shellcheck disable=SC1090
   # source=jf_aliases
   source "$(pwd)/${APP_NAME}_aliases"
-  export -f jf-docker
+  export -f docker-jq-front
   export JF_DOCKER_TAG="${_version}"
   bash -eu "tests/tests.sh" "docker-${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
-  unset jf-docker
+  unset -f docker-jq-front
   unset JF_DOCKER_TAG
 }
 
@@ -25,6 +25,16 @@ function _build() {
 function message() {
   local _message="${1}"
   echo "${_message}" 1>&2
+}
+
+function execute_prepare() {
+  local _src_file="res/jq-front_aliases"
+  local _dest_file="${_src_file#res/}"
+  local _content
+  local _templated
+  _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
+  _templated=$(eval "echo \"${_content}\"")
+  echo "${_templated}" > "${_dest_file}"
 }
 
 function execute_doc() {
