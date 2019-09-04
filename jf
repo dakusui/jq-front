@@ -67,7 +67,7 @@ function _expand_internal_inheritances() {
   # shellcheck disable=SC2016
   for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
     debug "->_expand_internal_inheritances:2:${i})"
-    for j in $(jq -r -c "${i}[]" "${_target}"); do
+    while IFS= read -r j; do
       local _next
       local _jj
       debug "-->_expand_internal_inheritances:3:${j})"
@@ -88,7 +88,7 @@ function _expand_internal_inheritances() {
       _next=$(mktemp_with_content "$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")") ||
         abort "failed on node replacing; _cur=$(cat "${_cur}"); _merged_piece=$(cat "${_merged_piece}")"
       _cur="${_next}"
-    done
+    done <<< "$(jq -r -c "${i}[]" "${_target}")"
   done
   debug "(end:_expand_internal_inheritances:1)"
   jq -r -c . "${_cur}"
@@ -218,7 +218,7 @@ function expand_inheritances_of_private_nodes() {
     local _tmp
     local _f="${i}"
     debug "expanding inheritance of private node:${i}"
-    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "${_templating}" "no" "${_private_nodes_dir}:${_jf_path}")")"
+    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "no" "no" "${_private_nodes_dir}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
   done < <(find "${_private_nodes_dir}" -maxdepth 1 -type f -print0)
