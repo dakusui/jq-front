@@ -57,12 +57,20 @@ function execute_release() {
   local uncommitted_changes
   local unmerged_commits
   local release_branch="master"
+  local current_branch
+  # shellcheck disable=SC2063
+  current_branch=$(git branch|grep '^*'|cut -d ' ' -f 2)
+  if [[ ${current_branch} != "${release_branch}" ]]; then
+    message "You are not on release branch:'${release_branch}': current branch:'${current_branch}'"
+    return 1
+  fi
   uncommitted_changes=$(git diff)
   if [[ ! -z ${uncommitted_changes} ]]; then
     message "You have uncommitted changes"
     echo "${uncommitted_changes}" | less
     return 1
   fi
+  git pull origin "${release_branch}"
   unmerged_commits=$(git log origin/${release_branch}..HEAD)
   if [[ ! -z ${unmerged_commits} ]]; then
     message "You have following unmerged commits against branch:'${release_branch}'"
