@@ -23,6 +23,16 @@ function execute_test() {
   bash -eu "tests/tests.sh" "$(pwd)/jf" "$(pwd)/tests" "${_target_tests}"
 }
 
+function execute_test_package() {
+  local _target_tests="${1:-*}"
+  # shellcheck disable=SC1090
+  # source=jf_alias
+  source "$(pwd)/jf_alias"
+  export -f jf-docker
+  export  JF_DOCKER_TAG=latest
+  bash -eu "tests/tests.sh" "jf-docker" "$(pwd)/tests" "${_target_tests}"
+}
+
 function execute_release() {
   docker login
 }

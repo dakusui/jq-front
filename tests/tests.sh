@@ -151,7 +151,7 @@ function main() {
   local failed=0
   local skipped=0
   local numtests=0
-  message "${_TEST_ROOT_DIR}"
+  message "${_TEST_ROOT_DIR}:target=${_TARGET_TESTS}"
   while IFS= read -r -d '' i; do
     numtests=$((numtests + 1))
     if [[ "x${i}" == x${_TARGET_TESTS} ]]; then
