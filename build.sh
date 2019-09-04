@@ -8,6 +8,7 @@ function message() {
 
 function execute_doc() {
   docker run -it \
+         --rm \
          --user 1000:1000 \
          -v "$(pwd)":/documents/ \
          asciidoctor/docker-asciidoctor \
@@ -26,7 +27,7 @@ function execute_test() {
 function execute_test_package() {
   local _target_tests="${1:-*}"
   # shellcheck disable=SC1090
-  # source=jf_alias
+  # source=jf_aliases
   source "$(pwd)/jf_aliases"
   export -f jf-docker
   export  JF_DOCKER_TAG=latest
