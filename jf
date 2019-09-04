@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
+JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
+export JF_BASEDIR
+
 # shellcheck disable=SC1090
 # source = ./shared.sh
-source "$(dirname "$(readlink -f "${0}")")/shared.sh"
+source "${JF_BASEDIR}/shared.sh"
 
 function _mangle_path() {
   local _path="${1}"
@@ -68,7 +71,7 @@ function _expand_internal_inheritances() {
       local _next
       local _jj
       debug "-->_expand_internal_inheritances:3:${j})"
-      _jj="$(search_file_in "${j}" "${_private_nodes_dir}")"
+      _jj="$(read_file_from_path "${j}" "${_private_nodes_dir}")"
       validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
       local _p
@@ -91,34 +94,16 @@ function _expand_internal_inheritances() {
   jq -r -c . "${_cur}"
 }
 
-function _search_file_in() {
-  local _target="${1}"
-  local _path="${2}"
-  if [[ "${_target}" == /* ]]; then
-    echo "${_target}"
-    return 0
-  fi
-  IFS=':' read -r -a _arr <<<"${_path}"
-  for i in "${_arr[@]}"; do
-    local _ret="${i}/${_target}"
-    if [[ -e "${_ret}" ]]; then
-      echo "${_ret}"
-      return 0
-    fi
-  done
-  quit "File '${_target}' was not found in '${_path}'"
-}
-
-function search_file_in() {
+function read_file_from_path() {
   local _target="${1}"
   local _path="${2}"
   IFS=':' read -r -a _arr <<<"${_target}"
   if [[ ${#_arr[@]} -le 1 ]]; then
-    _search_file_in "${1}" "${2}"
+    search_file_in "${1}" "${2}"
     return $?
   elif [[ ${#_arr[@]} -gt 1 ]]; then
     local _f
-    _f="$(_search_file_in "${_arr[1]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
+    _f="$(search_file_in "${_arr[1]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
     debug "plugin command line=" "${_arr[0]}" "${_f}" "${_arr[@]:2}"
     mktemp_with_content "$("${_arr[0]}" "${_f}" "${_arr[@]:2}")"
     return $?
@@ -160,7 +145,7 @@ function expand_external_inheritances() {
   # shellcheck disable=SC2016
   local _cur
   local _content
-  _in="$(search_file_in "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
+  _in="$(read_file_from_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
   debug "...validated"
@@ -179,9 +164,9 @@ function expand_external_inheritances() {
         _cur="${_next}"
       done <<< "$(value_at '."$extends"[]' "${_content}")"
     fi
-    jq -r -c '.|del(.["$extends"])' "$(search_file_in "${_cur}" "${_path}")"
+    jq -r -c '.|del(.["$extends"])' "$(read_file_from_path "${_cur}" "${_path}")"
   else
-    cat "$(search_file_in "${_cur}" "${_path}")"
+    cat "$(read_file_from_path "${_cur}" "${_path}")"
   fi
   debug "end:expand_external_inheritances"
 }
@@ -236,7 +221,7 @@ function expand_inheritances_of_private_nodes() {
     _tmp="$(mktemp_with_content "$(run_jf "${_f}" "${_templating}" "no" "${_private_nodes_dir}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
-  done < <(find "${_private_nodes_dir}" -type f -maxdepth 1 -print0)
+  done < <(find "${_private_nodes_dir}" -maxdepth 1 -type f -print0)
   debug "end:   expand_inheritances_of_private_nodes"
 }
 
@@ -265,7 +250,7 @@ function run_jf() {
   local _templating="${2}"
   local _jf_path="${4}"
   local _out
-  _target="$(search_file_in "${_target}" "${_jf_path}")"
+  _target="$(read_file_from_path "${_target}" "${_jf_path}")"
   if [[ $(is_object "$(cat "${_target}")") == true ]]; then
     local _tmp
     local _validation_mode="${3}"
@@ -337,7 +322,8 @@ function main() {
 }
 
 _JF_CWD="${JF_CWD:-"$(pwd)"}"
-_JF_SCHEMA_DIR="$(dirname "$(readlink --canonicalize "${0}")")/schema"
+_JF_BASEDIR="${JF_BASEDIR}"
+_JF_SCHEMA_DIR="${_JF_BASEDIR}/schema"
 _JF_PATH_BASE=${JF_PATH_BASE:-""}
 _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 _JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
@@ -345,6 +331,7 @@ _JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
 
 debug "_JF_CWD=${_JF_CWD}"
+debug "_JF_BASEDIR=${_JF_BASEDIR}"
 debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
 debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
