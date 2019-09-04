@@ -5,8 +5,11 @@ JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
 
 # shellcheck disable=SC1090
-# source = ./shared.sh
-source "${JF_BASEDIR}/shared.sh"
+# source = lib/shared.sh
+source "${JF_BASEDIR}/lib/shared.sh"
+# shellcheck disable=SC1090
+# source = lib/templating.sh
+source "${JF_BASEDIR}/lib/templating.sh"
 
 function _mangle_path() {
   local _path="${1}"
@@ -114,12 +117,15 @@ function read_file_from_path() {
   elif [[ ${#_arr[@]} -gt 1 ]]; then
     local _f
     _f="$(search_file_in "${_arr[0]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
-    export -f find_file
-    export -f search_file_in
-    export _JF_PATH
     mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
     return $?
   fi
+}
+
+function export_names_for_script_inheritance() {
+    export -f find_file
+    export -f search_file_in
+    export _JF_PATH
 }
 
 function validate_jf_json() {
@@ -241,23 +247,6 @@ function perform_templating() {
 
 ####
 #
-# Function intended to be used on templating
-#
-function ref() {
-  local _path="${1}"
-  value_at "${_path}" "$(cat "$(self)")"
-}
-
-####
-#
-# Function intended to be used on templating
-#
-function self() {
-  echo "${_out}"
-}
-
-####
-#
 # Function intended to be used on 'script inheritance'.
 # Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
 # In case it is not found, 1 will be returned
@@ -362,5 +351,7 @@ debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
+
+export_names_for_script_inheritance
 
 main "${@}"

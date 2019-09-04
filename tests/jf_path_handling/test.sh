@@ -2,7 +2,7 @@
 set -eu
 
 # shellcheck disable=SC1090 source=/home/hiroshi/Documents/jf/shared.sh
-. "${JF_BASEDIR}/shared.sh"
+. "${JF_BASEDIR}/lib/shared.sh"
 
 function run_testcase() {
   local _file_to_be_searched="${1}"
