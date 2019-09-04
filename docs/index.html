@@ -502,11 +502,11 @@ Followings will be required by <code>jf</code></p>
 <div class="content">
 <pre class="highlight"><code class="language-bash" data-lang="bash">function jf-docker() {
   local _target=${1}
-  docker run -i \
+  docker run -i --rm \
     -v /:/var/lib/jf \
     -e JF_PATH_BASE="/var/lib/jf" \
     -e JF_PATH="${JF_PATH}" \
-    -e JF_DEBUG=${JF_DEBUG} \
+    -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
     dakusui/jf:"${JF_DOCKER_TAG:-v0.1}" "${@}"
 }</code></pre>
@@ -1166,7 +1166,7 @@ SOFTWARE.</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-01 23:14:35 UTC
+Last updated 2019-09-03 20:43:32 UTC
 </div>
 </div>
 </body>

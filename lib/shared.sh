@@ -17,7 +17,10 @@ function debug() {
 
 function message() {
   local IFS=" "
-  echo "$*" >&2
+  local _o
+  _o="${1}"
+  shift
+  echo "${_o}" "$*" >&2
 }
 
 ####
@@ -78,5 +81,23 @@ function keys_of() {
   local _path="${1}" # A path from which the output is retrieved.
   local _json="${2}" # JSON content
   echo "${_json}" | jq -r -c "${_path} | keys[]" || quit "Failed to access keys of '${_path}' in '${_json}'"
+}
+
+function search_file_in() {
+  local _target="${1}"
+  local _path="${2}"
+  if [[ "${_target}" == "${_JF_PATH_BASE}/"* ]]; then
+    echo "${_target}"
+    return 0
+  fi
+  IFS=':' read -r -a _arr <<<"${_path}"
+  for i in "${_arr[@]}"; do
+    local _ret="${i}/${_target}"
+    if [[ -e "${_ret}" ]]; then
+      echo "${_ret}"
+      return 0
+    fi
+  done
+  quit "File '${_target}' was not found in '${_path}'"
 }
 

@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
+set -eu
+
+JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
+export JF_BASEDIR
 
 # shellcheck disable=SC1090
-# source = ./shared.sh
-source "$(dirname "$(readlink -f "${0}")")/shared.sh"
+# source = lib/shared.sh
+source "${JF_BASEDIR}/lib/shared.sh"
+# shellcheck disable=SC1090
+# source = lib/templating.sh
+source "${JF_BASEDIR}/lib/templating.sh"
 
 function _mangle_path() {
   local _path="${1}"
@@ -22,7 +29,7 @@ function _mangle_path() {
       _ret="${_ret}:${_cur}"
     fi
   done
-  echo "${_ret}"
+  echo ":${_JF_PATH_BASE}:${_ret}"
 }
 
 function _remove_meta_nodes() {
@@ -64,11 +71,11 @@ function _expand_internal_inheritances() {
   # shellcheck disable=SC2016
   for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
     debug "->_expand_internal_inheritances:2:${i})"
-    for j in $(jq -r -c "${i}[]" "${_target}"); do
+    while IFS= read -r j; do
       local _next
       local _jj
       debug "-->_expand_internal_inheritances:3:${j})"
-      _jj="$(search_file_in "${j}" "${_private_nodes_dir}")"
+      _jj="$(read_file_from_path "${j}" "${_private_nodes_dir}")"
       validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
       local _p
@@ -85,44 +92,10 @@ function _expand_internal_inheritances() {
       _next=$(mktemp_with_content "$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")") ||
         abort "failed on node replacing; _cur=$(cat "${_cur}"); _merged_piece=$(cat "${_merged_piece}")"
       _cur="${_next}"
-    done
+    done <<<"$(jq -r -c "${i}[]" "${_target}")"
   done
   debug "(end:_expand_internal_inheritances:1)"
   jq -r -c . "${_cur}"
-}
-
-function _search_file_in() {
-  local _target="${1}"
-  local _path="${2}"
-  if [[ "${_target}" == /* ]]; then
-    echo "${_target}"
-    return 0
-  fi
-  IFS=':' read -r -a _arr <<<"${_path}"
-  for i in "${_arr[@]}"; do
-    local _ret="${i}/${_target}"
-    if [[ -e "${_ret}" ]]; then
-      echo "${_ret}"
-      return 0
-    fi
-  done
-  quit "File '${_target}' was not found in '${_path}'"
-}
-
-function search_file_in() {
-  local _target="${1}"
-  local _path="${2}"
-  IFS=':' read -r -a _arr <<<"${_target}"
-  if [[ ${#_arr[@]} -le 1 ]]; then
-    _search_file_in "${1}" "${2}"
-    return $?
-  elif [[ ${#_arr[@]} -gt 1 ]]; then
-    local _f
-    _f="$(_search_file_in "${_arr[1]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
-    debug "plugin command line=" "${_arr[0]}" "${_f}" "${_arr[@]:2}"
-    mktemp_with_content "$("${_arr[0]}" "${_f}" "${_arr[@]:2}")"
-    return $?
-  fi
 }
 
 function _validate_jf_json_with() {
@@ -132,6 +105,28 @@ function _validate_jf_json_with() {
   {
     _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
   } || abort "Validation for '${_in}' was failed:\n${_out}"
+}
+
+function read_file_from_path() {
+  local _target="${1}"
+  local _path="${2}"
+  IFS=';' read -r -a _arr <<<"${_target}"
+  if [[ ${#_arr[@]} -le 1 ]]; then
+    search_file_in "${1}" "${2}"
+    return $?
+  elif [[ ${#_arr[@]} -gt 1 ]]; then
+    local _f
+    _f="$(search_file_in "${_arr[0]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
+    mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
+    return $?
+  fi
+}
+
+function export_names_for_script_inheritance() {
+    export -f find_file
+    export -f search_file_in
+    export _JF_PATH
+    export _JF_PATH_BASE
 }
 
 function validate_jf_json() {
@@ -160,7 +155,7 @@ function expand_external_inheritances() {
   # shellcheck disable=SC2016
   local _cur
   local _content
-  _in="$(search_file_in "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
+  _in="$(read_file_from_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
   debug "...validated"
@@ -177,11 +172,11 @@ function expand_external_inheritances() {
         _tmp=$(mktemp_with_content "$(expand_external_inheritances "$i" "${_validation_mode}" "${_path}")")
         _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
         _cur="${_next}"
-      done <<< "$(value_at '."$extends"[]' "${_content}")"
+      done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
-    jq -r -c '.|del(.["$extends"])' "$(search_file_in "${_cur}" "${_path}")"
+    jq -r -c '.|del(.["$extends"])' "$(read_file_from_path "${_cur}" "${_path}")"
   else
-    cat "$(search_file_in "${_cur}" "${_path}")"
+    cat "$(read_file_from_path "${_cur}" "${_path}")"
   fi
   debug "end:expand_external_inheritances"
 }
@@ -233,10 +228,10 @@ function expand_inheritances_of_private_nodes() {
     local _tmp
     local _f="${i}"
     debug "expanding inheritance of private node:${i}"
-    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "${_templating}" "no" "${_private_nodes_dir}:${_jf_path}")")"
+    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "no" "no" "${_private_nodes_dir}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
-  done < <(find "${_private_nodes_dir}" -type f -maxdepth 1 -print0)
+  done < <(find "${_private_nodes_dir}" -maxdepth 1 -type f -print0)
   debug "end:   expand_inheritances_of_private_nodes"
 }
 
@@ -251,22 +246,30 @@ function perform_templating() {
   debug "end:perform_templating"
 }
 
-function ref() {
-  local _path="${1}"
-  value_at "${_path}" "$(cat "$(self)")"
-}
-
-function self() {
-  echo "${_out}"
+####
+#
+# Function intended to be used on 'script inheritance'.
+# Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
+# In case it is not found, 1 will be returned
+#
+function find_file() {
+  local _target="${1}"
+  search_file_in "${_target}" "${_JF_PATH}" || {
+    return $?
+  }
+  return 0
 }
 
 function run_jf() {
   local _target="${1}"
+  local _content
   local _templating="${2}"
   local _jf_path="${4}"
   local _out
-  _target="$(search_file_in "${_target}" "${_jf_path}")"
-  if [[ $(is_object "$(cat "${_target}")") == true ]]; then
+  debug "begin:run_jf"
+  _target="$(read_file_from_path "${_target}" "${_jf_path}")"
+  _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
+  if [[ $(is_object "${_content}") == true ]]; then
     local _tmp
     local _validation_mode="${3}"
     local _private_nodes_dir
@@ -280,13 +283,14 @@ function run_jf() {
     _out=$(mktemp_with_content "$(expand_internal_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")")
   else
     debug "non object file:${_target}"
-    _out="$(mktemp_with_content "$(cat "${_target}")")"
+    _out="$(mktemp_with_content "${_content}")"
   fi
   if [[ "${_templating}" == "yes" ]]; then
     perform_templating "${_out}"
   else
     cat "${_out}"
   fi
+  debug "end:run_jf"
 }
 
 function usage_exit() {
@@ -337,7 +341,8 @@ function main() {
 }
 
 _JF_CWD="${JF_CWD:-"$(pwd)"}"
-_JF_SCHEMA_DIR="$(dirname "$(readlink --canonicalize "${0}")")/schema"
+_JF_BASEDIR="${JF_BASEDIR}"
+_JF_SCHEMA_DIR="${_JF_BASEDIR}/schema"
 _JF_PATH_BASE=${JF_PATH_BASE:-""}
 _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 _JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
@@ -345,10 +350,13 @@ _JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
 
 debug "_JF_CWD=${_JF_CWD}"
+debug "_JF_BASEDIR=${_JF_BASEDIR}"
 debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
 debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
+
+export_names_for_script_inheritance
 
 main "${@}"

@@ -1,6 +1,26 @@
 # Run tests
 set -eu
 
+TARGET_VERSION=v0.2
+
+function _test_package() {
+  local _version="${1}"
+  local _target_tests="${2}"
+  # shellcheck disable=SC1090
+  # source=jf_aliases
+  source "$(pwd)/jf_aliases"
+  export -f jf-docker
+  export JF_DOCKER_TAG="${_version}"
+  bash -eu "tests/tests.sh" "jf-docker" "$(pwd)/tests" "${_target_tests}"
+  unset jf-docker
+  unset JF_DOCKER_TAG
+}
+
+function _build() {
+  local _version="${1}"
+  docker build -t "dakusui/jf:${_version}" .
+}
+
 function message() {
   local _message="${1}"
   echo "${_message}" 1>&2
@@ -8,14 +28,15 @@ function message() {
 
 function execute_doc() {
   docker run -it \
-         --user 1000:1000 \
-         -v "$(pwd)":/documents/ \
-         asciidoctor/docker-asciidoctor \
-         asciidoctor -r asciidoctor-diagram README.adoc -o docs/index.html
+    --rm \
+    --user 1000:1000 \
+    -v "$(pwd)":/documents/ \
+    asciidoctor/docker-asciidoctor \
+    asciidoctor -r asciidoctor-diagram README.adoc -o docs/index.html
 }
 
 function execute_package() {
-  docker build -t dakusui/jf .
+  _build "latest"
 }
 
 function execute_test() {
@@ -23,8 +44,33 @@ function execute_test() {
   bash -eu "tests/tests.sh" "$(pwd)/jf" "$(pwd)/tests" "${_target_tests}"
 }
 
+function execute_test_package() {
+  local _target_tests="${1:-*}"
+  _test_package "latest" "${_target_tests}"
+}
+
+function execute_package_release() {
+  _build "${TARGET_VERSION}"
+}
+
 function execute_release() {
+  local uncommitted_changes
+  local unmerged_commits
+  local release_branch="master"
+  uncommitted_changes=$(git diff)
+  if [[ ! -z ${uncommitted_changes} ]]; then
+    message "You have uncommitted changes"
+    echo "${uncommitted_changes}" | less
+    return 1
+  fi
+  unmerged_commits=$(git log origin/${release_branch}..HEAD)
+  if [[ ! -z ${unmerged_commits} ]]; then
+    message "You have following unmerged commits against branch:'${release_branch}'"
+    message "${unmerged_commits}"
+    return 1
+  fi
   docker login
+  docker push "dakusui/jf:${TARGET_VERSION}"
 }
 
 function execute_stage() {
@@ -32,7 +78,7 @@ function execute_stage() {
   shift
   message "EXECUTING:${_stage}..."
   {
-    "execute_${_stage}" "${@}" && message "DONE:${_stage}"
+    "execute_${_stage}" "$@" && message "DONE:${_stage}"
   } || {
     message "FAILED:${_stage}"
     return 1
