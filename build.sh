@@ -63,6 +63,7 @@ function execute_release() {
     echo "${uncommitted_changes}" | less
     return 1
   fi
+  git pull origin "${release_branch}"
   unmerged_commits=$(git log origin/${release_branch}..HEAD)
   if [[ ! -z ${unmerged_commits} ]]; then
     message "You have following unmerged commits against branch:'${release_branch}'"
