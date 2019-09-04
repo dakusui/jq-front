@@ -1,7 +1,8 @@
+#!/usr/bin/env bash
 # Run tests
 set -eu
 
-TARGET_VERSION=v0.2
+source build_info.sh
 
 function _test_package() {
   local _version="${1}"
@@ -36,7 +37,7 @@ function execute_doc() {
 }
 
 function execute_package() {
-  _build "latest"
+  _build "snapshot"
 }
 
 function execute_test() {
@@ -46,11 +47,16 @@ function execute_test() {
 
 function execute_test_package() {
   local _target_tests="${1:-*}"
-  _test_package "latest" "${_target_tests}"
+  _test_package "snapshot" "${_target_tests}"
 }
 
 function execute_package_release() {
   _build "${TARGET_VERSION}"
+}
+
+function execute_test_release() {
+  local _target_tests="${1:-*}"
+  _test_package "${TARGET_VERSION}" "${_target_tests}"
 }
 
 function execute_release() {
@@ -79,6 +85,12 @@ function execute_release() {
   fi
   docker login
   docker push "dakusui/jf:${TARGET_VERSION}"
+  docker push "dakusui/jf:latest"
+}
+
+function execute_deploy() {
+  docker login
+  docker push "dakusui/jf:snapshot"
 }
 
 function execute_stage() {
@@ -97,7 +109,16 @@ function execute_stage() {
 function main() {
   if [[ $# == 0 ]]; then
     main doc test package
+    return 0
   fi
+  if [[ ${1} == DEPLOY ]]; then
+    main doc test package test_package deploy
+    return 0
+  elif [[ ${1} == RELEASE ]]; then
+    main doc test package_release test_release release
+    return 0
+  fi
+
   for i in "$@"; do
     local _args
     IFS=':' read -r -a _args <<<"${i}"
