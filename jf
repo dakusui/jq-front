@@ -29,7 +29,7 @@ function _mangle_path() {
       _ret="${_ret}:${_cur}"
     fi
   done
-  echo "${_ret}"
+  echo ":${_JF_PATH_BASE}:${_ret}"
 }
 
 function _remove_meta_nodes() {
@@ -261,11 +261,14 @@ function find_file() {
 
 function run_jf() {
   local _target="${1}"
+  local _content
   local _templating="${2}"
   local _jf_path="${4}"
   local _out
+  debug "begin:run_jf"
   _target="$(read_file_from_path "${_target}" "${_jf_path}")"
-  if [[ $(is_object "$(cat "${_target}")") == true ]]; then
+  _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
+  if [[ $(is_object "${_content}") == true ]]; then
     local _tmp
     local _validation_mode="${3}"
     local _private_nodes_dir
@@ -279,13 +282,14 @@ function run_jf() {
     _out=$(mktemp_with_content "$(expand_internal_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")")
   else
     debug "non object file:${_target}"
-    _out="$(mktemp_with_content "$(cat "${_target}")")"
+    _out="$(mktemp_with_content "${_content}")"
   fi
   if [[ "${_templating}" == "yes" ]]; then
     perform_templating "${_out}"
   else
     cat "${_out}"
   fi
+  debug "end:run_jf"
 }
 
 function usage_exit() {

@@ -27,7 +27,7 @@ function execute_test_package() {
   local _target_tests="${1:-*}"
   # shellcheck disable=SC1090
   # source=jf_alias
-  source "$(pwd)/jf_alias"
+  source "$(pwd)/jf_aliases"
   export -f jf-docker
   export  JF_DOCKER_TAG=latest
   bash -eu "tests/tests.sh" "jf-docker" "$(pwd)/tests" "${_target_tests}"
@@ -42,7 +42,7 @@ function execute_stage() {
   shift
   message "EXECUTING:${_stage}..."
   {
-    "execute_${_stage}" "${@}" && message "DONE:${_stage}"
+    "execute_${_stage}" "$@" && message "DONE:${_stage}"
   } || {
     message "FAILED:${_stage}"
     return 1

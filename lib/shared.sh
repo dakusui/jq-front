@@ -86,7 +86,7 @@ function keys_of() {
 function search_file_in() {
   local _target="${1}"
   local _path="${2}"
-  if [[ "${_target}" == /* ]]; then
+  if [[ "${_target}" == "${_JF_PATH_BASE}/"* ]]; then
     echo "${_target}"
     return 0
   fi
