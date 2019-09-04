@@ -126,6 +126,7 @@ function export_names_for_script_inheritance() {
     export -f find_file
     export -f search_file_in
     export _JF_PATH
+    export _JF_PATH_BASE
 }
 
 function validate_jf_json() {
