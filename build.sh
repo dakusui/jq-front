@@ -9,17 +9,17 @@ function _test_package() {
   local _target_tests="${2}"
   # shellcheck disable=SC1090
   # source=jf_aliases
-  source "$(pwd)/jf_aliases"
+  source "$(pwd)/${APP_NAME}_aliases"
   export -f jf-docker
   export JF_DOCKER_TAG="${_version}"
-  bash -eu "tests/tests.sh" "jf-docker" "$(pwd)/tests" "${_target_tests}"
+  bash -eu "tests/tests.sh" "docker-${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
   unset jf-docker
   unset JF_DOCKER_TAG
 }
 
 function _build() {
   local _version="${1}"
-  docker build -t "dakusui/jf:${_version}" .
+  docker build -t "${DOCKER_REPO_NAME}:${_version}" .
 }
 
 function message() {
@@ -42,7 +42,7 @@ function execute_package() {
 
 function execute_test() {
   local _target_tests="${1:-*}"
-  bash -eu "tests/tests.sh" "$(pwd)/jf" "$(pwd)/tests" "${_target_tests}"
+  bash -eu "tests/tests.sh" "$(pwd)/${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
 }
 
 function execute_test_package() {
@@ -84,13 +84,13 @@ function execute_release() {
     return 1
   fi
   docker login
-  docker push "dakusui/jf:${TARGET_VERSION}"
-  docker push "dakusui/jf:latest"
+  docker push "${DOCKER_REPO_NAME}:${TARGET_VERSION}"
+  docker push "${DOCKER_REPO_NAME}:latest"
 }
 
 function execute_deploy() {
   docker login
-  docker push "dakusui/jf:snapshot"
+  docker push "${DOCKER_REPO_NAME}:snapshot"
 }
 
 function execute_stage() {

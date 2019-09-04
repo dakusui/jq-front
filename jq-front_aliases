@@ -1,4 +1,4 @@
-function jf-docker() {
+function docker-jq-front() {
   local _target=${1}
   docker run -i --rm \
     -v /:/var/lib/jf \
