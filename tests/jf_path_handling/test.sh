@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-# shellcheck disable=SC1090 source=/home/hiroshi/Documents/jf/shared.sh
+# shellcheck disable=SC1090 source=lib/shared.sh
 . "${JF_BASEDIR}/lib/shared.sh"
 
 function run_testcase() {

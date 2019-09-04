@@ -8,6 +8,9 @@ _JF_PATH=.:${_TEST_ROOT_DIR}/base
 JF_BASEDIR="$(dirname "$(dirname "${0}")")"
 export JF_BASEDIR
 
+# shellcheck disable=SC1090 source=lib/shared.sh
+source "${JF_BASEDIR}/lib/shared.sh"
+
 function run_normal_test() {
   local _testfile="${1}"
   local _dirname
@@ -20,13 +23,13 @@ function run_normal_test() {
   }
   _diff=$(cat "${_dirname}/test-output.diff") || return 1
   if [[ -z ${_diff} ]]; then
-    echo "PASSED" 1>&2
+    message "PASSED"
     _ret=0
   else
     _ret=1
-    echo "FAILED: diff--->
+    message "FAILED: diff--->
     ${_diff}
-    ---" 1>&2
+    ---"
   fi
   return ${_ret}
 }
@@ -35,7 +38,7 @@ function _failure_message() {
   local _expected_validity_level="${1}"
   local _schema="${2}"
   local _expectation="${3}"
-  echo "(Expectation:${_expected_validity_level}):Expected to be ${_expectation} with ${_schema} schema but not:'${_dirname/input.txt/}'" >&2
+  message "(Expectation:${_expected_validity_level}):Expected to be ${_expectation} with ${_schema} schema but not:'${_dirname/input.txt/}'"
   cat "${_dirname}/test-output-${_schema}".txt >&2
 }
 
@@ -79,13 +82,13 @@ function run_validation_test() {
       _ret=1
     fi
   else
-    echo "Unknown expectation validity level:'${_expected_validity_level}' was specified." 1>&2
+    message "Unknown expectation validity level:'${_expected_validity_level}' was specified."
     return 1
   fi
   if [[ ${_ret} == 0 ]]; then
-    echo "PASSED" 1>&2
+    message "PASSED"
   else
-    echo "FAILED" 1>&2
+    message "FAILED"
   fi
   return ${_ret}
 }
@@ -107,23 +110,23 @@ function run_suite_test() {
   _testfile_dir="$(dirname ${_testfile}"")"
   _executor="${_testfile_dir}/$(jq -r -c '.args.executor' "${_testfile}")"
   _numtestcases="$(jq -r -c '.args.testCases | length' ${_testfile})"
-  echo "" >&2
+  message ""
   for i in $(seq 0 $((_numtestcases - 1))); do
-    echo -n "  Running test case [${i}]" >&2
+    message -n "  Running test case [${i}]"
     # shellcheck disable=SC2046
     _run_testcase "${_executor}" $(jq -r -c ".args.testCases[${i}].args[]" "${_testfile}") || {
       _ret=1
       _numfailed=$((_numfailed + 1))
-      echo "...FAILED" >&2
+      message "...FAILED"
       continue
     }
-    echo "...PASSED" >&2
+    message "...PASSED"
   done
-  echo "  ${_numfailed} test cases (out of ${_numtestcases}) have failed" >&2
+  message "  ${_numfailed} test cases (out of ${_numtestcases}) have failed"
   if [[ ${_ret} == 0 ]]; then
-    echo "PASSED" 1>&2
+    message "PASSED"
   else
-    echo "FAILED" 1>&2
+    message "FAILED"
   fi
   return ${_ret}
 }
@@ -133,7 +136,7 @@ function runtest() {
   local _dirname="${_test_json%/test.json}"
   local _test_type
   _test_type="$(jq -r -c ".testType" "${_test_json}")" || return 1
-  echo -n "executing test(${_test_type}):'${_dirname#${_TEST_ROOT_DIR}/}':..." >&2
+  message -n "executing test(${_test_type}):'${_dirname#${_TEST_ROOT_DIR}/}':..."
 
   export JF_PATH
   JF_PATH=${_JF_PATH}:$(dirname "${_test_json}")
@@ -148,21 +151,21 @@ function main() {
   local failed=0
   local skipped=0
   local numtests=0
-  echo "${_TEST_ROOT_DIR}" 1>&2
+  message "${_TEST_ROOT_DIR}"
   while IFS= read -r -d '' i; do
     numtests=$((numtests + 1))
     if [[ "x${i}" == x${_TARGET_TESTS} ]]; then
       runtest "${i}" || failed=$((failed + 1))
     else
       skipped=$((skipped + 1))
-      echo "Skipping ${i}" >&2
+      message "Skipping ${i}"
     fi
   done < <(find "${_TEST_ROOT_DIR}" -type f -name test.json -print0)
 
   if [[ $failed == 0 ]]; then
-    echo "No test failed (total=${numtests}; skipped=${skipped})" >&2
+    message "No test failed (total=${numtests}; skipped=${skipped})"
   else
-    echo "$failed test(s) FAILED (total=${numtests}; skipped=${skipped})" >&2
+    message "$failed test(s) FAILED (total=${numtests}; skipped=${skipped})"
     return 1
   fi
 }

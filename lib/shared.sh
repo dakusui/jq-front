@@ -17,7 +17,10 @@ function debug() {
 
 function message() {
   local IFS=" "
-  echo "$*" >&2
+  local _o
+  _o="${1}"
+  shift
+  echo "${_o}" "$*" >&2
 }
 
 ####
