@@ -1,4 +1,4 @@
-function jf-docker() {
+function docker-jq-front() {
   local _target=${1}
   docker run -i --rm \
     -v /:/var/lib/jf \
@@ -6,5 +6,5 @@ function jf-docker() {
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jf:"${JF_DOCKER_TAG:-v0.1}" "${@}"
+    dakusui/jf:"${JF_DOCKER_TAG:-v0.2}" "${@}"
 }

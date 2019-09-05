@@ -9,22 +9,36 @@ function _test_package() {
   local _target_tests="${2}"
   # shellcheck disable=SC1090
   # source=jf_aliases
-  source "$(pwd)/jf_aliases"
-  export -f jf-docker
+  source "$(pwd)/${APP_NAME}_aliases"
+  export -f docker-jq-front
   export JF_DOCKER_TAG="${_version}"
-  bash -eu "tests/tests.sh" "jf-docker" "$(pwd)/tests" "${_target_tests}"
-  unset jf-docker
+  bash -eu "tests/tests.sh" "docker-${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
+  unset -f docker-jq-front
   unset JF_DOCKER_TAG
 }
 
 function _build() {
   local _version="${1}"
-  docker build -t "dakusui/jf:${_version}" .
+  docker build -t "${DOCKER_REPO_NAME}:${_version}" .
 }
 
 function message() {
   local _message="${1}"
   echo "${_message}" 1>&2
+}
+
+function execute_prepare() {
+  local _content
+  local _templated
+  local _resource_dir="res"
+  while IFS= read -r -d '' i; do
+    local _src_file="${i}"
+    local _dest_file="${_src_file#${_resource_dir}/}"
+    mkdir -p "$(dirname "${_dest_file}")"
+    _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
+    _templated=$(eval "echo \"${_content}\"")
+    echo "${_templated}" >"${_dest_file}"
+  done < <(find "${_resource_dir}" -type f -print0)
 }
 
 function execute_doc() {
@@ -42,7 +56,7 @@ function execute_package() {
 
 function execute_test() {
   local _target_tests="${1:-*}"
-  bash -eu "tests/tests.sh" "$(pwd)/jf" "$(pwd)/tests" "${_target_tests}"
+  bash -eu "tests/tests.sh" "$(pwd)/${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
 }
 
 function execute_test_package() {
@@ -65,7 +79,7 @@ function execute_release() {
   local release_branch="master"
   local current_branch
   # shellcheck disable=SC2063
-  current_branch=$(git branch|grep '^*'|cut -d ' ' -f 2)
+  current_branch=$(git branch | grep '^*' | cut -d ' ' -f 2)
   if [[ ${current_branch} != "${release_branch}" ]]; then
     message "You are not on release branch:'${release_branch}': current branch:'${current_branch}'"
     return 1
@@ -84,13 +98,13 @@ function execute_release() {
     return 1
   fi
   docker login
-  docker push "dakusui/jf:${TARGET_VERSION}"
-  docker push "dakusui/jf:latest"
+  docker push "${DOCKER_REPO_NAME}:${TARGET_VERSION}"
+  docker push "${DOCKER_REPO_NAME}:latest"
 }
 
 function execute_deploy() {
   docker login
-  docker push "dakusui/jf:snapshot"
+  docker push "${DOCKER_REPO_NAME}:snapshot"
 }
 
 function execute_stage() {
@@ -108,6 +122,10 @@ function execute_stage() {
 
 function main() {
   if [[ $# == 0 ]]; then
+    main doc test
+    return 0
+  fi
+  if [[ ${1} == PACKAGE ]]; then
     main doc test package
     return 0
   fi
@@ -119,10 +137,12 @@ function main() {
     return 0
   fi
 
-  for i in "$@"; do
+  local -a _stages=("prepare")
+  _stages+=("$@")
+  for i in "${_stages[@]}"; do
     local _args
     IFS=':' read -r -a _args <<<"${i}"
-    execute_stage "${_args[@]}" || exit 1
+    time execute_stage "${_args[@]}" || exit 1
   done
 }
 

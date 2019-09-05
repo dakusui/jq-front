@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.10">
-<title>jf: JSON with inheritance and templating</title>
+<title>jq-front: JSON with inheritance and templating</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -438,13 +438,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>jf: JSON with inheritance and templating</h1>
+<h1>jq-front: JSON with inheritance and templating</h1>
 </div>
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p><code>jf</code>, which stands for "jq-front", is a simple tool to give your JSON files a power of inheritance and templating.</p>
+<p><code>jq-front</code> is a simple tool to give your JSON files a power of inheritance and templating.</p>
 </div>
 </div>
 </div>
@@ -459,7 +459,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
 </div>
 <div class="paragraph">
-<p><code>jf</code> is a tool to cope with such challenges by introducing inheritance and templating into JSON files.</p>
+<p><code>jq-front</code> is a tool to cope with such challenges by introducing inheritance and templating into JSON files.</p>
 </div>
 </div>
 </div>
@@ -469,8 +469,8 @@ For instance, under a situation, where we need to generate similar but slightly 
 <div class="sect2">
 <h3 id="_ubuntu">Ubuntu</h3>
 <div class="paragraph">
-<p>Place the file <code>jf</code> somewhere on your <code>PATH</code>.
-Followings will be required by <code>jf</code></p>
+<p>Place the file <code>jq-front</code> somewhere on your <code>PATH</code>.
+Followings will be required by <code>jq-front</code></p>
 </div>
 <div class="ulist">
 <ul>
@@ -500,7 +500,7 @@ Followings will be required by <code>jf</code></p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">function jf-docker() {
+<pre class="highlight"><code class="language-bash" data-lang="bash">function docker-jq-front() {
   local _target=${1}
   docker run -i --rm \
     -v /:/var/lib/jf \
@@ -508,7 +508,7 @@ Followings will be required by <code>jf</code></p>
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jf:"${JF_DOCKER_TAG:-v0.1}" "${@}"
+    dakusui/jf:"${JF_DOCKER_TAG:-v0.2}" "${@}"
 }</code></pre>
 </div>
 </div>
@@ -520,7 +520,7 @@ Followings will be required by <code>jf</code></p>
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">jf [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
+<pre class="highlight"><code class="language-sh" data-lang="sh">jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
 </div>
 </div>
 <div class="sect2">
@@ -540,7 +540,7 @@ $ cat greeting.json
 </div>
 </div>
 <div class="paragraph">
-<p>Now, let&#8217;s try <code>jf</code>.</p>
+<p>Now, let&#8217;s try <code>jq-front</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -551,7 +551,7 @@ $ cat greeting.json
     ],
     "sayHello": "$(ref .greeting), $(ref .yourname). Toady is $(date). How are you doing?"
   }
-  ' | jf
+  ' | jq-front
   {
     "yourname": "Mark",
     "greeting": "Hello",
@@ -570,8 +570,8 @@ $</code></pre>
 <h2 id="_features">Features</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>With <code>jf</code>, you can build a JSON object reusing other JSON objects.
-To specify JSON objects to be referenced, <code>jf</code> searches for keys which have special names in a given object.
+<p>With <code>jq-front</code>, you can build a JSON object reusing other JSON objects.
+To specify JSON objects to be referenced, <code>jq-front</code> searches for keys which have special names in a given object.
 <code>$extends</code> and <code>$private</code> are keywords used for this purpose.</p>
 </div>
 <div class="paragraph">
@@ -648,7 +648,7 @@ To specify JSON objects to be referenced, <code>jf</code> searches for keys whic
 <h3 id="_external_inheritance">External Inheritance</h3>
 <div class="paragraph">
 <p>In programming languages, inheritance is an indispensable technique to reuse a component.
-<code>jf</code> offers it for the purpose.
+<code>jq-front</code> offers it for the purpose.
 A usage example is as follows.</p>
 </div>
 <div class="listingblock">
@@ -662,7 +662,7 @@ A usage example is as follows.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>jf I.json</pre>
+<pre>jq-front I.json</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -681,7 +681,7 @@ A usage example is as follows.</p>
 <p>As you see in the example, the attribute <code>o</code> whose value is set to <code>"A"</code> in <code>A.json</code>, is overridden by the value in <code>I.json</code>.</p>
 </div>
 <div class="paragraph">
-<p>Multiple inheritance is also supported by <code>jf</code>.
+<p>Multiple inheritance is also supported by <code>jq-front</code>.
 Just by listing file names of JSONs to be inherited, multiple inheritance happens, like <code>"$extends": ["A.json", "B.json"]</code>.
 When both <code>A.json</code> and <code>B.json</code> have attributes at the same path, <code>A.json</code> side&#8217;s value will be used.</p>
 </div>
@@ -842,7 +842,7 @@ Following is a such an example.</p>
 Templating is a feature to offer a solution to this challenge.</p>
 </div>
 <div class="paragraph">
-<p>We can describe this relationship by using the templating feature of <code>jf</code>.</p>
+<p>We can describe this relationship by using the templating feature of <code>jq-front</code>.</p>
 </div>
 <div class="listingblock">
 <div class="title">T.json</div>
@@ -854,14 +854,14 @@ Templating is a feature to offer a solution to this challenge.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Once you render this file with <code>jf</code>, you will get the first file (Version file).</p>
+<p>Once you render this file with <code>jq-front</code>, you will get the first file (Version file).</p>
 </div>
 <div class="paragraph">
-<p><code>$ref</code> is a built-in function of <code>jf</code>, which expands the value of the node specified by the path given as an argument.
-Not only built-in functions but also any commands (bash expressions) valid on a platform on which <code>jf</code> is running can be used here.</p>
+<p><code>$ref</code> is a built-in function of <code>jq-front</code>, which expands the value of the node specified by the path given as an argument.
+Not only built-in functions but also any commands (bash expressions) valid on a platform on which <code>jq-front</code> is running can be used here.</p>
 </div>
 <div class="paragraph">
-<p>For instance, following is a valid input to <code>jf</code>.</p>
+<p>For instance, following is a valid input to <code>jq-front</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -887,7 +887,7 @@ Not only built-in functions but also any commands (bash expressions) valid on a 
 And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templating</code>) in case <code>JF_TEMPLATING_ENABLED</code> is set to <code>no</code>.</p>
 </div>
 <div class="sect3">
-<h4 id="_built_in_jf_functions">Built-in <code>jf</code> functions</h4>
+<h4 id="_built_in_jq_front_functions">Built-in <code>jq-front</code> functions</h4>
 <div class="sect4">
 <h5 id="_ref_function"><code>ref</code> function</h5>
 <div class="paragraph">
@@ -948,12 +948,12 @@ This function can only work from inside "Work(2)" file.</p>
 <div class="sect2">
 <h3 id="_environment_variables">Environment variables</h3>
 <div class="paragraph">
-<p>You can control behaviours of <code>jf</code> by setting environment variables described in this section.</p>
+<p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
 </div>
 <div class="sect3">
 <h4 id="_jf_path">JF_PATH</h4>
 <div class="paragraph">
-<p>From directories listed in <code>JF_PATH</code>, <code>jf</code> searches for requested file.
+<p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
 Entries in the variable is separated by colons(<code>:</code>).</p>
 </div>
 <div class="paragraph">
@@ -969,7 +969,7 @@ Entries in the variable is separated by colons(<code>:</code>).</p>
 <div class="sect3">
 <h4 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h4>
 <div class="paragraph">
-<p>You can enable <code>jf</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
+<p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
 If any other value is set to the variable, it will not be executed.</p>
 </div>
 <div class="sect4">
@@ -998,13 +998,13 @@ If any other value is set to the variable, it will not be executed.</p>
 <h2 id="_design">Design</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Following is a diagram that illustrates <code>jf</code> 's processing pipeline design.</p>
+<p>Following is a diagram that illustrates <code>jq-front</code> 's processing pipeline design.</p>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="images/pipeline.png" alt="pipeline" width="850" height="532">
 </div>
-<div class="title">Figure 1. jf&#8217;s pipeline</div>
+<div class="title">Figure 1. jq-front&#8217;s pipeline</div>
 </div>
 <div class="paragraph">
 <p>As shown, it consists of four main components, which are "external inheritance", "private node materialization", "internal inheritance", and "templating".</p>
@@ -1082,10 +1082,6 @@ The 'private node directory' and its contents are utilized by the "internal inhe
 <h3 id="_limitations_and_future_work">Limitations and Future Work</h3>
 <div class="ulist">
 <ul>
-<li>
-<p>Currently, almost no validation is performed by <code>jf</code>. (<a href="https://github.com/dakusui/jf/issues/23">Issue-23</a>)
-Probably, it is preferable to create an external tool (or independent module) to validate an input JSON file.</p>
-</li>
 <li>
 <p>Cyclic dependencies are not checked and such a model will result in a stack-overflow.</p>
 </li>
@@ -1166,7 +1162,7 @@ SOFTWARE.</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-03 20:43:32 UTC
+Last updated 2019-09-04 22:50:02 UTC
 </div>
 </div>
 </body>
