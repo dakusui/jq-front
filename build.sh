@@ -39,11 +39,11 @@ function execute_prepare() {
     local _dest_file="${_src_file#${_resource_dir}/}"
     message -n "Processing '${_src_file}'"
     mkdir -p "$(dirname "${_dest_file}")"
-    _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
+    _content=$(cat "${_src_file}" | sed -r 's/\"/\\\"/g' | sed -r 's/`/\\`/g')
     _templated=$(eval "echo \"${_content}\"")
     echo "${_templated}" >"${_dest_file}"
     message "...done"
-  done < <(find "${_resource_dir}" -type f -print0)
+  done < <(find "${_resource_dir}" -type f -print0 | sort -z)
 }
 
 function execute_doc() {

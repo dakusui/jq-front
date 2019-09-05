@@ -502,7 +502,7 @@ Followings will be required by <code>jq-front</code></p>
 <div class="content">
 <pre class="highlight"><code class="language-bash" data-lang="bash">function docker-jq-front() {
   local _target="${1}"
-  docker run -i --rm \
+  docker run --rm \
     -v /:/var/lib/jf \
     -e JF_PATH_BASE="/var/lib/jf" \
     -e JF_PATH="${JF_PATH}" \
@@ -1162,7 +1162,7 @@ SOFTWARE.</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-05 00:38:49 UTC
+Last updated 2019-09-05 00:45:09 UTC
 </div>
 </div>
 </body>

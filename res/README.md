@@ -23,16 +23,7 @@ Add a following entry to your `.bashrc` or a file sourced through it.
 
 ```bash
 
-function docker-jq-front() {
-  local _target="${1}"
-  docker run --rm \
-    -v /:/var/lib/jf \
-    -e JF_PATH_BASE="/var/lib/jf" \
-    -e JF_PATH="${JF_PATH}" \
-    -e JF_DEBUG=${JF_DEBUG:-disabled} \
-    -e JF_CWD="$(pwd)" \
-    dakusui/jf:"${JF_DOCKER_TAG:-v0.2}" "${@}"
-}
+$(cat jq-front_aliases)
 
 ```
 
