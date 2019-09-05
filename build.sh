@@ -23,8 +23,11 @@ function _build() {
 }
 
 function message() {
-  local _message="${1}"
-  echo "${_message}" 1>&2
+  local IFS=" "
+  local _o
+  _o="${1}"
+  shift
+  echo "${_o}" "$*" >&2
 }
 
 function execute_prepare() {
@@ -34,20 +37,31 @@ function execute_prepare() {
   while IFS= read -r -d '' i; do
     local _src_file="${i}"
     local _dest_file="${_src_file#${_resource_dir}/}"
+    _dest_file="${_dest_file#[0-9]*_}"
+    message -n "Processing '${_src_file}'->'${_dest_file}'"
     mkdir -p "$(dirname "${_dest_file}")"
-    _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
-    _templated=$(eval "echo \"${_content}\"")
+    # shellcheck disable=SC2002
+    _content=$(cat "${_src_file}" | sed -r 's/\"/\\\"/g' | sed -r 's/`/\\`/g')
+    _templated=$(eval "echo \"${_content}\"") || {
+      message "Failed to process a file '${_src_file}'(content='$(head "${_src_file}")...')"
+      return 1
+    }
     echo "${_templated}" >"${_dest_file}"
-  done < <(find "${_resource_dir}" -type f -print0)
+    message "...done"
+  done < <(find "${_resource_dir}" -type f -print0 | sort -z)
 }
 
 function execute_doc() {
-  docker run -it \
-    --rm \
-    --user 1000:1000 \
-    -v "$(pwd)":/documents/ \
-    asciidoctor/docker-asciidoctor \
-    asciidoctor -r asciidoctor-diagram README.adoc -o docs/index.html
+  while IFS= read -r -d '' i; do
+    local _src_file="${i}"
+    message -n "Processing '${_src_file}'"
+    docker run --rm \
+      --user 1000:1000 \
+      -v "$(pwd)":/documents/ \
+      asciidoctor/docker-asciidoctor \
+      asciidoctor -r asciidoctor-diagram "${i}" -o "${i%.adoc}.html"
+    message "...done"
+  done < <(find "docs" -type f -name '*.adoc' -print0)
 }
 
 function execute_package() {
@@ -126,7 +140,7 @@ function main() {
     return 0
   fi
   if [[ ${1} == PACKAGE ]]; then
-    main doc test package
+    main doc test package test_package
     return 0
   fi
   if [[ ${1} == DEPLOY ]]; then
@@ -142,7 +156,7 @@ function main() {
   for i in "${_stages[@]}"; do
     local _args
     IFS=':' read -r -a _args <<<"${i}"
-    time execute_stage "${_args[@]}" || exit 1
+    execute_stage "${_args[@]}" || exit 1
   done
 }
 

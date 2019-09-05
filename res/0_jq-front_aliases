@@ -1,6 +1,6 @@
 function docker-jq-front() {
-  local _target=$(echo '${1}')
-  docker run -i --rm \\
+  local _target="$(echo '${1}')"
+  docker run --rm \\
     -v /:/var/lib/jf \\
     -e JF_PATH_BASE="/var/lib/jf" \\
     -e JF_PATH="$(echo '${JF_PATH}')" \\

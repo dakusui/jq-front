@@ -241,7 +241,10 @@ function perform_templating() {
   local _content
   local _ret
   _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
-  _ret=$(eval "echo \"${_content}\"")
+  _ret=$(eval "echo \"${_content}\"") || {
+      message "Failed to process a file '${_src_file}'(content='${_content}')"
+      return 1
+    }
   echo "${_ret}"
   debug "end:perform_templating"
 }
