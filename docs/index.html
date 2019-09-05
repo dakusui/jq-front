@@ -501,7 +501,7 @@ Followings will be required by <code>jq-front</code></p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlight"><code class="language-bash" data-lang="bash">function docker-jq-front() {
-  local _target=${1}
+  local _target="${1}"
   docker run -i --rm \
     -v /:/var/lib/jf \
     -e JF_PATH_BASE="/var/lib/jf" \
@@ -1106,7 +1106,7 @@ The 'private node directory' and its contents are utilized by the "internal inhe
 </div>
 </div>
 <div class="sect1">
-<h2 id="_license"><a href="LICENSE">License</a></h2>
+<h2 id="_license"><a href="../LICENSE">License</a></h2>
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
@@ -1162,7 +1162,7 @@ SOFTWARE.</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-04 22:50:02 UTC
+Last updated 2019-09-05 00:38:49 UTC
 </div>
 </div>
 </body>

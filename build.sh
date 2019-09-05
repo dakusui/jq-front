@@ -23,8 +23,11 @@ function _build() {
 }
 
 function message() {
-  local _message="${1}"
-  echo "${_message}" 1>&2
+  local IFS=" "
+  local _o
+  _o="${1}"
+  shift
+  echo "${_o}" "$*" >&2
 }
 
 function execute_prepare() {
@@ -34,20 +37,26 @@ function execute_prepare() {
   while IFS= read -r -d '' i; do
     local _src_file="${i}"
     local _dest_file="${_src_file#${_resource_dir}/}"
+    message -n "Processing '${_src_file}'"
     mkdir -p "$(dirname "${_dest_file}")"
     _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
     _templated=$(eval "echo \"${_content}\"")
     echo "${_templated}" >"${_dest_file}"
+    message "...done"
   done < <(find "${_resource_dir}" -type f -print0)
 }
 
 function execute_doc() {
-  docker run -it \
-    --rm \
-    --user 1000:1000 \
-    -v "$(pwd)":/documents/ \
-    asciidoctor/docker-asciidoctor \
-    asciidoctor -r asciidoctor-diagram README.adoc -o docs/index.html
+  while IFS= read -r -d '' i; do
+    local _src_file="${i}"
+    message -n "Processing '${_src_file}'"
+    docker run --rm \
+      --user 1000:1000 \
+      -v "$(pwd)":/documents/ \
+      asciidoctor/docker-asciidoctor \
+      asciidoctor -r asciidoctor-diagram "${i}" -o "${i%.adoc}.html"
+    message "...done"
+  done < <(find "docs" -type f -name '*.adoc' -print0)
 }
 
 function execute_package() {
