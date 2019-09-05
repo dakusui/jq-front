@@ -1,3 +1,4 @@
+:toc:
 = jq-front: JSON with inheritance and templating
 
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
