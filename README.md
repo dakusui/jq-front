@@ -79,7 +79,7 @@ Please replace `jq-front` in this document with `docker-jq-front` as necessary.
 
 ## Documentation
 
-You can find more about this product <a href="./docs/index.html">here</a>.
+You can find more about this product <a href="https://dakusui.github.io/jq-front/">here</a>.
 
 ## Contributing
 

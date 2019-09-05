@@ -3,7 +3,6 @@
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
 It was named after *Cfront*<<Cfront>>, which is an old component of {cpp} language and converts {cpp} source code into C source code.
 
-
 == Background and Introduction
 
 Despite that there are criticisms to use JSON<<json>> as system configuration information's format<<cr>>, JSON still has its beauty such as rich tool supports, good balance between machine's and human's readability and writability, clarity and simplicity in syntax, etc.
