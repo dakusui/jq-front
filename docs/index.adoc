@@ -1,75 +1,47 @@
 :toc:
-= jq-front: JSON with inheritance and templating
+
+= `jq-front`: JSON with inheritance and templating
 
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
-It was named after *Cfront*<<Cfront>>, which is an old component of {cpp} language and converts {cpp} source code into C source code.
-
-== Background and Introduction
+It was named after *Cfront*<<Cfront>>, which is an old component of {cpp} language that converts {cpp} source code into C language.
 
 Despite that there are criticisms to use JSON<<json>> as system configuration information's format<<cr>>, JSON still has its beauty such as rich tool supports, good balance between machine's and human's readability and writability, clarity and simplicity in syntax, etc.
 
 However, surely it has some weaknesses when we try to define data structure.
 For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.footnote:[This is not merely a weakness of JSON but also other notations even YAML. YAML has a way to reference another object node from one, still it cannot embed a string value of a text node in another by itself.]
 
-`jq-front` is a tool to cope with such challenges by introducing inheritance and templating into JSON files.
+== Environment variables
 
-== Installation
+You can control behaviours of `jq-front` by setting environment variables described in this section.
 
-=== Ubuntu
-Place the file `jq-front` somewhere on your `PATH`.
-Followings will be required by `jq-front`
+=== JF_PATH
 
-* `jq`
-* `bash`
-* `npm`
-  ** `ajv-cli`
+From directories listed in `JF_PATH`, `jq-front` searches for requested file.
+Entries in the variable is separated by colons(`:`).
 
-=== With Docker
-Add a following entry to your `.bashrc` or a file sourced through it.
+When it is searching for a file during internal inheritance resolution, it first searches for private node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
 
-[source, bash]
-include::../jq-front_aliases[]
+==== Default value
+
+`.`
+
+=== JF_TEMPLATING_ENABLED
+
+You can enable `jq-front` 's templating feature by setting this environment variable's value to `yes`.
+If any other value is set to the variable, it will not be executed.
+
+==== Default value
+
+`yes`
 
 
+=== JF_DEBUG
 
-== Usage
+If this variable is set to `enabled`, debug information will be printed to `stderr`.
 
-```sh
-jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]
-```
+==== Default value
+`disabled`
 
-=== Example
-
-Let's prepare files from which you want to create a new JSON by extending them.
-
-```sh
-$ echo '{"yourname":"Mark"}' > name.json
-$ cat name.json
-{"yourname":"Mark"}
-
-$ echo '{"greeting":"Hello"}' > greeting.json
-$ cat greeting.json
-{"greeting":"Hello"}
-```
-
-Now, let's try `jq-front`.
-```sh
-$ echo '{
-    "$extends": [
-      "greeting.json",
-      "name.json"
-    ],
-    "sayHello": "$(ref .greeting), $(ref .yourname). Toady is $(date). How are you doing?"
-  }
-  ' | jq-front
-  {
-    "yourname": "Mark",
-    "greeting": "Hello",
-    "sayHello": "Hello, Mark. Toady is Fri Aug 30 22:04:40 UTC 2019. How are you doing?"
-  }
-$
-```
-Doesn't it seem useful? Have fun!
 
 == Features
 
@@ -81,7 +53,9 @@ Basic features offered by the product are following
 
 * External Inheritance
 * Internal Inheritance
+* Script-output Inheritance
 * Templating
+* Validation
 
 And usage of them will be discussed in this section.
 
@@ -331,38 +305,6 @@ This function can only work from inside "Work(2)" file.
   * A path to "Work(2)" file.
 
 
-=== Environment variables
-
-You can control behaviours of `jq-front` by setting environment variables described in this section.
-
-==== JF_PATH
-
-From directories listed in `JF_PATH`, `jq-front` searches for requested file.
-Entries in the variable is separated by colons(`:`).
-
-When it is searching for a file during internal inheritance resolution, it first searches for private node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
-
-===== Default value
-
-`.`
-
-==== JF_TEMPLATING_ENABLED
-
-You can enable `jq-front` 's templating feature by setting this environment variable's value to `yes`.
-If any other value is set to the variable, it will not be executed.
-
-===== Default value
-
-`yes`
-
-
-==== JF_DEBUG
-
-If this variable is set to `enabled`, debug information will be printed to `stderr`.
-
-===== Default value
-`disabled`
-
 == Design
 
 Following is a diagram that illustrates `jq-front` 's processing pipeline design.
@@ -447,26 +389,16 @@ echo {CONTENT OF Work(2)}
 And this causes expansions of bash expressions inside the content of "Work(2)" and that expanded string will be printed by the `echo` command.
 
 
-=== Limitations and Future Work
+== Limitations and Future Work
 
 * Cyclic dependencies are not checked and such a model will result in a stack-overflow.
 * Handling of characters that need escaping on templating is naive.
 
-== Authors
-
-* **Hrioshi Ukai** - *Initial work* - https://github.com/dakusui[dakusui]
-
-== link:../LICENSE[License]
-
-[source, text]
-----
-include::../LICENSE[]
-----
-
 [bibliography]
 == References
 
-- [[[Cfront, 1]]] https://en.wikipedia.org/wiki/Cfront[Cfront]: 2019
-- [[[cr, 2]]] Thayne McCombs. https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/[Why JSON isn’t a Good Configuration Language]: 2018.
-- [[[yaml, 3]]] en.wikipedia.org. https://en.wikipedia.org/wiki/YAML[YAML]: 2019
-- [[[json, 4]]] json.org. http://www.json.org/[JSON]:2019
+- [[jq-front, 1]] jq-front project in github.org. https://github.com/dakusui/jq-front[jq-front]: 2019
+- [[[Cfront, 2]]] Cfront article in en.wikipedia.org. https://en.wikipedia.org/wiki/Cfront[Cfront]: 2019
+- [[[cr, 3]]] Thayne McCombs. https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/[Why JSON isn’t a Good Configuration Language]: 2018.
+- [[[yaml, 4]]] YAML article in en.wikipedia.org. https://en.wikipedia.org/wiki/YAML[YAML]: 2019
+- [[[json, 5]]] json.org. http://www.json.org/[JSON]:2019

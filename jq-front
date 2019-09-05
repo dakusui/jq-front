@@ -62,11 +62,11 @@ function _merge_object_nodes() {
 function _expand_internal_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
-  local _private_nodes_dir="${3}"
+  local _path="${3}"
   local _cur
   local _in
   _cur=$(mktemp_with_content '{}')
-  debug "(begin:_expand_internal_inheritances:1)"
+  debug "(begin:_expand_internal_inheritances:1:${_target})"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
@@ -75,7 +75,7 @@ function _expand_internal_inheritances() {
       local _next
       local _jj
       debug "-->_expand_internal_inheritances:3:${j})"
-      _jj="$(read_file_from_path "${j}" "${_private_nodes_dir}")"
+      _jj="$(read_file_from_path "${j}" "${_path}")"
       validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
       local _p
@@ -123,10 +123,10 @@ function read_file_from_path() {
 }
 
 function export_names_for_script_inheritance() {
-    export -f find_file
-    export -f search_file_in
-    export _JF_PATH
-    export _JF_PATH_BASE
+  export -f find_file
+  export -f search_file_in
+  export _JF_PATH
+  export _JF_PATH_BASE
 }
 
 function validate_jf_json() {
@@ -159,6 +159,7 @@ function expand_external_inheritances() {
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
   debug "...validated"
+  _path="$(dirname "$(readlink --canonicalize "$_in")"):${_path}"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
   if [[ $(is_object "${_content}") == true ]]; then
@@ -200,16 +201,17 @@ function materialize_private_nodes() {
   debug "end:materialize_private_nodes"
 }
 
+#$(dirname "$(readlink --canonicalize "$j")"):
 function expand_internal_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
-  local _private_nodes_dir="${3}"
+  local _path="${3}"
   local _expanded
   local _expanded_clean
   local _clean
-  debug "begin:expand_internal_inheritances"
-  debug "step(1):main"
-  _expanded=$(mktemp_with_content "$(_expand_internal_inheritances "${_target}" "${_validation_mode}" "${_private_nodes_dir}")")
+  debug "begin:expand_internal_inheritances:_target=${_target}"
+  debug "step(1):main:_target=${_target}"
+  _expanded=$(mktemp_with_content "$(_expand_internal_inheritances "${_target}" "${_validation_mode}" "${_path}")")
   debug "step(2a):remove meta nodes from target"
   _clean=$(mktemp_with_content "$(_remove_meta_nodes "${_target}")")
   debug "step(2b):remove meta nodes from expanded"
@@ -220,18 +222,18 @@ function expand_internal_inheritances() {
 }
 
 function expand_inheritances_of_private_nodes() {
-  local _private_nodes_dir="${1}"
+  local _path="${1}"
   local _templating="${2}"
   local _jf_path="${3}"
-  debug "begin: expand_inheritances_of_private_nodes in ${_private_nodes_dir}"
+  debug "begin: expand_inheritances_of_private_nodes in ${_path}"
   while IFS= read -r -d '' i; do
     local _tmp
     local _f="${i}"
     debug "expanding inheritance of private node:${i}"
-    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "no" "no" "${_private_nodes_dir}:${_jf_path}")")"
+    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "no" "no" "${_path}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
-  done < <(find "${_private_nodes_dir}" -maxdepth 1 -type f -print0)
+  done < <(find "${_path}" -maxdepth 1 -type f -print0)
   debug "end:   expand_inheritances_of_private_nodes"
 }
 
@@ -242,9 +244,9 @@ function perform_templating() {
   local _ret
   _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
   _ret=$(eval "echo \"${_content}\"") || {
-      message "Failed to process a file '${_src_file}'(content='${_content}')"
-      return 1
-    }
+    message "Failed to process a file '${_src_file}'(content='${_content}')"
+    return 1
+  }
   echo "${_ret}"
   debug "end:perform_templating"
 }
@@ -269,7 +271,7 @@ function run_jf() {
   local _templating="${2}"
   local _jf_path="${4}"
   local _out
-  debug "begin:run_jf"
+  debug "begin:run_jf:_target=${_target}"
   _target="$(read_file_from_path "${_target}" "${_jf_path}")"
   _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
   if [[ $(is_object "${_content}") == true ]]; then

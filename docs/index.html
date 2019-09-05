@@ -438,20 +438,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>jq-front: JSON with inheritance and templating</h1>
+<h1><code>jq-front</code>: JSON with inheritance and templating</h1>
 <div id="toc" class="toc">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_background_and_introduction">Background and Introduction</a></li>
-<li><a href="#_installation">Installation</a>
+<li><a href="#_environment_variables">Environment variables</a>
 <ul class="sectlevel2">
-<li><a href="#_ubuntu">Ubuntu</a></li>
-<li><a href="#_with_docker">With Docker</a></li>
-</ul>
-</li>
-<li><a href="#_usage">Usage</a>
-<ul class="sectlevel2">
-<li><a href="#_example">Example</a></li>
+<li><a href="#_jf_path">JF_PATH</a></li>
+<li><a href="#_jf_templating_enabled">JF_TEMPLATING_ENABLED</a></li>
+<li><a href="#_jf_debug">JF_DEBUG</a></li>
 </ul>
 </li>
 <li><a href="#_features">Features</a>
@@ -459,7 +454,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_external_inheritance">External Inheritance</a></li>
 <li><a href="#_internal_inheritance">Internal Inheritance</a></li>
 <li><a href="#_templating">Templating</a></li>
-<li><a href="#_environment_variables">Environment variables</a></li>
 </ul>
 </li>
 <li><a href="#_design">Design</a>
@@ -468,11 +462,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_private_node_materialization">Private node materialization</a></li>
 <li><a href="#_internal_inheritance_2">Internal inheritance</a></li>
 <li><a href="#_templating_2">Templating</a></li>
-<li><a href="#_limitations_and_future_work">Limitations and Future Work</a></li>
 </ul>
 </li>
-<li><a href="#_authors">Authors</a></li>
-<li><a href="#_license">License</a></li>
+<li><a href="#_limitations_and_future_work">Limitations and Future Work</a></li>
 <li><a href="#_references">References</a></li>
 </ul>
 </div>
@@ -482,124 +474,62 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="sectionbody">
 <div class="paragraph">
 <p><code>jq-front</code> is a simple tool to give your JSON files a power of inheritance and templating.
-It was named after <strong>Cfront</strong><a href="#Cfront">[1]</a>, which is an old component of C&#43;&#43; language and converts C&#43;&#43; source code into C source code.</p>
+It was named after <strong>Cfront</strong><a href="#Cfront">[2]</a>, which is an old component of C&#43;&#43; language that converts C&#43;&#43; source code into C language.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_background_and_introduction">Background and Introduction</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>Despite that there are criticisms to use JSON<a href="#json">[4]</a> as system configuration information&#8217;s format<a href="#cr">[2]</a>, JSON still has its beauty such as rich tool supports, good balance between machine&#8217;s and human&#8217;s readability and writability, clarity and simplicity in syntax, etc.</p>
+<p>Despite that there are criticisms to use JSON<a href="#json">[5]</a> as system configuration information&#8217;s format<a href="#cr">[3]</a>, JSON still has its beauty such as rich tool supports, good balance between machine&#8217;s and human&#8217;s readability and writability, clarity and simplicity in syntax, etc.</p>
 </div>
 <div class="paragraph">
 <p>However, surely it has some weaknesses when we try to define data structure.
 For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
 </div>
-<div class="paragraph">
-<p><code>jq-front</code> is a tool to cope with such challenges by introducing inheritance and templating into JSON files.</p>
-</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_installation">Installation</h2>
+<h2 id="_environment_variables">Environment variables</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_ubuntu">Ubuntu</h3>
 <div class="paragraph">
-<p>Place the file <code>jq-front</code> somewhere on your <code>PATH</code>.
-Followings will be required by <code>jq-front</code></p>
+<p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>jq</code></p>
-</li>
-<li>
-<p><code>bash</code></p>
-</li>
-<li>
-<p><code>npm</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p><code>ajv-cli</code></p>
-</li>
-</ul>
+<div class="sect2">
+<h3 id="_jf_path">JF_PATH</h3>
+<div class="paragraph">
+<p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
+Entries in the variable is separated by colons(<code>:</code>).</p>
 </div>
-</li>
-</ul>
+<div class="paragraph">
+<p>When it is searching for a file during internal inheritance resolution, it first searches for private node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value">Default value</h4>
+<div class="paragraph">
+<p><code>.</code></p>
+</div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_with_docker">With Docker</h3>
+<h3 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h3>
 <div class="paragraph">
-<p>Add a following entry to your <code>.bashrc</code> or a file sourced through it.</p>
+<p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
+If any other value is set to the variable, it will not be executed.</p>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">function docker-jq-front() {
-  local _target="${1}"
-  docker run --rm \
-    -v /:/var/lib/jf \
-    -e JF_PATH_BASE="/var/lib/jf" \
-    -e JF_PATH="${JF_PATH}" \
-    -e JF_DEBUG=${JF_DEBUG:-disabled} \
-    -e JF_CWD="$(pwd)" \
-    dakusui/jf:"${JF_DOCKER_TAG:-v0.2}" "${@}"
-}</code></pre>
+<div class="sect3">
+<h4 id="_default_value_2">Default value</h4>
+<div class="paragraph">
+<p><code>yes</code></p>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_usage">Usage</h2>
-<div class="sectionbody">
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_example">Example</h3>
+<h3 id="_jf_debug">JF_DEBUG</h3>
 <div class="paragraph">
-<p>Let&#8217;s prepare files from which you want to create a new JSON by extending them.</p>
+<p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">$ echo '{"yourname":"Mark"}' &gt; name.json
-$ cat name.json
-{"yourname":"Mark"}
-
-$ echo '{"greeting":"Hello"}' &gt; greeting.json
-$ cat greeting.json
-{"greeting":"Hello"}</code></pre>
-</div>
-</div>
+<div class="sect3">
+<h4 id="_default_value_3">Default value</h4>
 <div class="paragraph">
-<p>Now, let&#8217;s try <code>jq-front</code>.</p>
+<p><code>disabled</code></p>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">$ echo '{
-    "$extends": [
-      "greeting.json",
-      "name.json"
-    ],
-    "sayHello": "$(ref .greeting), $(ref .yourname). Toady is $(date). How are you doing?"
-  }
-  ' | jq-front
-  {
-    "yourname": "Mark",
-    "greeting": "Hello",
-    "sayHello": "Hello, Mark. Toady is Fri Aug 30 22:04:40 UTC 2019. How are you doing?"
-  }
-$</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Doesn&#8217;t it seem useful? Have fun!</p>
 </div>
 </div>
 </div>
@@ -624,7 +554,13 @@ To specify JSON objects to be referenced, <code>jq-front</code> searches for key
 <p>Internal Inheritance</p>
 </li>
 <li>
+<p>Script-output Inheritance</p>
+</li>
+<li>
 <p>Templating</p>
+</li>
+<li>
+<p>Validation</p>
 </li>
 </ul>
 </div>
@@ -983,53 +919,6 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_environment_variables">Environment variables</h3>
-<div class="paragraph">
-<p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
-</div>
-<div class="sect3">
-<h4 id="_jf_path">JF_PATH</h4>
-<div class="paragraph">
-<p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
-Entries in the variable is separated by colons(<code>:</code>).</p>
-</div>
-<div class="paragraph">
-<p>When it is searching for a file during internal inheritance resolution, it first searches for private node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
-</div>
-<div class="sect4">
-<h5 id="_default_value">Default value</h5>
-<div class="paragraph">
-<p><code>.</code></p>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h4>
-<div class="paragraph">
-<p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
-If any other value is set to the variable, it will not be executed.</p>
-</div>
-<div class="sect4">
-<h5 id="_default_value_2">Default value</h5>
-<div class="paragraph">
-<p><code>yes</code></p>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_jf_debug">JF_DEBUG</h4>
-<div class="paragraph">
-<p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
-</div>
-<div class="sect4">
-<h5 id="_default_value_3">Default value</h5>
-<div class="paragraph">
-<p><code>disabled</code></p>
-</div>
-</div>
-</div>
-</div>
 </div>
 </div>
 <div class="sect1">
@@ -1116,8 +1005,11 @@ The 'private node directory' and its contents are utilized by the "internal inhe
 <p>And this causes expansions of bash expressions inside the content of "Work(2)" and that expanded string will be printed by the <code>echo</code> command.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_limitations_and_future_work">Limitations and Future Work</h3>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_limitations_and_future_work">Limitations and Future Work</h2>
+<div class="sectionbody">
 <div class="ulist">
 <ul>
 <li>
@@ -1130,65 +1022,25 @@ The 'private node directory' and its contents are utilized by the "internal inhe
 </div>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_authors">Authors</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Hrioshi Ukai</strong> - <strong>Initial work</strong> - <a href="https://github.com/dakusui">dakusui</a></p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_license"><a href="../LICENSE">License</a></h2>
-<div class="sectionbody">
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-text" data-lang="text">MIT License
-
-Copyright (c) 2019 Hiroshi Ukai
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.</code></pre>
-</div>
-</div>
-</div>
-</div>
 <div class="sect1">
 <h2 id="_references">References</h2>
 <div class="sectionbody">
 <div class="ulist bibliography">
 <ul class="bibliography">
 <li>
-<p><a id="Cfront"></a>[1] <a href="https://en.wikipedia.org/wiki/Cfront">Cfront</a>: 2019</p>
+<p><a id="jq-front"></a> jq-front project in github.org. <a href="https://github.com/dakusui/jq-front">jq-front</a>: 2019</p>
 </li>
 <li>
-<p><a id="cr"></a>[2] Thayne McCombs. <a href="https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/">Why JSON isn’t a Good Configuration Language</a>: 2018.</p>
+<p><a id="Cfront"></a>[2] Cfront article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/Cfront">Cfront</a>: 2019</p>
 </li>
 <li>
-<p><a id="yaml"></a>[3] en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/YAML">YAML</a>: 2019</p>
+<p><a id="cr"></a>[3] Thayne McCombs. <a href="https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/">Why JSON isn’t a Good Configuration Language</a>: 2018.</p>
 </li>
 <li>
-<p><a id="json"></a>[4] json.org. <a href="http://www.json.org/">JSON</a>:2019</p>
+<p><a id="yaml"></a>[4] YAML article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/YAML">YAML</a>: 2019</p>
+</li>
+<li>
+<p><a id="json"></a>[5] json.org. <a href="http://www.json.org/">JSON</a>:2019</p>
 </li>
 </ul>
 </div>
@@ -1203,7 +1055,7 @@ SOFTWARE.</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-05 12:12:05 UTC
+Last updated 2019-09-05 17:53:26 UTC
 </div>
 </div>
 </body>

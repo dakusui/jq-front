@@ -151,6 +151,7 @@ function main() {
   local failed=0
   local passed=0
   local skipped=0
+  local run=0
   local numtests=0
   local -a tests
   message "${_TEST_ROOT_DIR}:target=${_TARGET_TESTS}"
@@ -160,9 +161,10 @@ function main() {
   done < <(find "${_TEST_ROOT_DIR}" -type f -name test.json -print0)
   for i in "${tests[@]}"; do
     if [[ "x${i}" == x${_TARGET_TESTS} ]]; then
+      run=$((run + 1))
       {
-        runtest "${i}" || failed=$((failed + 1))
-      } && passed=$((passed + 1))
+        runtest "${i}" && passed=$((passed + 1))
+      } || failed=$((failed + 1))
     else
       skipped=$((skipped + 1))
       message "Skipping ${i}"
@@ -172,7 +174,7 @@ function main() {
   if [[ $failed == 0 ]]; then
     message "No test failed (total=${numtests}; passed=${passed}; skipped=${skipped})"
   else
-    message "$failed test(s) FAILED (total=${numtests}; passed=${passed}; skipped=${skipped})"
+    message "$failed test(s) FAILED (total=${numtests}; passed=${passed}; run=${run}; skipped=${skipped})"
     return 1
   fi
 }
