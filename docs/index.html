@@ -444,7 +444,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p><code>jq-front</code> is a simple tool to give your JSON files a power of inheritance and templating.</p>
+<p><code>jq-front</code> is a simple tool to give your JSON files a power of inheritance and templating.
+It was named after <strong>Cfront</strong><a href="#Cfront">[1]</a>, which is an old component of C language and converts C source code into C source code.</p>
 </div>
 </div>
 </div>
@@ -452,7 +453,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_background_and_introduction">Background and Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Despite that there are criticisms to use JSON<a href="#json">[json]</a> as system configuration information&#8217;s format<a href="#cr">[cr]</a>, JSON still has its beauty such as rich tool supports, good balance between machine&#8217;s and human&#8217;s readability and writability, clarity and simplicity in syntax, etc.</p>
+<p>Despite that there are criticisms to use JSON<a href="#json">[4]</a> as system configuration information&#8217;s format<a href="#cr">[2]</a>, JSON still has its beauty such as rich tool supports, good balance between machine&#8217;s and human&#8217;s readability and writability, clarity and simplicity in syntax, etc.</p>
 </div>
 <div class="paragraph">
 <p>However, surely it has some weaknesses when we try to define data structure.
@@ -497,20 +498,6 @@ Followings will be required by <code>jq-front</code></p>
 <h3 id="_with_docker">With Docker</h3>
 <div class="paragraph">
 <p>Add a following entry to your <code>.bashrc</code> or a file sourced through it.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">function docker-jq-front() {
-  local _target="${1}"
-  docker run --rm \
-    -v /:/var/lib/jf \
-    -e JF_PATH_BASE="/var/lib/jf" \
-    -e JF_PATH="${JF_PATH}" \
-    -e JF_DEBUG=${JF_DEBUG:-disabled} \
-    -e JF_CWD="$(pwd)" \
-    dakusui/jf:"${JF_DOCKER_TAG:-v0.2}" "${@}"
-}</code></pre>
-</div>
 </div>
 </div>
 </div>
@@ -1141,13 +1128,16 @@ SOFTWARE.</code></pre>
 <div class="ulist bibliography">
 <ul class="bibliography">
 <li>
-<p><a id="cr"></a>[cr] Thayne McCombs. <a href="https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/">Why JSON isn’t a Good Configuration Language</a>: 2018.</p>
+<p><a id="Cfront"></a>[1] <a href="https://en.wikipedia.org/wiki/Cfront">Cfront</a>: 2019</p>
 </li>
 <li>
-<p><a id="yaml"></a>[yaml] en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/YAML">YAML</a>: 2019</p>
+<p><a id="cr"></a>[2] Thayne McCombs. <a href="https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/">Why JSON isn’t a Good Configuration Language</a>: 2018.</p>
 </li>
 <li>
-<p><a id="json"></a>[json] json.org. <a href="http://www.json.org/">JSON</a>:2019</p>
+<p><a id="yaml"></a>[3] en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/YAML">YAML</a>: 2019</p>
+</li>
+<li>
+<p><a id="json"></a>[4] json.org. <a href="http://www.json.org/">JSON</a>:2019</p>
 </li>
 </ul>
 </div>
@@ -1162,7 +1152,7 @@ SOFTWARE.</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-05 00:45:09 UTC
+Last updated 2019-09-05 04:23:51 UTC
 </div>
 </div>
 </body>

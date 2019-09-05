@@ -1,6 +1,8 @@
 = jq-front: JSON with inheritance and templating
 
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
+It was named after *Cfront*<<Cfront>>, which is an old component of C++ language and converts C++ source code into C source code.
+
 
 == Background and Introduction
 
@@ -462,6 +464,7 @@ include::../LICENSE[]
 [bibliography]
 == References
 
-- [[[cr]]] Thayne McCombs. https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/[Why JSON isn’t a Good Configuration Language]: 2018.
-- [[[yaml]]] en.wikipedia.org. https://en.wikipedia.org/wiki/YAML[YAML]: 2019
-- [[[json]]] json.org. http://www.json.org/[JSON]:2019
+- [[[Cfront, 1]]] https://en.wikipedia.org/wiki/Cfront[Cfront]: 2019
+- [[[cr, 2]]] Thayne McCombs. https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/[Why JSON isn’t a Good Configuration Language]: 2018.
+- [[[yaml, 3]]] en.wikipedia.org. https://en.wikipedia.org/wiki/YAML[YAML]: 2019
+- [[[json, 4]]] json.org. http://www.json.org/[JSON]:2019

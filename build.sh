@@ -37,8 +37,10 @@ function execute_prepare() {
   while IFS= read -r -d '' i; do
     local _src_file="${i}"
     local _dest_file="${_src_file#${_resource_dir}/}"
-    message -n "Processing '${_src_file}'"
+    _dest_file="${_dest_file#[0-9]*_}"
+    message -n "Processing '${_src_file}'->'${_dest_file}'"
     mkdir -p "$(dirname "${_dest_file}")"
+    # shellcheck disable=SC2002
     _content=$(cat "${_src_file}" | sed -r 's/\"/\\\"/g' | sed -r 's/`/\\`/g')
     _templated=$(eval "echo \"${_content}\"")
     echo "${_templated}" >"${_dest_file}"
