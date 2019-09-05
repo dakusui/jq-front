@@ -28,13 +28,17 @@ function message() {
 }
 
 function execute_prepare() {
-  local _src_file="res/jq-front_aliases"
-  local _dest_file="${_src_file#res/}"
   local _content
   local _templated
-  _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
-  _templated=$(eval "echo \"${_content}\"")
-  echo "${_templated}" > "${_dest_file}"
+  local _resource_dir="res"
+  while IFS= read -r -d '' i; do
+    local _src_file="${i}"
+    local _dest_file="${_src_file#${_resource_dir}/}"
+    mkdir -p "$(dirname "${_dest_file}")"
+    _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
+    _templated=$(eval "echo \"${_content}\"")
+    echo "${_templated}" >"${_dest_file}"
+  done < <(find "${_resource_dir}" -type f -print0)
 }
 
 function execute_doc() {
@@ -75,7 +79,7 @@ function execute_release() {
   local release_branch="master"
   local current_branch
   # shellcheck disable=SC2063
-  current_branch=$(git branch|grep '^*'|cut -d ' ' -f 2)
+  current_branch=$(git branch | grep '^*' | cut -d ' ' -f 2)
   if [[ ${current_branch} != "${release_branch}" ]]; then
     message "You are not on release branch:'${release_branch}': current branch:'${current_branch}'"
     return 1
@@ -133,7 +137,9 @@ function main() {
     return 0
   fi
 
-  for i in "$@"; do
+  local -a _stages=("prepare")
+  _stages+=("$@")
+  for i in "${_stages[@]}"; do
     local _args
     IFS=':' read -r -a _args <<<"${i}"
     time execute_stage "${_args[@]}" || exit 1
