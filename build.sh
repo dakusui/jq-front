@@ -42,7 +42,10 @@ function execute_prepare() {
     mkdir -p "$(dirname "${_dest_file}")"
     # shellcheck disable=SC2002
     _content=$(cat "${_src_file}" | sed -r 's/\"/\\\"/g' | sed -r 's/`/\\`/g')
-    _templated=$(eval "echo \"${_content}\"")
+    _templated=$(eval "echo \"${_content}\"") || {
+      message "Failed to process a file '${_src_file}'(content='$(head "${_src_file}")...')"
+      return 1
+    }
     echo "${_templated}" >"${_dest_file}"
     message "...done"
   done < <(find "${_resource_dir}" -type f -print0 | sort -z)
@@ -137,7 +140,7 @@ function main() {
     return 0
   fi
   if [[ ${1} == PACKAGE ]]; then
-    main doc test package
+    main doc test package test_package
     return 0
   fi
   if [[ ${1} == DEPLOY ]]; then
@@ -153,7 +156,7 @@ function main() {
   for i in "${_stages[@]}"; do
     local _args
     IFS=':' read -r -a _args <<<"${i}"
-    time execute_stage "${_args[@]}" || exit 1
+    execute_stage "${_args[@]}" || exit 1
   done
 }
 

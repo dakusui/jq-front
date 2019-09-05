@@ -499,6 +499,20 @@ Followings will be required by <code>jq-front</code></p>
 <div class="paragraph">
 <p>Add a following entry to your <code>.bashrc</code> or a file sourced through it.</p>
 </div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">function docker-jq-front() {
+  local _target="${1}"
+  docker run --rm \
+    -v /:/var/lib/jf \
+    -e JF_PATH_BASE="/var/lib/jf" \
+    -e JF_PATH="${JF_PATH}" \
+    -e JF_DEBUG=${JF_DEBUG:-disabled} \
+    -e JF_CWD="$(pwd)" \
+    dakusui/jf:"${JF_DOCKER_TAG:-v0.2}" "${@}"
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>

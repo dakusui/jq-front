@@ -39,7 +39,9 @@ jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--valid
 ```
 
 === Example
-Let's prepare files from which you want to create a new JSON by extending.
+
+Let's prepare files from which you want to create a new JSON by extending them.
+
 ```sh
 $ echo '{"yourname":"Mark"}' > name.json
 $ cat name.json
