@@ -9,6 +9,10 @@ function mktemp_with_content() {
   echo "${_ret}"
 }
 
+function mktempdir() {
+  mktemp -d
+}
+
 function debug() {
   if [[ ${_JF_DEBUG:-""} == "enabled" ]]; then
     message "DEBUG" "$@"
@@ -20,7 +24,7 @@ function message() {
   local _o
   _o="${1}"
   shift
-  echo "${_o}" "$*" >&2
+  echo -e "${_o}" "$*" >&2
 }
 
 ####
@@ -100,4 +104,3 @@ function search_file_in() {
   done
   quit "File '${_target}' was not found in '${_path}'"
 }
-

@@ -15,11 +15,16 @@ function _mangle_path() {
   local _path="${1}"
   local _path_base="${2}"
   local _ret=""
+  if [[ -z "${_path_base}" ]]; then
+    echo "${_path}"
+    return 0
+  fi
   IFS=":" read -r -a _arr <<<"${_path}"
   for i in "${_arr[@]}"; do
     local _cur="${_path_base}"
     if [[ ${i} == .* ]]; then
-      _cur="${_cur}/${i/./${_JF_CWD}}"
+      # _JF_CWD always starts with '/' since it is an absolute path to current working directory by definition.
+      _cur="${_cur}${i/./${_JF_CWD}}"
     else
       _cur="${_cur}${i}"
     fi
@@ -29,7 +34,7 @@ function _mangle_path() {
       _ret="${_ret}:${_cur}"
     fi
   done
-  echo ":${_JF_PATH_BASE}:${_ret}"
+  echo "${_path_base}:${_ret}"
 }
 
 function _remove_meta_nodes() {
@@ -56,7 +61,9 @@ function _remove_meta_nodes() {
 function _merge_object_nodes() {
   local _a="${1}"
   local _b="${2}"
-  jq -s '.[0] * .[1]' "${_a}" "${_b}"
+  jq -s '.[0] * .[1]' "${_a}" "${_b}" || {
+    abort "Failed to merge object nodes:'${_a}' and '${_b}'"
+  }
 }
 
 function _expand_internal_inheritances() {
@@ -137,7 +144,6 @@ function find_file_in_path() {
 #
 function find_file() {
   local _target="${1}"
-  #search_file_in "${_target}" "${_JF_PATH}"
   search_file_in "${_target}" "${_path}"
 }
 
@@ -167,7 +173,9 @@ function validate_jf_json() {
 
 function dirof() {
   local _target="${1}"
-  dirname "$(readlink --canonicalize "${_target}")"
+  local _ret
+  _ret=$(dirname "$(readlink --canonicalize-missing "${_target}")")
+  echo "${_ret}"
 }
 
 function expand_external_inheritances() {
@@ -175,7 +183,7 @@ function expand_external_inheritances() {
   local _validation_mode="${2}"
   local _path="${3}"
   local _in
-  debug "begin:expand_external_inheritances:target=${_target}"
+  debug "begin:expand_external_inheritances:_target=${_target}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
@@ -183,7 +191,7 @@ function expand_external_inheritances() {
   local _content
   _in="$(find_file_in_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
   debug "validating ${_in}"
-  validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
+  validate_jf_json "${_in}" "${_validation_mode}" || abort "Validation failed:${_in}:content='$(cat "${_in}")'"
   debug "...validated"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
@@ -289,9 +297,9 @@ function run_jf() {
   if [[ $(is_object "${_content}") == true ]]; then
     local _tmp
     local _private_nodes_dir
-    # If we use mktemp_with_content here, somehow an error happens. Let's fix it later.
-    _tmp="$(mktemp)"
-    expand_external_inheritances "${_target}" "${_validation_mode}" "${_jf_path}" >"${_tmp}"
+    local _c
+    _c="$(expand_external_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
+    _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
       "${_templating}" \
@@ -373,6 +381,7 @@ debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
 
+export TMPDIR="${_JF_PATH_BASE}"
 export_names_for_script_inheritance
 
 main "${@}"
