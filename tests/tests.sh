@@ -139,7 +139,7 @@ function runtest() {
   message -n "executing test(${_test_type}):'${_dirname#${_TEST_ROOT_DIR}/}':..."
 
   export JF_PATH
-  JF_PATH=${_JF_PATH}:$(dirname "${_test_json}")
+  JF_PATH="${_JF_PATH}"
   "run_${_test_type}_test" "${_test_json}" || return 1
 }
 
