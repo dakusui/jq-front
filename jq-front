@@ -75,7 +75,7 @@ function _expand_internal_inheritances() {
       local _next
       local _jj
       debug "-->_expand_internal_inheritances:3:${j})"
-      _jj="$(find_file_from_path "${j}" "${_path}")"
+      _jj="$(find_file_in_path "${j}" "${_path}")"
       validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
       local _p
@@ -107,7 +107,7 @@ function _validate_jf_json_with() {
   } || abort "Validation for '${_in}' was failed:\n${_out}"
 }
 
-function find_file_from_path() {
+function find_file_in_path() {
   local _target="${1}"
   local _path="${2}"
   IFS=';' read -r -a _arr <<<"${_target}"
@@ -115,11 +115,30 @@ function find_file_from_path() {
     search_file_in "${1}" "${2}"
     return $?
   elif [[ ${#_arr[@]} -gt 1 ]]; then
+    ####
+    # In case the file name contains one or more semi-colons(';'), the name will be splitted by it.
+    # And a command line is constructed from them and executed.
     local _f
     _f="$(search_file_in "${_arr[0]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
+    export _path
     mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
+    unset _path
     return $?
   fi
+}
+
+####
+#
+# Function intended to be used on 'script inheritance'.
+# Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
+# In case it is not found, 1 will be returned.
+#
+# This function is indirectly called by 'find_file_in_path' through a command line it constructs
+#
+function find_file() {
+  local _target="${1}"
+  #search_file_in "${_target}" "${_JF_PATH}"
+  search_file_in "${_target}" "${_path}"
 }
 
 function export_names_for_script_inheritance() {
@@ -162,11 +181,10 @@ function expand_external_inheritances() {
   # shellcheck disable=SC2016
   local _cur
   local _content
-  _in="$(find_file_from_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
+  _in="$(find_file_in_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
   debug "...validated"
-  _path="$(dirof "${_in}"):${_path}"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
   if [[ $(is_object "${_content}") == true ]]; then
@@ -182,9 +200,9 @@ function expand_external_inheritances() {
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
-    jq -r -c '.|del(.["$extends"])' "$(find_file_from_path "${_cur}" "${_path}")"
+    jq -r -c '.|del(.["$extends"])' "$(find_file_in_path "${_cur}" "${_path}")"
   else
-    cat "$(find_file_from_path "${_cur}" "${_path}")"
+    cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
   debug "end:expand_external_inheritances"
 }
@@ -257,17 +275,6 @@ function perform_templating() {
   debug "end:perform_templating"
 }
 
-####
-#
-# Function intended to be used on 'script inheritance'.
-# Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
-# In case it is not found, 1 will be returned
-#
-function find_file() {
-  local _target="${1}"
-  search_file_in "${_target}" "${_JF_PATH}"
-}
-
 function run_jf() {
   local _target="${1}"
   local _templating="${2}"
@@ -276,7 +283,7 @@ function run_jf() {
   local _content
   local _out
   debug "begin:run_jf:_target=${_target}"
-  _target="$(find_file_from_path "${_target}" "${_jf_path}")"
+  _target="$(find_file_in_path "${_target}" "${_jf_path}")"
   _jf_path="$(dirof "${_target}"):${_jf_path}"
   _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
   if [[ $(is_object "${_content}") == true ]]; then
