@@ -166,7 +166,7 @@ function expand_external_inheritances() {
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
   debug "...validated"
-  _path="$(dirname "$(readlink --canonicalize "$_in")"):${_path}"
+  _path="$(dirof "${_in}"):${_path}"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
   if [[ $(is_object "${_content}") == true ]]; then
@@ -177,7 +177,7 @@ function expand_external_inheritances() {
       while IFS= read -r i; do
         local _next
         local _tmp
-        _tmp=$(mktemp_with_content "$(run_jf "${i}" "no" "${_validation_mode}" "$(dirof "${i}"):${_path}")")
+        _tmp=$(mktemp_with_content "$(run_jf "${i}" "no" "${_validation_mode}" "${_path}")")
         _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
@@ -208,7 +208,6 @@ function materialize_private_nodes() {
   debug "end:materialize_private_nodes"
 }
 
-#$(dirname "$(readlink --canonicalize "$j")"):
 function expand_internal_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
