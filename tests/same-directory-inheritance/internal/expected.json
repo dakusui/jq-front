@@ -1,5 +1,6 @@
 {
-  "x": "X",
-  "y": "Y",
-  "o": "hello world"
+  "i": {
+    "x": "X",
+    "o": "hello"
+  }
 }

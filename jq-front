@@ -75,7 +75,7 @@ function _expand_internal_inheritances() {
       local _next
       local _jj
       debug "-->_expand_internal_inheritances:3:${j})"
-      _jj="$(read_file_from_path "${j}" "${_path}")"
+      _jj="$(find_file_from_path "${j}" "${_path}")"
       validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
       local _p
@@ -107,7 +107,7 @@ function _validate_jf_json_with() {
   } || abort "Validation for '${_in}' was failed:\n${_out}"
 }
 
-function read_file_from_path() {
+function find_file_from_path() {
   local _target="${1}"
   local _path="${2}"
   IFS=';' read -r -a _arr <<<"${_target}"
@@ -162,7 +162,7 @@ function expand_external_inheritances() {
   # shellcheck disable=SC2016
   local _cur
   local _content
-  _in="$(read_file_from_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
+  _in="$(find_file_from_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
   debug "...validated"
@@ -182,9 +182,9 @@ function expand_external_inheritances() {
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
-    jq -r -c '.|del(.["$extends"])' "$(read_file_from_path "${_cur}" "${_path}")"
+    jq -r -c '.|del(.["$extends"])' "$(find_file_from_path "${_cur}" "${_path}")"
   else
-    cat "$(read_file_from_path "${_cur}" "${_path}")"
+    cat "$(find_file_from_path "${_cur}" "${_path}")"
   fi
   debug "end:expand_external_inheritances"
 }
@@ -265,10 +265,7 @@ function perform_templating() {
 #
 function find_file() {
   local _target="${1}"
-  search_file_in "${_target}" "${_JF_PATH}" || {
-    return $?
-  }
-  return 0
+  search_file_in "${_target}" "${_JF_PATH}"
 }
 
 function run_jf() {
@@ -279,7 +276,8 @@ function run_jf() {
   local _content
   local _out
   debug "begin:run_jf:_target=${_target}"
-  _target="$(read_file_from_path "${_target}" "${_jf_path}")"
+  _target="$(find_file_from_path "${_target}" "${_jf_path}")"
+  _jf_path="$(dirof "${_target}"):${_jf_path}"
   _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
   if [[ $(is_object "${_content}") == true ]]; then
     local _tmp
