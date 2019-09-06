@@ -65,7 +65,7 @@ function execute_doc() {
 }
 
 function execute_package() {
-  _build "snapshot"
+  _build "${TARGET_VERSION}-snapshot"
 }
 
 function execute_test() {
@@ -118,7 +118,7 @@ function execute_release() {
 
 function execute_deploy() {
   docker login
-  docker push "${DOCKER_REPO_NAME}:snapshot"
+  docker push "${DOCKER_REPO_NAME}:${TARGET_VERSION}-snapshot"
 }
 
 function execute_stage() {
