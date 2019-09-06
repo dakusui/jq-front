@@ -125,6 +125,8 @@ function read_file_from_path() {
 function export_names_for_script_inheritance() {
   export -f find_file
   export -f search_file_in
+  export -f quit
+  export -f message
   export _JF_PATH
   export _JF_PATH_BASE
 }
@@ -142,6 +144,11 @@ function validate_jf_json() {
     message "Unknown validation mode:'${_mode}' was set."
     exit 1
   fi
+}
+
+function dirof() {
+  local _target="${1}"
+  dirname "$(readlink --canonicalize "${_target}")"
 }
 
 function expand_external_inheritances() {
@@ -170,7 +177,7 @@ function expand_external_inheritances() {
       while IFS= read -r i; do
         local _next
         local _tmp
-        _tmp=$(mktemp_with_content "$(expand_external_inheritances "$i" "${_validation_mode}" "${_path}")")
+        _tmp=$(mktemp_with_content "$(run_jf "${i}" "no" "${_validation_mode}" "$(dirof "${i}"):${_path}")")
         _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
@@ -267,16 +274,16 @@ function find_file() {
 
 function run_jf() {
   local _target="${1}"
-  local _content
   local _templating="${2}"
+  local _validation_mode="${3}"
   local _jf_path="${4}"
+  local _content
   local _out
   debug "begin:run_jf:_target=${_target}"
   _target="$(read_file_from_path "${_target}" "${_jf_path}")"
   _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
   if [[ $(is_object "${_content}") == true ]]; then
     local _tmp
-    local _validation_mode="${3}"
     local _private_nodes_dir
     # If we use mktemp_with_content here, somehow an error happens. Let's fix it later.
     _tmp="$(mktemp)"

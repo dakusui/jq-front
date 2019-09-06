@@ -1,0 +1,35 @@
+
+* Entry point
+** stdin
+** file
+*** rel
+*** abs
+*** ./...
+
+* Inheritance
+** external (file-level)
+** internal (node-level)
+
+* Node generation
+** normal file
+** private nodes
+** script output
+
+*** Missing
+*** Malformed
+*** Invalid
+*** Valid
+
+* Inheritance Multiplicity
+** Single
+** Multiple
+
+* Layer
+** Single
+** Multi
+
+* Templating
+** Enabled
+*** self
+*** ref
+** Disabled
