@@ -375,13 +375,19 @@ _JF_DEBUG=${JF_DEBUG:-"disabled"}
 
 debug "_JF_CWD=${_JF_CWD}"
 debug "_JF_BASEDIR=${_JF_BASEDIR}"
+####
+# JF_PATH_BASE is set when this program is run under Docker.
 debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
 debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
 
-export TMPDIR="${_JF_PATH_BASE}"
+####
+# Export JF_PATH_BASE, which is set for executions under Docker
+if [[ -n "${_JF_PATH_BASE}" ]]; then
+    export TMPDIR="${_JF_PATH_BASE}/tmp"
+fi
 export_names_for_script_inheritance
 
 main "${@}"
