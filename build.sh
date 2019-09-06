@@ -80,6 +80,7 @@ function execute_test_package() {
 
 function execute_package_release() {
   _build "${TARGET_VERSION}"
+  _build "latest"
 }
 
 function execute_test_release() {
