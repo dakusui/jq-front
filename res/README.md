@@ -2,12 +2,25 @@
 
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
 
-## Example
+## Usage
+
+```shell script
+jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]
+```
+
+- `-h`, `--help`: Shows a help
+- `-e`, `--enable-templating`: Enables templating
+- `-d`, `--disable-templating`: Disables templating
+- `--validation`: Validation mode.
+`no`, `strict`, and `lenient` are available.
+- `TARGET`: A file to be processed.
+ 
+### Example
 
 
 Let's prepare files, `name.json` and `greeting.json`, from which you want to create a new JSON by extending them.
 
-```sh
+```shell script
 \$ echo '{"yourname":"Mark"}' > name.json
 \$ cat name.json
 {"yourname":"Mark"}
@@ -19,7 +32,7 @@ Let's prepare files, `name.json` and `greeting.json`, from which you want to cre
 
 Then create a file that extends them.
 
-```sh
+```shell script
 \$ echo '{
     "\$extends": ["greeting.json", "name.json"],
     "sayHello": "\$(ref .greeting), \$(ref .yourname). Toady is \$(date). How are you doing?"
@@ -27,7 +40,7 @@ Then create a file that extends them.
 ```
 
 Now, let's try `jq-front`.
-```sh
+```shell script
 \$ jq-front sayHello.json
 {
   "yourname": "Mark",
@@ -53,7 +66,7 @@ Followings will be required by `jq-front`
 
 Add a following entry to your `.bashrc` or a file sourced through it.
 
-```bash
+```shell script
 
 $(cat jq-front_aliases)
 
@@ -127,7 +140,7 @@ Please do
 
 ```shell script
 
-$ ./build.sh PACKAGE
+\$ ./build.sh PACKAGE
 
 ```
 
@@ -141,7 +154,9 @@ This will execute following tasks after resource preparation is finished.
 ### Step 4: Creating a pull request
 
 - 🔃 Create a new pull request using <a href="https://github.com/dakusui/jq-front/compare/" target="_blank">`https://github.com/dakusui/jq-front/compare/`</a>.
-Please do not forget removing your custom configuration made on `build_info.sh`.
+Please do not forget running tests to ensure that auto-generated resources up-to-date.
+Also please do not forget removing your custom configuration made on `build_info.sh`.
+
 
 ## Authors
 

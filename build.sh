@@ -41,7 +41,7 @@ function execute_prepare() {
     message -n "Processing '${_src_file}'->'${_dest_file}'"
     mkdir -p "$(dirname "${_dest_file}")"
     # shellcheck disable=SC2002
-    _content=$(cat "${_src_file}" | sed -r 's/\"/\\\"/g' | sed -r 's/`/\\`/g')
+    _content=$(cat "${_src_file}" | sed -E 's/\"/\\\"/g' | sed -E 's/`/\\`/g')
     _templated=$(eval "echo \"${_content}\"") || {
       message "Failed to process a file '${_src_file}'(content='$(head "${_src_file}")...')"
       return 1
@@ -137,6 +137,10 @@ function execute_stage() {
 function main() {
   if [[ $# == 0 ]]; then
     main doc test
+    return 0
+  fi
+  if [[ ${1} == OSX ]]; then
+    main doc package test_package
     return 0
   fi
   if [[ ${1} == PACKAGE ]]; then

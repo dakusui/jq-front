@@ -1,0 +1,55 @@
+
+
+* Entry point
+** Source
+*** stdin
+*** file
+**** rel
+**** abs
+**** ./...
+** Presence
+*** Absent
+*** Present
+** Validity
+*** Malformed
+*** Invalid
+*** Valid
+** Type
+*** Object
+*** Array
+*** Text
+*** Number
+*** Boolean
+*** null
+** File Level Inheritance
+*** None
+*** Single
+*** Multiple
+** Node Level Inheritance
+*** None
+*** Single
+*** Multiple
+** # of Node Level Inheritances
+*** None
+*** 1
+*** 2...
+
+* Inheritee Node
+** Generation Method
+*** File node
+*** Private (local) node
+*** Script rendered node
+** Presence
+** Validity
+** Type
+** File Level Inheritance
+** Node Level Inheritance
+** # of Node Level Inheritance
+
+
+== Terminology update
+
+`$private` -> `$local`
+
+external inheritance -> File Level Inheritance
+internal inheritance -> Node Level Inheritance

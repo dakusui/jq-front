@@ -15,11 +15,16 @@ function _mangle_path() {
   local _path="${1}"
   local _path_base="${2}"
   local _ret=""
+  if [[ -z "${_path_base}" ]]; then
+    echo "${_path}"
+    return 0
+  fi
   IFS=":" read -r -a _arr <<<"${_path}"
   for i in "${_arr[@]}"; do
     local _cur="${_path_base}"
     if [[ ${i} == .* ]]; then
-      _cur="${_cur}/${i/./${_JF_CWD}}"
+      # _JF_CWD always starts with '/' since it is an absolute path to current working directory by definition.
+      _cur="${_cur}${i/./${_JF_CWD}}"
     else
       _cur="${_cur}${i}"
     fi
@@ -29,7 +34,7 @@ function _mangle_path() {
       _ret="${_ret}:${_cur}"
     fi
   done
-  echo ":${_JF_PATH_BASE}:${_ret}"
+  echo "${_path_base}:${_ret}"
 }
 
 function _remove_meta_nodes() {
@@ -56,17 +61,19 @@ function _remove_meta_nodes() {
 function _merge_object_nodes() {
   local _a="${1}"
   local _b="${2}"
-  jq -s '.[0] * .[1]' "${_a}" "${_b}"
+  jq -s '.[0] * .[1]' "${_a}" "${_b}" || {
+    abort "Failed to merge object nodes:'${_a}' and '${_b}'"
+  }
 }
 
 function _expand_internal_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
-  local _private_nodes_dir="${3}"
+  local _path="${3}"
   local _cur
   local _in
   _cur=$(mktemp_with_content '{}')
-  debug "(begin:_expand_internal_inheritances:1)"
+  debug "(begin:_expand_internal_inheritances:1:${_target})"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
@@ -75,7 +82,7 @@ function _expand_internal_inheritances() {
       local _next
       local _jj
       debug "-->_expand_internal_inheritances:3:${j})"
-      _jj="$(read_file_from_path "${j}" "${_private_nodes_dir}")"
+      _jj="$(find_file_in_path "${j}" "${_path}")"
       validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
       local _p
@@ -107,7 +114,7 @@ function _validate_jf_json_with() {
   } || abort "Validation for '${_in}' was failed:\n${_out}"
 }
 
-function read_file_from_path() {
+function find_file_in_path() {
   local _target="${1}"
   local _path="${2}"
   IFS=';' read -r -a _arr <<<"${_target}"
@@ -115,18 +122,38 @@ function read_file_from_path() {
     search_file_in "${1}" "${2}"
     return $?
   elif [[ ${#_arr[@]} -gt 1 ]]; then
+    ####
+    # In case the file name contains one or more semi-colons(';'), the name will be splitted by it.
+    # And a command line is constructed from them and executed.
     local _f
     _f="$(search_file_in "${_arr[0]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
+    export _path
     mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
+    unset _path
     return $?
   fi
 }
 
+####
+#
+# Function intended to be used on 'script inheritance'.
+# Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
+# In case it is not found, 1 will be returned.
+#
+# This function is indirectly called by 'find_file_in_path' through a command line it constructs
+#
+function find_file() {
+  local _target="${1}"
+  search_file_in "${_target}" "${_path}"
+}
+
 function export_names_for_script_inheritance() {
-    export -f find_file
-    export -f search_file_in
-    export _JF_PATH
-    export _JF_PATH_BASE
+  export -f find_file
+  export -f search_file_in
+  export -f quit
+  export -f message
+  export _JF_PATH
+  export _JF_PATH_BASE
 }
 
 function validate_jf_json() {
@@ -144,20 +171,27 @@ function validate_jf_json() {
   fi
 }
 
+function dirof() {
+  local _target="${1}"
+  local _ret
+  _ret=$(dirname "$(readlink --canonicalize-missing "${_target}")")
+  echo "${_ret}"
+}
+
 function expand_external_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
   local _in
-  debug "begin:expand_external_inheritances:target=${_target}"
+  debug "begin:expand_external_inheritances:_target=${_target}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
   local _cur
   local _content
-  _in="$(read_file_from_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
+  _in="$(find_file_in_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
   debug "validating ${_in}"
-  validate_jf_json "${_in}" "${_validation_mode}" || quit "Validation failed:${_in}:content=""$(cat "${_in}")"""
+  validate_jf_json "${_in}" "${_validation_mode}" || abort "Validation failed:${_in}:content='$(cat "${_in}")'"
   debug "...validated"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
@@ -169,14 +203,14 @@ function expand_external_inheritances() {
       while IFS= read -r i; do
         local _next
         local _tmp
-        _tmp=$(mktemp_with_content "$(expand_external_inheritances "$i" "${_validation_mode}" "${_path}")")
+        _tmp=$(mktemp_with_content "$(run_jqfront "${i}" "no" "${_validation_mode}" "${_path}")")
         _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
-    jq -r -c '.|del(.["$extends"])' "$(read_file_from_path "${_cur}" "${_path}")"
+    jq -r -c '.|del(.["$extends"])' "$(find_file_in_path "${_cur}" "${_path}")"
   else
-    cat "$(read_file_from_path "${_cur}" "${_path}")"
+    cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
   debug "end:expand_external_inheritances"
 }
@@ -203,13 +237,13 @@ function materialize_private_nodes() {
 function expand_internal_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
-  local _private_nodes_dir="${3}"
+  local _path="${3}"
   local _expanded
   local _expanded_clean
   local _clean
-  debug "begin:expand_internal_inheritances"
-  debug "step(1):main"
-  _expanded=$(mktemp_with_content "$(_expand_internal_inheritances "${_target}" "${_validation_mode}" "${_private_nodes_dir}")")
+  debug "begin:expand_internal_inheritances:_target=${_target}"
+  debug "step(1):main:_target=${_target}"
+  _expanded=$(mktemp_with_content "$(_expand_internal_inheritances "${_target}" "${_validation_mode}" "${_path}")")
   debug "step(2a):remove meta nodes from target"
   _clean=$(mktemp_with_content "$(_remove_meta_nodes "${_target}")")
   debug "step(2b):remove meta nodes from expanded"
@@ -220,18 +254,18 @@ function expand_internal_inheritances() {
 }
 
 function expand_inheritances_of_private_nodes() {
-  local _private_nodes_dir="${1}"
+  local _path="${1}"
   local _templating="${2}"
   local _jf_path="${3}"
-  debug "begin: expand_inheritances_of_private_nodes in ${_private_nodes_dir}"
+  debug "begin: expand_inheritances_of_private_nodes in ${_path}"
   while IFS= read -r -d '' i; do
     local _tmp
     local _f="${i}"
     debug "expanding inheritance of private node:${i}"
-    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "no" "no" "${_private_nodes_dir}:${_jf_path}")")"
+    _tmp="$(mktemp_with_content "$(run_jqfront "${_f}" "no" "no" "${_path}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
-  done < <(find "${_private_nodes_dir}" -maxdepth 1 -type f -print0)
+  done < <(find "${_path}" -maxdepth 1 -type f -print0)
   debug "end:   expand_inheritances_of_private_nodes"
 }
 
@@ -242,43 +276,30 @@ function perform_templating() {
   local _ret
   _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
   _ret=$(eval "echo \"${_content}\"") || {
-      message "Failed to process a file '${_src_file}'(content='${_content}')"
-      return 1
-    }
+    message "Failed to process a file '${_src_file}'(content='${_content}')"
+    return 1
+  }
   echo "${_ret}"
   debug "end:perform_templating"
 }
 
-####
-#
-# Function intended to be used on 'script inheritance'.
-# Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
-# In case it is not found, 1 will be returned
-#
-function find_file() {
+function run_jqfront() {
   local _target="${1}"
-  search_file_in "${_target}" "${_JF_PATH}" || {
-    return $?
-  }
-  return 0
-}
-
-function run_jf() {
-  local _target="${1}"
-  local _content
   local _templating="${2}"
+  local _validation_mode="${3}"
   local _jf_path="${4}"
+  local _content
   local _out
-  debug "begin:run_jf"
-  _target="$(read_file_from_path "${_target}" "${_jf_path}")"
+  debug "begin:run_jf:_target=${_target}"
+  _target="$(find_file_in_path "${_target}" "${_jf_path}")"
+  _jf_path="$(dirof "${_target}"):${_jf_path}"
   _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
   if [[ $(is_object "${_content}") == true ]]; then
     local _tmp
-    local _validation_mode="${3}"
     local _private_nodes_dir
-    # If we use mktemp_with_content here, somehow an error happens. Let's fix it later.
-    _tmp="$(mktemp)"
-    expand_external_inheritances "${_target}" "${_validation_mode}" "${_jf_path}" >"${_tmp}"
+    local _c
+    _c="$(expand_external_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
+    _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
       "${_templating}" \
@@ -340,7 +361,7 @@ function main() {
   else
     _target="${1}"
   fi
-  run_jf "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
+  run_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
 _JF_CWD="${JF_CWD:-"$(pwd)"}"
@@ -354,12 +375,19 @@ _JF_DEBUG=${JF_DEBUG:-"disabled"}
 
 debug "_JF_CWD=${_JF_CWD}"
 debug "_JF_BASEDIR=${_JF_BASEDIR}"
+####
+# JF_PATH_BASE is set when this program is run under Docker.
 debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
 debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
 
+####
+# Export JF_PATH_BASE, which is set for executions under Docker
+if [[ -n "${_JF_PATH_BASE}" ]]; then
+    export TMPDIR="${_JF_PATH_BASE}/tmp"
+fi
 export_names_for_script_inheritance
 
 main "${@}"
