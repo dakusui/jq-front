@@ -139,6 +139,10 @@ function main() {
     main doc test
     return 0
   fi
+  if [[ ${1} == OSX ]]; then
+    main doc package test_package
+    return 0
+  fi
   if [[ ${1} == PACKAGE ]]; then
     main doc test package test_package
     return 0

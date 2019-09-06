@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.10">
-<title>Untitled</title>
+<title>Terminology update</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -447,6 +447,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
+<p>Source</p>
+<div class="ulist">
+<ul>
+<li>
 <p>stdin</p>
 </li>
 <li>
@@ -469,35 +473,22 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </li>
 <li>
-<p>Inheritance</p>
+<p>Presence</p>
 <div class="ulist">
 <ul>
 <li>
-<p>external (file-level)</p>
+<p>Absent</p>
 </li>
 <li>
-<p>internal (node-level)</p>
+<p>Present</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>Node generation</p>
+<p>Validity</p>
 <div class="ulist">
 <ul>
-<li>
-<p>normal file</p>
-</li>
-<li>
-<p>private nodes</p>
-</li>
-<li>
-<p>script output</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Missing</p>
-</li>
 <li>
 <p>Malformed</p>
 </li>
@@ -510,13 +501,38 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </div>
 </li>
+<li>
+<p>Type</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Object</p>
+</li>
+<li>
+<p>Array</p>
+</li>
+<li>
+<p>Text</p>
+</li>
+<li>
+<p>Number</p>
+</li>
+<li>
+<p>Boolean</p>
+</li>
+<li>
+<p>null</p>
+</li>
 </ul>
 </div>
 </li>
 <li>
-<p>Inheritance Multiplicity</p>
+<p>File Level Inheritance</p>
 <div class="ulist">
 <ul>
+<li>
+<p>None</p>
+</li>
 <li>
 <p>Single</p>
 </li>
@@ -527,47 +543,99 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </li>
 <li>
-<p>Layer</p>
+<p>Node Level Inheritance</p>
 <div class="ulist">
 <ul>
+<li>
+<p>None</p>
+</li>
 <li>
 <p>Single</p>
 </li>
 <li>
-<p>Multi</p>
+<p>Multiple</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>Templating</p>
+<p># of Node Level Inheritances</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Enabled</p>
+<p>None</p>
+</li>
+<li>
+<p>1</p>
+</li>
+<li>
+<p>2&#8230;&#8203;</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Inheritee Node</p>
 <div class="ulist">
 <ul>
 <li>
-<p>self</p>
+<p>Generation Method</p>
+<div class="ulist">
+<ul>
+<li>
+<p>File node</p>
 </li>
 <li>
-<p>ref</p>
+<p>Private (local) node</p>
+</li>
+<li>
+<p>Script rendered node</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>Disabled</p>
+<p>Presence</p>
+</li>
+<li>
+<p>Validity</p>
+</li>
+<li>
+<p>Type</p>
+</li>
+<li>
+<p>File Level Inheritance</p>
+</li>
+<li>
+<p>Node Level Inheritance</p>
+</li>
+<li>
+<p># of Node Level Inheritance</p>
 </li>
 </ul>
 </div>
 </li>
 </ul>
+</div>
+<div class="sect1">
+<h2 id="_terminology_update">Terminology update</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>$private</code> &#8594; <code>$local</code></p>
+</div>
+<div class="paragraph">
+<p>external inheritance &#8594; File Level Inheritance
+internal inheritance &#8594; Node Level Inheritance</p>
+</div>
+</div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-06 03:57:00 UTC
+Last updated 2019-09-06 09:49:37 UTC
 </div>
 </div>
 </body>

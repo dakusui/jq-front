@@ -203,7 +203,7 @@ function expand_external_inheritances() {
       while IFS= read -r i; do
         local _next
         local _tmp
-        _tmp=$(mktemp_with_content "$(run_jf "${i}" "no" "${_validation_mode}" "${_path}")")
+        _tmp=$(mktemp_with_content "$(run_jqfront "${i}" "no" "${_validation_mode}" "${_path}")")
         _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
@@ -262,7 +262,7 @@ function expand_inheritances_of_private_nodes() {
     local _tmp
     local _f="${i}"
     debug "expanding inheritance of private node:${i}"
-    _tmp="$(mktemp_with_content "$(run_jf "${_f}" "no" "no" "${_path}:${_jf_path}")")"
+    _tmp="$(mktemp_with_content "$(run_jqfront "${_f}" "no" "no" "${_path}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
   done < <(find "${_path}" -maxdepth 1 -type f -print0)
@@ -283,7 +283,7 @@ function perform_templating() {
   debug "end:perform_templating"
 }
 
-function run_jf() {
+function run_jqfront() {
   local _target="${1}"
   local _templating="${2}"
   local _validation_mode="${3}"
@@ -361,7 +361,7 @@ function main() {
   else
     _target="${1}"
   fi
-  run_jf "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
+  run_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
 _JF_CWD="${JF_CWD:-"$(pwd)"}"
