@@ -117,6 +117,16 @@ function execute_release() {
   docker push "${DOCKER_REPO_NAME}:latest"
 }
 
+function execute_post_release() {
+  local tmp
+  git tag "${TARGET_VERSION}"
+  tmp=$(mktemp)
+  jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json > "${tmp}"
+  cp "${tmp}" build_info.json
+  git commit -m "$(printf "Bump up target version to v%s.%s" $(jq '.version.target.major', $(jq '.version.target.minor')"
+  git push origin master:master
+}
+
 function execute_deploy() {
   docker login
   docker push "${DOCKER_REPO_NAME}:${TARGET_VERSION}-snapshot"
@@ -152,7 +162,7 @@ function main() {
     main doc test package test_package deploy
     return 0
   elif [[ ${1} == RELEASE ]]; then
-    main doc test package_release test_release release
+    main doc test package_release test_release release post_release
     return 0
   fi
 
