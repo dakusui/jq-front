@@ -121,14 +121,14 @@ function execute_post_release() {
   local tmp
   git tag "${TARGET_VERSION}"
   tmp=$(mktemp)
-  jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json > "${tmp}"
+  jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json > "${tmp}" || abort "Failed to bump up the version."
   cp "${tmp}" build_info.json
   message "Updated build_info.json"
   git commit -a -m "$(printf "Bump up target version to v%s.%s" \
                      "$(jq '.version.target.major' "${tmp}")"  \
-                     "$(jq '.version.target.minor' "${tmp}")")"
+                     "$(jq '.version.target.minor' "${tmp}")")" || abort "Failed to commit bumped up version."
   message "Committed the change"
-  git push origin master:master
+  git push origin master:master || abort "Failed to push the change."
   message "Pushed it to the remote"
 }
 
