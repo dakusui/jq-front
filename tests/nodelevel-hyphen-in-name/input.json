@@ -1,5 +1,5 @@
 {
-  "$private": {
+  "$local": {
     "hello-world": {
       "HELLO": "WORLD"
     }

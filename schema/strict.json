@@ -43,13 +43,13 @@
     }
   },
   "propertyNames": {
-    "pattern": "^((\\$extends|\\$private)|[^$].*$|$)"
+    "pattern": "^((\\$extends|\\$local)|[^$].*$|$)"
   },
   "properties": {
     "$extends": {
       "$ref": "#/definitions/$extends"
     },
-    "$private": {
+    "$local": {
       "type": "object",
       "description": "Object nodes that can be extended by nodes inside this JSON object."
     }

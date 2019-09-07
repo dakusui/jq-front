@@ -76,7 +76,7 @@ function docker-jq-front() {
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.3}" "${@}"
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.4}" "${@}"
 }
 
 ```
@@ -85,8 +85,8 @@ Please replace `jq-front` in this document with `docker-jq-front` as necessary.
 
 ## Features
 
-* External inheritance (normal inheritance, file based)
-* Internal inheritance (node based inheritance)
+* File Level Inheritance
+* Node Level Inheritance
 * Templating (rendering text nodes referring to other nodes' values)
 * Validation (strict and lenient validations)
 
