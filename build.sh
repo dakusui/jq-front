@@ -123,8 +123,13 @@ function execute_post_release() {
   tmp=$(mktemp)
   jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json > "${tmp}"
   cp "${tmp}" build_info.json
-  git commit -m "$(printf "Bump up target version to v%s.%s" $(jq '.version.target.major', $(jq '.version.target.minor')"
+  message "Updated build_info.json"
+  git commit -m "$(printf "Bump up target version to v%s.%s" \
+                          "$(jq '.version.target.major')"  \
+                          "$(jq '.version.target.minor')")"
+  message "Committed the change"
   git push origin master:master
+  message "Pushed it to the remote"
 }
 
 function execute_deploy() {
