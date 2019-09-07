@@ -12,6 +12,7 @@ function _test_package() {
   source "$(pwd)/${APP_NAME}_aliases"
   export -f docker-jq-front
   export JF_DOCKER_TAG="${_version}"
+  message "Testing package:'${JF_DOCKER_TAG}'"
   bash -eu "tests/tests.sh" "docker-${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
   unset -f docker-jq-front
   unset JF_DOCKER_TAG
@@ -75,7 +76,7 @@ function execute_test() {
 
 function execute_test_package() {
   local _target_tests="${1:-*}"
-  _test_package "snapshot" "${_target_tests}"
+  _test_package "${TARGET_VERSION}-snapshot" "${_target_tests}"
 }
 
 function execute_package_release() {
