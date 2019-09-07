@@ -451,16 +451,16 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#_features">Features</a>
 <ul class="sectlevel2">
-<li><a href="#_external_inheritance">External Inheritance</a></li>
-<li><a href="#_internal_inheritance">Internal Inheritance</a></li>
+<li><a href="#_file_level_inheritance">File-level Inheritance</a></li>
+<li><a href="#_node_level_inheritance">Node-level Inheritance</a></li>
 <li><a href="#_templating">Templating</a></li>
 </ul>
 </li>
 <li><a href="#_design">Design</a>
 <ul class="sectlevel2">
-<li><a href="#_external_inheritance_2">External inheritance</a></li>
-<li><a href="#_private_node_materialization">Private node materialization</a></li>
-<li><a href="#_internal_inheritance_2">Internal inheritance</a></li>
+<li><a href="#_file_level_inheritance_2">File-level Inheritance</a></li>
+<li><a href="#_local_node_materialization">Local node Materialization</a></li>
+<li><a href="#_node_level_inheritance_2">Node-level Inheritance</a></li>
 <li><a href="#_templating_2">Templating</a></li>
 </ul>
 </li>
@@ -498,7 +498,7 @@ For instance, under a situation, where we need to generate similar but slightly 
 Entries in the variable is separated by colons(<code>:</code>).</p>
 </div>
 <div class="paragraph">
-<p>When it is searching for a file during internal inheritance resolution, it first searches for private node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
+<p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
 </div>
 <div class="sect3">
 <h4 id="_default_value">Default value</h4>
@@ -540,7 +540,7 @@ If any other value is set to the variable, it will not be executed.</p>
 <div class="paragraph">
 <p>With <code>jq-front</code>, you can build a JSON object reusing other JSON objects.
 To specify JSON objects to be referenced, <code>jq-front</code> searches for keys which have special names in a given object.
-<code>$extends</code> and <code>$private</code> are keywords used for this purpose.</p>
+<code>$extends</code> and <code>$local</code> are keywords used for this purpose.</p>
 </div>
 <div class="paragraph">
 <p>Basic features offered by the product are following</p>
@@ -548,10 +548,10 @@ To specify JSON objects to be referenced, <code>jq-front</code> searches for key
 <div class="ulist">
 <ul>
 <li>
-<p>External Inheritance</p>
+<p>File-level Inheritance</p>
 </li>
 <li>
-<p>Internal Inheritance</p>
+<p>Node-level Inheritance</p>
 </li>
 <li>
 <p>Script-output Inheritance</p>
@@ -619,7 +619,7 @@ To specify JSON objects to be referenced, <code>jq-front</code> searches for key
 </ul>
 </div>
 <div class="sect2">
-<h3 id="_external_inheritance">External Inheritance</h3>
+<h3 id="_file_level_inheritance">File-level Inheritance</h3>
 <div class="paragraph">
 <p>In programming languages, inheritance is an indispensable technique to reuse a component.
 <code>jq-front</code> offers it for the purpose.
@@ -643,7 +643,7 @@ A usage example is as follows.</p>
 <p><code>I.json</code> will be rendered into the following JSON object with this command line.</p>
 </div>
 <div class="listingblock">
-<div class="title">External Inheritance output</div>
+<div class="title">File-level Inheritance output</div>
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "a": "A",
@@ -671,7 +671,7 @@ When both <code>A.json</code> and <code>B.json</code> have attributes at the sam
 <p>That is, <code>J.json</code> will be rendered into following output.</p>
 </div>
 <div class="listingblock">
-<div class="title">External Multiple Inheritance output</div>
+<div class="title">File-level Multiple Inheritance output</div>
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "a": "A",
@@ -700,7 +700,7 @@ For instance, one is for authentication information and the other is for GUI fla
 <p>That is, <code>K.json</code> is rendered into a following JSON file.</p>
 </div>
 <div class="listingblock">
-<div class="title">External Inheritance output (2)</div>
+<div class="title">File-level Inheritance output (2)</div>
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "a": "A",
@@ -725,10 +725,10 @@ Behaviour for this situation is not defined and it will result in stack overflow
 </div>
 </div>
 <div class="sect2">
-<h3 id="_internal_inheritance">Internal Inheritance</h3>
+<h3 id="_node_level_inheritance">Node-level Inheritance</h3>
 <div class="paragraph">
-<p>"Internal Inheritance" refers to an inheritance happens on an internal (object) node of a given JSON file.
-Although it is implemented as a separate mechanism from the external one as it will be discussed in "Design" section, it behaves almost the same as the "external" one.</p>
+<p>"Node-level Inheritance" refers to an inheritance happens on an internal (object) node of a given JSON file.
+Although it is implemented as a separate mechanism from the file-level one as it will be discussed in "Design" section, it behaves almost the same as the "file-level" one.</p>
 </div>
 <div class="listingblock">
 <div class="title">L.json</div>
@@ -742,7 +742,7 @@ Although it is implemented as a separate mechanism from the external one as it w
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Internal Inheritance output</div>
+<div class="title">Node-level Inheritance output</div>
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "a": {
@@ -753,16 +753,16 @@ Although it is implemented as a separate mechanism from the external one as it w
 </div>
 </div>
 <div class="paragraph">
-<p>As it worked for External Inheritance, multiple inheritance works also for Internal Inheritance.</p>
+<p>As it worked for File-level Inheritance, multiple inheritance works also for Node-level Inheritance.</p>
 </div>
 <div class="paragraph">
-<p>However, for internal nodes, you can also reference "private" nodes not only external files.</p>
+<p>However, for internal nodes, you can also reference "local" nodes not only external files.</p>
 </div>
 <div class="listingblock">
 <div class="title">P.json</div>
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
-  "$private": {
+  "$local": {
     "nodeA": {
        "aa": "aa"
     },
@@ -777,12 +777,12 @@ Although it is implemented as a separate mechanism from the external one as it w
 </div>
 </div>
 <div class="paragraph">
-<p>These nodes can be referenced through "internal inheritance feature" as shown in the example.
+<p>These nodes can be referenced through "node-level inheritance feature" as shown in the example.
 Note that you do not need to specify <code>.json</code> extension.
 And <code>P.json</code> will result in following output.</p>
 </div>
 <div class="listingblock">
-<div class="title">Private Node Inheritance output</div>
+<div class="title">Local Node Inheritance output</div>
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "a": {
@@ -934,32 +934,32 @@ This function can only work from inside "Work(2)" file.</p>
 <div class="title">Figure 1. jq-front&#8217;s pipeline</div>
 </div>
 <div class="paragraph">
-<p>As shown, it consists of four main components, which are "external inheritance", "private node materialization", "internal inheritance", and "templating".</p>
+<p>As shown, it consists of four main components, which are "file-level inheritance", "local node materialization", "node-level inheritance", and "templating".</p>
 </div>
 <div class="paragraph">
 <p>Designs of those components will be described in the rest of this section.</p>
 </div>
 <div class="sect2">
-<h3 id="_external_inheritance_2">External inheritance</h3>
+<h3 id="_file_level_inheritance_2">File-level Inheritance</h3>
 <div class="paragraph">
-<p>'External inheritance' composes a new JSON file from a given one by expanding the files provided through the top-level <code>$extends</code> attribute.</p>
+<p>'File-level Inheritance' composes a new JSON file from a given one by expanding the files provided through the top-level <code>$extends</code> attribute.</p>
 </div>
 <div class="paragraph">
 <p>At the end of this process, the attribute is removed and copied to the output, "Work(1)" in the diagram.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_private_node_materialization">Private node materialization</h3>
+<h3 id="_local_node_materialization">Local node Materialization</h3>
 <div class="paragraph">
-<p>If the file, "Work(1)" has <code>$private</code> attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
-The temporary directory is called 'private node directory'.
-The 'private node directory' and its contents are utilized by the "internal inheritance' mechanism.</p>
+<p>If the file, "Work(1)" has <code>$local</code> attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
+The temporary directory is called 'local node directory'.
+The 'local node directory' and its contents are utilized by the "node-level inheritance' mechanism.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_internal_inheritance_2">Internal inheritance</h3>
+<h3 id="_node_level_inheritance_2">Node-level Inheritance</h3>
 <div class="paragraph">
-<p>Internal inheritance mechanism is a bit more complicated than the external one.</p>
+<p>Node-level Inheritance mechanism is a bit more complicated than the file-level one.</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -983,12 +983,12 @@ The 'private node directory' and its contents are utilized by the "internal inhe
 <p>Overlay the JSON object created in the step. 1 with an original JSON object.</p>
 </li>
 <li>
-<p>Remove nodes, i.e., <code>$extends</code> and <code>$private</code> nodes from the JSON object created in the step 2.</p>
+<p>Remove nodes, i.e., <code>$extends</code> and <code>$local</code> nodes from the JSON object created in the step 2.</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
-<p>'Private node directory' is inserted before the first entry of <code>JF_PATH</code> environment variable when a file to be expanded is searched during the step 1. b.</p>
+<p>'Local node directory' is inserted before the first entry of <code>JF_PATH</code> environment variable when a file to be expanded is searched during the step 1. b.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1055,7 +1055,7 @@ The 'private node directory' and its contents are utilized by the "internal inhe
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-06 21:22:07 UTC
+Last updated 2019-09-07 10:46:59 UTC
 </div>
 </div>
 </body>

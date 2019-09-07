@@ -19,7 +19,7 @@ You can control behaviours of `jq-front` by setting environment variables descri
 From directories listed in `JF_PATH`, `jq-front` searches for requested file.
 Entries in the variable is separated by colons(`:`).
 
-When it is searching for a file during internal inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
+When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
 
 ==== Default value
 
@@ -51,8 +51,8 @@ To specify JSON objects to be referenced, `jq-front` searches for keys which hav
 
 Basic features offered by the product are following
 
-* External Inheritance
-* Internal Inheritance
+* File-level Inheritance
+* Node-level Inheritance
 * Script-output Inheritance
 * Templating
 * Validation
@@ -74,7 +74,7 @@ include::examples/B.json[]
 [source, json]
 include::examples/T.json[]
 
-=== External Inheritance
+=== File-level Inheritance
 
 In programming languages, inheritance is an indispensable technique to reuse a component.
 `jq-front` offers it for the purpose.
@@ -97,7 +97,7 @@ jq-front I.json
 
 
 [source, json]
-.External Inheritance output
+.File-level Inheritance output
 ----
 {
   "a": "A",
@@ -122,7 +122,7 @@ When both `A.json` and `B.json` have attributes at the same path, `A.json` side'
 That is, `J.json` will be rendered into following output.
 
 [source, json]
-.External Multiple Inheritance output
+.File-level Multiple Inheritance output
 ----
 {
   "a": "A",
@@ -148,7 +148,7 @@ JSON objects that are inherited can also inherit some other JSON files.
 That is, `K.json` is rendered into a following JSON file.
 
 [source, json]
-.External Inheritance output (2)
+.File-level Inheritance output (2)
 ----
 {
   "a": "A",
@@ -162,10 +162,10 @@ CAUTION: Ensure that inheritance hierarchy does not have any cyclic dependencies
 Behaviour for this situation is not defined and it will result in stack overflow.
 
 
-=== Internal Inheritance
+=== Node-level Inheritance
 
-"Internal Inheritance" refers to an inheritance happens on an internal (object) node of a given JSON file.
-Although it is implemented as a separate mechanism from the external one as it will be discussed in "Design" section, it behaves almost the same as the "external" one.
+"Node-level Inheritance" refers to an inheritance happens on an internal (object) node of a given JSON file.
+Although it is implemented as a separate mechanism from the file-level one as it will be discussed in "Design" section, it behaves almost the same as the "file-level" one.
 
 [source, json]
 .L.json
@@ -179,7 +179,7 @@ Although it is implemented as a separate mechanism from the external one as it w
 ----
 
 [source, json]
-.Internal Inheritance output
+.Node-level Inheritance output
 ----
 {
   "a": {
@@ -189,7 +189,7 @@ Although it is implemented as a separate mechanism from the external one as it w
 }
 ----
 
-As it worked for External Inheritance, multiple inheritance works also for Internal Inheritance.
+As it worked for File-level Inheritance, multiple inheritance works also for Node-level Inheritance.
 
 However, for internal nodes, you can also reference "local" nodes not only external files.
 
@@ -211,7 +211,7 @@ However, for internal nodes, you can also reference "local" nodes not only exter
 }
 ----
 
-These nodes can be referenced through "internal inheritance feature" as shown in the example.
+These nodes can be referenced through "node-level inheritance feature" as shown in the example.
 Note that you do not need to specify `.json` extension.
 And `P.json` will result in following output.
 
@@ -313,7 +313,7 @@ Following is a diagram that illustrates `jq-front` 's processing pipeline design
 .jq-front's pipeline
 ----
 
-          external inheritance             local node materialization
+          file-level inheritance             local node materialization
                  +----+                             +-----+
    +-------------+ {o}+-=----------+   +------------+ {o} +-=------------+
    |             +----+            |   |            +-----+              | 0...n
@@ -322,7 +322,7 @@ Following is a diagram that illustrates `jq-front` 's processing pipeline design
 |Source|                         |Work(1)|                         |LocalNodes|
 |{d}   |                         |{d}    |                         |{d}         |
 +------+                         +-------+                         +------------+
-                                     ^        internal inheritance       ^
+                                     ^        node-level inheritance       ^
                                      |              +-----+              |
                                      +--------------+ {o} +--------------+
                                                     +--+--+
@@ -349,25 +349,25 @@ Following is a diagram that illustrates `jq-front` 's processing pipeline design
 
 ----
 
-As shown, it consists of four main components, which are "external inheritance", "local node materialization", "internal inheritance", and "templating".
+As shown, it consists of four main components, which are "file-level inheritance", "local node materialization", "node-level inheritance", and "templating".
 
 Designs of those components will be described in the rest of this section.
 
-=== External inheritance
+=== File-level Inheritance
 
-'External inheritance' composes a new JSON file from a given one by expanding the files provided through the top-level `$extends` attribute.
+'File-level Inheritance' composes a new JSON file from a given one by expanding the files provided through the top-level `$extends` attribute.
 
 At the end of this process, the attribute is removed and copied to the output, "Work(1)" in the diagram.
 
-=== Local node materialization
+=== Local node Materialization
 
 If the file, "Work(1)" has `$local` attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
 The temporary directory is called 'local node directory'.
-The 'local node directory' and its contents are utilized by the "internal inheritance' mechanism.
+The 'local node directory' and its contents are utilized by the "node-level inheritance' mechanism.
 
-=== Internal inheritance
+=== Node-level Inheritance
 
-Internal inheritance mechanism is a bit more complicated than the external one.
+Node-level Inheritance mechanism is a bit more complicated than the file-level one.
 
 1. Create a base JSON object by the following procedure.
     a. Scan paths of all internal nodes.

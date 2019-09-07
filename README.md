@@ -85,8 +85,8 @@ Please replace `jq-front` in this document with `docker-jq-front` as necessary.
 
 ## Features
 
-* External inheritance (normal inheritance, file based)
-* Internal inheritance (node based inheritance)
+* File Level Inheritance
+* Node Level Inheritance
 * Templating (rendering text nodes referring to other nodes' values)
 * Validation (strict and lenient validations)
 
