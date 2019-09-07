@@ -4,6 +4,10 @@ set -eu
 function mktemp_with_content() {
   local _content="${1}"
   local _ret
+  # shellcheck disable=SC2154
+  if [[ -z ${_content+x} ]]; then
+    quit "Content was not set"
+  fi
   _ret="$(mktemp)"
   echo "${_content}" >"${_ret}"
   echo "${_ret}"

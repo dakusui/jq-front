@@ -7,12 +7,17 @@
       "b": "b"
     },
     "C": {
-      "$extends": ["A", "B"],
+      "$extends": [
+        "A",
+        "B"
+      ],
       "c": "c"
     }
   },
   "D": {
-    "$extends": ["C"],
+    "$extends": [
+      "C"
+    ],
     "d": "d"
   }
 }
