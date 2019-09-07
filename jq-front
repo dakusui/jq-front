@@ -66,22 +66,22 @@ function _merge_object_nodes() {
   }
 }
 
-function _expand_internal_inheritances() {
+function _expand_nodelevel_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
   local _cur
   local _in
   _cur=$(mktemp_with_content '{}')
-  debug "(begin:_expand_internal_inheritances:1:${_target})"
+  debug "(begin:_expand_nodelevel_inheritances:1:${_target})"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
-    debug "->_expand_internal_inheritances:2:${i})"
+    debug "->_expand_nodelevel_inheritances:2:${i})"
     while IFS= read -r j; do
       local _next
       local _jj
-      debug "-->_expand_internal_inheritances:3:${j})"
+      debug "-->_expand_nodelevel_inheritances:3:${j})"
       _jj="$(find_file_in_path "${j}" "${_path}")"
       validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
@@ -101,7 +101,7 @@ function _expand_internal_inheritances() {
       _cur="${_next}"
     done <<<"$(jq -r -c "${i}[]" "${_target}")"
   done
-  debug "(end:_expand_internal_inheritances:1)"
+  debug "(end:_expand_nodelevel_inheritances:1)"
   jq -r -c . "${_cur}"
 }
 
@@ -234,23 +234,23 @@ function materialize_private_nodes() {
   debug "end:materialize_private_nodes"
 }
 
-function expand_internal_inheritances() {
+function expand_nodelevel_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
   local _expanded
   local _expanded_clean
   local _clean
-  debug "begin:expand_internal_inheritances:_target=${_target}"
+  debug "begin:expand_nodelevel_inheritances:_target=${_target}"
   debug "step(1):main:_target=${_target}"
-  _expanded=$(mktemp_with_content "$(_expand_internal_inheritances "${_target}" "${_validation_mode}" "${_path}")")
+  _expanded=$(mktemp_with_content "$(_expand_nodelevel_inheritances "${_target}" "${_validation_mode}" "${_path}")")
   debug "step(2a):remove meta nodes from target"
   _clean=$(mktemp_with_content "$(_remove_meta_nodes "${_target}")")
   debug "step(2b):remove meta nodes from expanded"
   _expanded_clean=$(mktemp_with_content "$(_remove_meta_nodes "${_expanded}")")
   debug "step(3):merge object nodes"
   _merge_object_nodes "${_expanded_clean}" "${_clean}"
-  debug "end:expand_internal_inheritances"
+  debug "end:expand_nodelevel_inheritances"
 }
 
 function expand_inheritances_of_private_nodes() {
@@ -304,7 +304,7 @@ function run_jqfront() {
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
       "${_templating}" \
       "${_private_nodes_dir}:${_jf_path}"
-    _out=$(mktemp_with_content "$(expand_internal_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")")
+    _out=$(mktemp_with_content "$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")")
   else
     debug "non object file:${_target}"
     _out="$(mktemp_with_content "${_content}")"
