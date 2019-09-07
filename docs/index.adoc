@@ -19,7 +19,7 @@ You can control behaviours of `jq-front` by setting environment variables descri
 From directories listed in `JF_PATH`, `jq-front` searches for requested file.
 Entries in the variable is separated by colons(`:`).
 
-When it is searching for a file during internal inheritance resolution, it first searches for private node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
+When it is searching for a file during internal inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
 
 ==== Default value
 
@@ -47,7 +47,7 @@ If this variable is set to `enabled`, debug information will be printed to `stde
 
 With `jq-front`, you can build a JSON object reusing other JSON objects.
 To specify JSON objects to be referenced, `jq-front` searches for keys which have special names in a given object.
-`$extends` and `$private` are keywords used for this purpose.
+`$extends` and `$local` are keywords used for this purpose.
 
 Basic features offered by the product are following
 
@@ -191,13 +191,13 @@ Although it is implemented as a separate mechanism from the external one as it w
 
 As it worked for External Inheritance, multiple inheritance works also for Internal Inheritance.
 
-However, for internal nodes, you can also reference "private" nodes not only external files.
+However, for internal nodes, you can also reference "local" nodes not only external files.
 
 [source, json]
 .P.json
 ----
 {
-  "$private": {
+  "$local": {
     "nodeA": {
        "aa": "aa"
     },
@@ -216,7 +216,7 @@ Note that you do not need to specify `.json` extension.
 And `P.json` will result in following output.
 
 [source, json]
-.Private Node Inheritance output
+.Local Node Inheritance output
 ----
 {
   "a": {
@@ -313,13 +313,13 @@ Following is a diagram that illustrates `jq-front` 's processing pipeline design
 .jq-front's pipeline
 ----
 
-          external inheritance             private node materialization
+          external inheritance             local node materialization
                  +----+                             +-----+
    +-------------+ {o}+-=----------+   +------------+ {o} +-=------------+
    |             +----+            |   |            +-----+              | 0...n
    V                               V   V                                 V
 +------+                         +-------+                         +------------+
-|Source|                         |Work(1)|                         |PrivateNodes|
+|Source|                         |Work(1)|                         |LocalNodes|
 |{d}   |                         |{d}    |                         |{d}         |
 +------+                         +-------+                         +------------+
                                      ^        internal inheritance       ^
@@ -349,7 +349,7 @@ Following is a diagram that illustrates `jq-front` 's processing pipeline design
 
 ----
 
-As shown, it consists of four main components, which are "external inheritance", "private node materialization", "internal inheritance", and "templating".
+As shown, it consists of four main components, which are "external inheritance", "local node materialization", "internal inheritance", and "templating".
 
 Designs of those components will be described in the rest of this section.
 
@@ -359,11 +359,11 @@ Designs of those components will be described in the rest of this section.
 
 At the end of this process, the attribute is removed and copied to the output, "Work(1)" in the diagram.
 
-=== Private node materialization
+=== Local node materialization
 
-If the file, "Work(1)" has `$private` attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
-The temporary directory is called 'private node directory'.
-The 'private node directory' and its contents are utilized by the "internal inheritance' mechanism.
+If the file, "Work(1)" has `$local` attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
+The temporary directory is called 'local node directory'.
+The 'local node directory' and its contents are utilized by the "internal inheritance' mechanism.
 
 === Internal inheritance
 
@@ -374,9 +374,9 @@ Internal inheritance mechanism is a bit more complicated than the external one.
     b. For each path, if it ends with `"$extends"`, expand the files specified by the attribute.
     c. Assign the JSON node created in step b. to the parent of the `$extends` attribute.
 2. Overlay the JSON object created in the step. 1 with an original JSON object.
-3. Remove nodes, i.e., `$extends` and `$private` nodes from the JSON object created in the step 2.
+3. Remove nodes, i.e., `$extends` and `$local` nodes from the JSON object created in the step 2.
 
-'Private node directory' is inserted before the first entry of `JF_PATH` environment variable when a file to be expanded is searched during the step 1. b.
+'Local node directory' is inserted before the first entry of `JF_PATH` environment variable when a file to be expanded is searched during the step 1. b.
 
 === Templating
 
