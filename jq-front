@@ -178,12 +178,12 @@ function dirof() {
   echo "${_ret}"
 }
 
-function expand_external_inheritances() {
+function expand_filelevel_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
   local _in
-  debug "begin:expand_external_inheritances:_target=${_target}"
+  debug "begin:expand_filelevel_inheritances:_target=${_target}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
@@ -212,7 +212,7 @@ function expand_external_inheritances() {
   else
     cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
-  debug "end:expand_external_inheritances"
+  debug "end:expand_filelevel_inheritances"
 }
 
 function materialize_private_nodes() {
@@ -298,7 +298,7 @@ function run_jqfront() {
     local _tmp
     local _private_nodes_dir
     local _c
-    _c="$(expand_external_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
+    _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
     _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
