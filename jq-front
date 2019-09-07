@@ -51,7 +51,7 @@ function _remove_meta_nodes() {
       _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
       _cur="${_next}"
     done
-    jq '.|del(."$private")' "${_cur}"
+    jq '.|del(."$local")' "${_cur}"
   else
     echo "${_content}"
   fi
@@ -224,10 +224,10 @@ function materialize_private_nodes() {
   _ret="$(mktemp -d)"
   # Intentional single quotes for jq.
   # shellcheck disable=SC2016
-  if [[ $(has_value_at '."$private"' "${_content}") == true ]]; then
+  if [[ $(has_value_at '."$local"' "${_content}") == true ]]; then
     # shellcheck disable=SC2016
-    for i in $(keys_of '."$private"' "${_content}"); do
-      echo "${_content}" | jq '."$private".''"'"${i}"'"' >"${_ret}/${i}"
+    for i in $(keys_of '."$local"' "${_content}"); do
+      echo "${_content}" | jq '."$local".''"'"${i}"'"' >"${_ret}/${i}"
     done
   fi
   echo "${_ret}"

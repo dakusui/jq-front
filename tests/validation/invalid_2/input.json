@@ -2,7 +2,7 @@
   "$extends": [
     "A.json"
   ],
-  "$private": {
+  "$local": {
     "privateNodeText": "textNode",
     "privateNodeArray": [],
     "privateNodeObject": {},
