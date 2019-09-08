@@ -148,7 +148,7 @@ function clean() {
 }
 
 function main() {
-  local failed=0
+  local -a failed=()
   local passed=0
   local skipped=0
   local run=0
@@ -164,17 +164,20 @@ function main() {
       run=$((run + 1))
       {
         runtest "${i}" && passed=$((passed + 1))
-      } || failed=$((failed + 1))
+      } || failed+=("${i}")
     else
       skipped=$((skipped + 1))
       message "Skipping ${i}"
     fi
   done
 
-  if [[ $failed == 0 ]]; then
+  if [[ ${#failed[@]} == 0 ]]; then
     message "No test failed (total=${numtests}; passed=${passed}; skipped=${skipped})"
   else
-    message "$failed test(s) FAILED (total=${numtests}; passed=${passed}; run=${run}; skipped=${skipped})"
+    message "${#failed[@]} test(s) FAILED (total=${numtests}; passed=${passed}; run=${run}; skipped=${skipped})"
+    for i in "${failed[@]}"; do
+      message "${i}"
+    done
     return 1
   fi
 }
