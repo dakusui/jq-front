@@ -309,11 +309,7 @@ function run_jqfront() {
     debug "non object file:${_target}"
     _out="$(mktemp_with_content "${_content}")"
   fi
-  if [[ "${_templating}" == "yes" ]]; then
-    perform_templating "${_out}"
-  else
-    cat "${_out}"
-  fi
+  cat "${_out}"
   debug "end:run_jf"
 }
 
@@ -324,14 +320,13 @@ function main_jqfront() {
   local _jf_path="${4}"
   local _content
   _content="$(run_jqfront "${_target}" "${_templating}" "${_validation_mode}" "${_jf_path}")"
-  echo "${_content}"
-#  if [[ "${_templating}" == "yes" ]]; then
-#    local _out
-#    _out=$(mktemp_with_content "${_content}")
-#    perform_templating "${_out}"
-#  else
-#    echo "${_content}"
-#  fi
+  if [[ "${_templating}" == "yes" ]]; then
+    local _out
+    _out=$(mktemp_with_content "${_content}")
+    perform_templating "${_out}"
+  else
+    echo "${_content}"
+  fi
 }
 
 function usage_exit() {
@@ -403,7 +398,7 @@ debug "_JF_DEBUG=${_JF_DEBUG}"
 ####
 # Export JF_PATH_BASE, which is set for executions under Docker
 if [[ -n "${_JF_PATH_BASE}" ]]; then
-    export TMPDIR="${_JF_PATH_BASE}/tmp"
+  export TMPDIR="${_JF_PATH_BASE}/tmp"
 fi
 export_names_for_script_inheritance
 
