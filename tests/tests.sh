@@ -1,5 +1,5 @@
 #!/bin/bash -eu
-set -eu
+set -E -eu
 
 _JF="${1:?Specify 'jf' to test in absolute path}"
 _TEST_ROOT_DIR="${2:?Specify a directory in which test dirs are stored.}"
