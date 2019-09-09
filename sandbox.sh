@@ -1,12 +1,15 @@
-set -E -eu
-# set -o posix
+set -eu
 
 function func1() {
-  cat "${1}"
+  echo "funcName:func1"
+  return "${1}"
 }
 
-declare -a arr
-arr=(HELLO WORLD)
+function func2() {
+  echo "funcName:func2" >&2
+  echo "$1"
+  return $1
+}
+a=$(func1 "$(func2 "$1")")
 
-func2 "hello" "${arr[@]}" asdf
-
+echo finished "${a}"

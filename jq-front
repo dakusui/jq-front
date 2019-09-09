@@ -51,7 +51,7 @@ function _remove_meta_nodes() {
       _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
       _cur="${_next}"
     done
-    jq '.|del(."$local")' "${_cur}"
+    cat "${_cur}"
   else
     echo "${_content}"
   fi
@@ -322,6 +322,7 @@ function main_jqfront() {
   if [[ -z ${_content} ]]; then
     abort "Failed to process '${_target}'"
   fi
+  _content=$(echo "${_content}" | jq '.|del(."$local")')
   if [[ "${_templating}" == "yes" ]]; then
     local _out
     _out=$(mktemp_with_content "${_content}")
