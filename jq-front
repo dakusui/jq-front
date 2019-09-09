@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -Eeu
 
 JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
@@ -51,7 +51,7 @@ function _remove_meta_nodes() {
       _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
       _cur="${_next}"
     done
-    jq '.|del(."$local")' "${_cur}"
+    cat "${_cur}"
   else
     echo "${_content}"
   fi
@@ -111,7 +111,9 @@ function _validate_jf_json_with() {
   local _out=
   {
     _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
-  } || abort "Validation for '${_in}' was failed:\n${_out}"
+  } || {
+    quit "Validation by ajv for '${_in}' was failed:\n${_out}"
+  }
 }
 
 function find_file_in_path() {
@@ -162,13 +164,13 @@ function validate_jf_json() {
   if [[ "${_mode}" == "no" ]]; then
     return 0
   elif [[ "${_mode}" == "strict" ]]; then
-    _validate_jf_json_with "${_in}" "strict" || return 1
+    _validate_jf_json_with "${_in}" "strict"
   elif [[ "${_mode}" == "lenient" ]]; then
-    _validate_jf_json_with "${_in}" "lenient" || return 1
+    _validate_jf_json_with "${_in}" "lenient"
   else
-    message "Unknown validation mode:'${_mode}' was set."
-    exit 1
+    abort "Unknown validation mode:'${_mode}' was set."
   fi
+  return $?
 }
 
 function dirof() {
@@ -189,9 +191,13 @@ function expand_filelevel_inheritances() {
   # shellcheck disable=SC2016
   local _cur
   local _content
-  _in="$(find_file_in_path "${_target}" "${_path}")" || quit "${_target} was not found in ${_path}"
+  _in="$(find_file_in_path "${_target}" "${_path}")"
   debug "validating ${_in}"
-  validate_jf_json "${_in}" "${_validation_mode}" || abort "Validation failed:${_in}:content='$(cat "${_in}")'"
+  validate_jf_json "${_in}" "${_validation_mode}"
+  ####
+  # Strangely the line above does not causes a quit on a failure.
+  # Explitly check and abotrt this functino.
+  [[ $? == 0 ]] || abort "Failed to process '${_target}'"
   debug "...validated"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
@@ -203,7 +209,7 @@ function expand_filelevel_inheritances() {
       while IFS= read -r i; do
         local _next
         local _tmp
-        _tmp=$(mktemp_with_content "$(run_jqfront "${i}" "no" "${_validation_mode}" "${_path}")")
+        _tmp=$(mktemp_with_content "$(run_jqfront "${i}" "${_validation_mode}" "${_path}")")
         _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
@@ -262,7 +268,7 @@ function expand_inheritances_of_private_nodes() {
     local _tmp
     local _f="${i}"
     debug "expanding inheritance of private node:${i}"
-    _tmp="$(mktemp_with_content "$(run_jqfront "${_f}" "no" "no" "${_path}:${_jf_path}")")"
+    _tmp="$(mktemp_with_content "$(run_jqfront "${_f}" "no" "${_path}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
   done < <(find "${_path}" -maxdepth 1 -type f -print0)
@@ -275,19 +281,15 @@ function perform_templating() {
   local _content
   local _ret
   _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
-  _ret=$(eval "echo \"${_content}\"") || {
-    message "Failed to process a file '${_src_file}'(content='${_content}')"
-    return 1
-  }
+  _ret=$(eval "echo \"${_content}\"") || quit "Failed to process a file '${_src_file}'(content='${_content}')"
   echo "${_ret}"
   debug "end:perform_templating"
 }
 
 function run_jqfront() {
   local _target="${1}"
-  local _templating="${2}"
-  local _validation_mode="${3}"
-  local _jf_path="${4}"
+  local _validation_mode="${2}"
+  local _jf_path="${3}"
   local _content
   local _out
   debug "begin:run_jf:_target=${_target}"
@@ -299,6 +301,10 @@ function run_jqfront() {
     local _private_nodes_dir
     local _c
     _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
+    ####
+    # Strangely the line above does not causes a quit on a failure.
+    # Explitly check and abotrt this functino.
+    [[ $? == 0 ]] || abort "File-level expansion failed for '${_target}'"
     _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
@@ -309,12 +315,24 @@ function run_jqfront() {
     debug "non object file:${_target}"
     _out="$(mktemp_with_content "${_content}")"
   fi
-  if [[ "${_templating}" == "yes" ]]; then
-    perform_templating "${_out}"
-  else
-    cat "${_out}"
-  fi
+  cat "${_out}"
   debug "end:run_jf"
+}
+
+function perform_jqfront() {
+  local _target="${1}"
+  local _templating="${2}"
+  local _validation_mode="${3}"
+  local _jf_path="${4}"
+  local _content
+  _content="$(run_jqfront "${_target}" "${_validation_mode}" "${_jf_path}")"
+  _content=$(echo "${_content}" | jq '.|del(."$local")')
+  if [[ "${_templating}" == "yes" ]]; then
+    local _out
+    _out=$(mktemp_with_content "${_content}")
+    _content=$(perform_templating "${_out}")
+  fi
+  echo "${_content}"
 }
 
 function usage_exit() {
@@ -361,7 +379,7 @@ function main() {
   else
     _target="${1}"
   fi
-  run_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
+  perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
 _JF_CWD="${JF_CWD:-"$(pwd)"}"
@@ -386,7 +404,7 @@ debug "_JF_DEBUG=${_JF_DEBUG}"
 ####
 # Export JF_PATH_BASE, which is set for executions under Docker
 if [[ -n "${_JF_PATH_BASE}" ]]; then
-    export TMPDIR="${_JF_PATH_BASE}/tmp"
+  export TMPDIR="${_JF_PATH_BASE}/tmp"
 fi
 export_names_for_script_inheritance
 
