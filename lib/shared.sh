@@ -45,8 +45,7 @@ function quit() {
 }
 
 function abort() {
-  quit "${@}"
-  exit $?
+  quit "${@}" || exit $?
 }
 
 function all_paths() {
