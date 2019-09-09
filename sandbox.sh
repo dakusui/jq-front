@@ -8,6 +8,7 @@ function func1() {
 function func2() {
   echo "func2:$1"
   func3 $1
+  echo "bye"
 }
 
 function func3() {
@@ -21,4 +22,4 @@ func1 "${1}" || {
 }
 
 a=$(func1 "$1")
-echo finished "$a"
+echo finished "---->'$a:$?'"

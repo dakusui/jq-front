@@ -192,10 +192,10 @@ function expand_filelevel_inheritances() {
   local _cur
   local _content
   _in="$(find_file_in_path "${_target}" "${_path}")"
-  message "validating ${_in}"
+  debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   [[ $? == 0 ]] || abort "Failed to process '${_target}'"
-  message "...validated"
+  debug "...validated"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
   if [[ $(is_object "${_content}") == true ]]; then
@@ -278,10 +278,7 @@ function perform_templating() {
   local _content
   local _ret
   _content=$(sed -r 's/\"/\\\"/g' <"${_src_file}")
-  _ret=$(eval "echo \"${_content}\"") || {
-    message "Failed to process a file '${_src_file}'(content='${_content}')"
-    return 1
-  }
+  _ret=$(eval "echo \"${_content}\"") || quit "Failed to process a file '${_src_file}'(content='${_content}')"
   echo "${_ret}"
   debug "end:perform_templating"
 }
@@ -301,6 +298,9 @@ function run_jqfront() {
     local _private_nodes_dir
     local _c
     _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
+    ####
+    # Strangely the line above does not causes a quit on a failure.
+    # Explitly check and abotrt this functino.
     [[ $? == 0 ]] || abort "File-level expansion failed for '${_target}'"
     _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
@@ -316,13 +316,16 @@ function run_jqfront() {
   debug "end:run_jf"
 }
 
-function main_jqfront() {
+function perform_jqfront() {
   local _target="${1}"
   local _templating="${2}"
   local _validation_mode="${3}"
   local _jf_path="${4}"
   local _content
   _content="$(run_jqfront "${_target}" "${_validation_mode}" "${_jf_path}")"
+  ####
+  # Strangely the line above does not causes a quit on a failure.
+  # Explitly check and abotrt this functino.
   if [[ -z ${_content} ]]; then
     abort "Failed to process '${_target}'"
   fi
@@ -380,7 +383,7 @@ function main() {
   else
     _target="${1}"
   fi
-  main_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
+  perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
 _JF_CWD="${JF_CWD:-"$(pwd)"}"
