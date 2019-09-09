@@ -326,17 +326,13 @@ function perform_jqfront() {
   local _jf_path="${4}"
   local _content
   _content="$(run_jqfront "${_target}" "${_validation_mode}" "${_jf_path}")"
-  if [[ -z ${_content} ]]; then
-    abort "Failed to process '${_target}'"
-  fi
   _content=$(echo "${_content}" | jq '.|del(."$local")')
   if [[ "${_templating}" == "yes" ]]; then
     local _out
     _out=$(mktemp_with_content "${_content}")
-    perform_templating "${_out}"
-  else
-    echo "${_content}"
+    _content=$(perform_templating "${_out}")
   fi
+  echo "${_content}"
 }
 
 function usage_exit() {
