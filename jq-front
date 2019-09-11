@@ -72,16 +72,18 @@ function _expand_nodelevel_inheritances() {
   local _path="${3}"
   local _cur
   local _in
+  local _keys
   _cur=$(mktemp_with_content '{}')
   debug "(begin:_expand_nodelevel_inheritances:1:${_target})"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
-  for i in $(all_paths "$(cat "${_target}")" | grep '"$extends"$'); do
-    debug "->_expand_nodelevel_inheritances:2:${i})"
+  IFS=$'\n' read -d '' -r -a _keys <<< "$(all_paths "$(cat "${_target}")" | grep '"$extends"$')"
+  for i in "${_keys[@]}" ; do
+    debug "->_expand_nodelevel_inheritances:2:i=${i})"
     while IFS= read -r j; do
       local _next
       local _jj
-      debug "-->_expand_nodelevel_inheritances:3:${j})"
+      debug "-->_expand_nodelevel_inheritances:3:j='${j}')"
       _jj="$(find_file_in_path "${j}" "${_path}")"
       validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
@@ -248,11 +250,11 @@ function expand_nodelevel_inheritances() {
   local _expanded_clean
   local _clean
   debug "begin:expand_nodelevel_inheritances:_target=${_target}"
-  debug "step(1):main:_target=${_target}"
+  debug "step(1):main:_target=${_target}: $?"
   _expanded=$(mktemp_with_content "$(_expand_nodelevel_inheritances "${_target}" "${_validation_mode}" "${_path}")")
-  debug "step(2a):remove meta nodes from target"
+  debug "step(2a):remove meta nodes from target: $?"
   _clean=$(mktemp_with_content "$(_remove_meta_nodes "${_target}")")
-  debug "step(2b):remove meta nodes from expanded"
+  debug "step(2b):remove meta nodes from expanded: $?"
   _expanded_clean=$(mktemp_with_content "$(_remove_meta_nodes "${_expanded}")")
   debug "step(3):merge object nodes"
   _merge_object_nodes "${_expanded_clean}" "${_clean}"

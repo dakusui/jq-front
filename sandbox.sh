@@ -1,20 +1,6 @@
 set -eu
+. lib/shared.sh
 
-function func1() {
-  echo "func1:$1" >&2
-  func2 "${1}"
-}
+all_paths "$(cat /home/hiroshi/Documents/jf/tests/nodelevel-space-in-key/input.json)"
 
-function func2() {
-  echo "func2:$1" >&2
-  func3 $1
-  return 0
-}
-
-function func3() {
-  echo "func3:$1" >&2
-  return $1
-}
-
-a=$(func1 "$1")
-echo finished "---->'$a:$?'"
+echo finished
