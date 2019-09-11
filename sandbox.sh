@@ -23,15 +23,37 @@ function _render_text_node() {
   echo "\"${_ret}\""
 }
 
+function _type_of() {
+  local _path="${1}"
+  local _content="${2}"
+  echo "${_content}" | jq -r -c "${_path}|type"
+}
+
+function _paths_type_of() {
+  local _type="${1}"
+  local _content="${2}"
+  local i
+  local -a _paths
+  debug "scanning _type=${_type},_content=${_content}"
+  mapfile -t _paths < <(all_paths "${_content}")
+  for i in "${_paths[@]}"; do
+    local _t
+    _t="$(_type_of "${i}" "${_content}")"
+    if [[ "${_t}" == "${_type}" ]]; then
+      debug "    read:'${i}'"
+      echo "${i}"
+    fi
+  done
+  debug "scanned"
+}
+
 function _perform_templating() {
   local _content="${1}"
   local _ret
   local i
   local -a _keys
-  local _paths_file
   debug "templating"
-  _paths_file="$(mktemp_with_content "string" "${_content}")"
-  IFS=$'\n' read -d '' -r -a _keys <"${_paths_file}"
+  mapfile -t _keys < <(_paths_type_of "string" "${_content}")
   debug "splitted"
   for i in "${_keys[@]}"; do
     local _node_value
@@ -54,29 +76,6 @@ function _perform_templating() {
   done
   debug "templated:'${_ret}'"
   echo "${_ret}"
-}
-
-function _type_of() {
-  local _path="${1}"
-  local _content="${2}"
-  echo "${_content}" | jq -r -c "${_path}|type"
-}
-
-function _paths_type_of() {
-  local _type="${1}"
-  local _content="${2}"
-  local i
-  local -a _paths
-  debug "scanning _type=${_type},_content=${_content}"
-  IFS=$'\n' read -r -d '' -a _paths <<<"$(all_paths "${_content}")"
-  for i in "${_paths[@]}"; do
-    local _t
-    _t="$(_type_of "${i}" "${_content}")"
-    if [[ "${_t}" == "${_type}" ]]; then
-      echo "${i}"
-    fi
-  done
-  debug "scanned"
 }
 
 function main() {
