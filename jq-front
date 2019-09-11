@@ -44,9 +44,11 @@ function _remove_meta_nodes() {
   _content="$(cat "${_target}")"
   if [[ $(is_object "${_content}") == true ]]; then
     _cur="$(mktemp_with_content "$(cat "${_target}")")"
+    local _keys
+    IFS=$'\n' read -d '' -r -a _keys <<< "$(all_paths "${_content}" | grep '"$extends"$')"
     # Intentional single quote to find a keyword that starts with '$'
     # shellcheck disable=SC2016
-    for i in $(all_paths "${_content}" | grep '"$extends"$'); do
+    for i in "${_keys[@]}"; do
       local _next
       _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
       _cur="${_next}"
@@ -77,31 +79,41 @@ function _expand_nodelevel_inheritances() {
   debug "(begin:_expand_nodelevel_inheritances:1:${_target})"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
-  IFS=$'\n' read -d '' -r -a _keys <<< "$(all_paths "$(cat "${_target}")" | grep '"$extends"$')"
-  for i in "${_keys[@]}" ; do
-    debug "->_expand_nodelevel_inheritances:2:i=${i})"
-    while IFS= read -r j; do
+  IFS=$'\n' read -d '' -r -a _keys <<<"$(all_paths "$(cat "${_target}")" | grep '"$extends"$')"
+  for i in "${_keys[@]}"; do
+    debug "->_expand_nodelevel_inheritances:2:i='${i}')"
+    local -a _extendeds
+    IFS=$'\n' read -d '' -r -a _extendeds <<<"$(jq -r -c "${i}[]" "${_target}")"
+    for j in "${_extendeds[@]}"; do
       local _next
       local _jj
-      debug "-->_expand_nodelevel_inheritances:3:j='${j}')"
-      _jj="$(find_file_in_path "${j}" "${_path}")"
-      validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
       local _merged_piece
       local _p
-      _p="${i%.\"\$extends\"}"
       local _cur_content
+      local _tmp_content
+      debug "-->_expand_nodelevel_inheritances:3:j='${j}')"
+      _jj="$(find_file_in_path "${j}" "${_path}")"
+      debug "-->_expand_nodelevel_inheritances:4:resolved '${j}'->'${_jj}'"
+      validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
+      debug "-->_expand_nodelevel_inheritances:5:validated '${_jj}'"
+      _p="${i%.\"\$extends\"}"
       _cur_content="$(cat "${_cur}")"
+      debug "-->_expand_nodelevel_inheritances:6:merging nodes at '${_p}'"
       if [[ $(has_value_at "${_p}" "${_cur_content}") == true ]]; then
         local _cur_piece
         _cur_piece=$(mktemp_with_content "$(echo "${_cur_content}" | jq "${_p}")")
         _merged_piece=$(mktemp_with_content "$(_merge_object_nodes "${_cur_piece}" "${_jj}")")
       else
-        _merged_piece=${_jj}
+        _merged_piece="${_jj}"
       fi
-      _next=$(mktemp_with_content "$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")") ||
-        abort "failed on node replacing; _cur=$(cat "${_cur}"); _merged_piece=$(cat "${_merged_piece}")"
+      debug "-->_expand_nodelevel_inheritances:7:merged"
+      _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")"
+      [[ $? == 0 ]] || abort "Failed to merge nodes:_p=${_p},_merged_piece=${_merged_piece}"
+      debug "-->_expand_nodelevel_inheritances:8:written:$?"
+      _next=$(mktemp_with_content "${_tmp_content}")
       _cur="${_next}"
-    done <<<"$(jq -r -c "${i}[]" "${_target}")"
+      debug "-->_expand_nodelevel_inheritances:9:trying:i=${i} on _target=${_target}"
+    done
   done
   debug "(end:_expand_nodelevel_inheritances:1)"
   jq -r -c . "${_cur}"
