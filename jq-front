@@ -45,7 +45,7 @@ function _remove_meta_nodes() {
   if [[ $(is_object "${_content}") == true ]]; then
     _cur="$(mktemp_with_content "$(cat "${_target}")")"
     local _keys
-    IFS=$'\n' read -d '' -r -a _keys <<< "$(all_paths "${_content}" | grep '"$extends"$')"
+    IFS=$'\n' read -d '' -r -a _keys <<<"$(all_paths "${_content}" | grep '"$extends"$')"
     # Intentional single quote to find a keyword that starts with '$'
     # shellcheck disable=SC2016
     for i in "${_keys[@]}"; do
@@ -136,7 +136,7 @@ function _render_text_node() {
   local _body
   local _ret
   debug "rendering"
-  if [[ "${_node_value}" == *:* ]]; then
+  if [[ "${_node_value}" == template:* || "${_node_value}" == raw:* ]]; then
     _mode="${_node_value%%:*}"
     _body="${_node_value#*:}"
   else
