@@ -132,13 +132,23 @@ function _validate_jf_json_with() {
 
 function _render_text_node() {
   local _node_value="${1}"
+  local _path="${2}"
   local _mode="raw"
+  local _quote="yes"
   local _body
   local _ret
   debug "rendering"
   if [[ "${_node_value}" == template:* || "${_node_value}" == raw:* ]]; then
     _mode="${_node_value%%:*}"
     _body="${_node_value#*:}"
+    if [[ "${_body}" == object:* || "${_body}" == array:* ||
+    "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
+      ; then
+      if [[ "${_body}" != string:* ]]; then
+        _quote="no"
+      fi
+      _body="${_body#*:}"
+    fi
   else
     _body="${_node_value}"
   fi
@@ -149,7 +159,11 @@ function _render_text_node() {
     _ret="${_body}"
   fi
   debug "rendered:_mode='${_mode}'"
-  echo "\"${_ret}\""
+  if [[ "${_quote}" == yes ]]; then
+    echo "\"${_ret}\""
+  else
+    echo "${_ret}"
+  fi
 }
 
 function _type_of() {
@@ -189,7 +203,7 @@ function _perform_templating() {
     local _templated_node_value
     debug "processing:${i}"
     _node_value="$(value_at "${i}" "${_content}")"
-    _templated_node_value="$(_render_text_node "${_node_value}")"
+    _templated_node_value="$(_render_text_node "${_node_value}" "${i}")"
     if [[ -z "${_ret+empty}" ]]; then
       debug "first node:'${i}':'${_templated_node_value}'"
       _ret="$(jq -r -c -n "${i}=input" "$(mktemp_with_content "${_templated_node_value}")")"
