@@ -4,9 +4,17 @@ set -eu
 function mktemp_with_content() {
   local _content="${1}"
   local _ret
+  # shellcheck disable=SC2154
+  if [[ -z ${_content+x} ]]; then
+    quit "Content was not set"
+  fi
   _ret="$(mktemp)"
   echo "${_content}" >"${_ret}"
   echo "${_ret}"
+}
+
+function mktempdir() {
+  mktemp -d
 }
 
 function debug() {
@@ -20,7 +28,7 @@ function message() {
   local _o
   _o="${1}"
   shift
-  echo "${_o}" "$*" >&2
+  echo -e "${_o}" "$*" >&2
 }
 
 ####
@@ -37,8 +45,7 @@ function quit() {
 }
 
 function abort() {
-  quit "${@}"
-  exit $?
+  quit "${@}" || exit $?
 }
 
 function all_paths() {
@@ -100,4 +107,3 @@ function search_file_in() {
   done
   quit "File '${_target}' was not found in '${_path}'"
 }
-

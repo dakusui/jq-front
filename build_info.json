@@ -1,0 +1,16 @@
+{
+  "appName": "jq-front",
+  "docker": {
+    "user": "dakusui"
+  },
+  "version": {
+    "latestReleased": {
+      "major": 0,
+      "minor": 7
+    },
+    "target": {
+      "major": 0,
+      "minor": 8
+    }
+  }
+}

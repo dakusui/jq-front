@@ -1,0 +1,7 @@
+{
+  "hello": {
+    "rawWorldImplicit": "test",
+    "rawWorldExplicit": "raw:test",
+    "templateExplicit": "template:$(date)"
+  }
+}

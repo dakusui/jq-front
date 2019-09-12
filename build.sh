@@ -12,6 +12,7 @@ function _test_package() {
   source "$(pwd)/${APP_NAME}_aliases"
   export -f docker-jq-front
   export JF_DOCKER_TAG="${_version}"
+  message "Testing package:'${JF_DOCKER_TAG}'"
   bash -eu "tests/tests.sh" "docker-${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
   unset -f docker-jq-front
   unset JF_DOCKER_TAG
@@ -41,7 +42,7 @@ function execute_prepare() {
     message -n "Processing '${_src_file}'->'${_dest_file}'"
     mkdir -p "$(dirname "${_dest_file}")"
     # shellcheck disable=SC2002
-    _content=$(cat "${_src_file}" | sed -r 's/\"/\\\"/g' | sed -r 's/`/\\`/g')
+    _content=$(cat "${_src_file}" | sed -E 's/\"/\\\"/g' | sed -E 's/`/\\`/g')
     _templated=$(eval "echo \"${_content}\"") || {
       message "Failed to process a file '${_src_file}'(content='$(head "${_src_file}")...')"
       return 1
@@ -65,7 +66,7 @@ function execute_doc() {
 }
 
 function execute_package() {
-  _build "snapshot"
+  _build "${TARGET_VERSION}-snapshot"
 }
 
 function execute_test() {
@@ -75,11 +76,12 @@ function execute_test() {
 
 function execute_test_package() {
   local _target_tests="${1:-*}"
-  _test_package "snapshot" "${_target_tests}"
+  _test_package "${TARGET_VERSION}-snapshot" "${_target_tests}"
 }
 
 function execute_package_release() {
   _build "${TARGET_VERSION}"
+  _build "latest"
 }
 
 function execute_test_release() {
@@ -116,9 +118,24 @@ function execute_release() {
   docker push "${DOCKER_REPO_NAME}:latest"
 }
 
+function execute_post_release() {
+  local tmp
+  git tag "${TARGET_VERSION}"
+  tmp=$(mktemp)
+  jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json > "${tmp}" || abort "Failed to bump up the version."
+  cp "${tmp}" build_info.json
+  message "Updated build_info.json"
+  git commit -a -m "$(printf "Bump up target version to v%s.%s" \
+                     "$(jq '.version.target.major' "${tmp}")"  \
+                     "$(jq '.version.target.minor' "${tmp}")")" || abort "Failed to commit bumped up version."
+  message "Committed the change"
+  git push origin master:master || abort "Failed to push the change."
+  message "Pushed it to the remote"
+}
+
 function execute_deploy() {
   docker login
-  docker push "${DOCKER_REPO_NAME}:snapshot"
+  docker push "${DOCKER_REPO_NAME}:${TARGET_VERSION}-snapshot"
 }
 
 function execute_stage() {
@@ -139,6 +156,10 @@ function main() {
     main doc test
     return 0
   fi
+  if [[ ${1} == OSX ]]; then
+    main doc package test_package
+    return 0
+  fi
   if [[ ${1} == PACKAGE ]]; then
     main doc test package test_package
     return 0
@@ -147,7 +168,7 @@ function main() {
     main doc test package test_package deploy
     return 0
   elif [[ ${1} == RELEASE ]]; then
-    main doc test package_release test_release release
+    main doc test package_release test_release release post_release
     return 0
   fi
 
