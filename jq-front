@@ -160,7 +160,8 @@ function _render_text_node() {
   fi
   debug "rendered:_mode='${_mode}'"
   if [[ "${_quote}" == yes ]]; then
-    echo "\"${_ret}\""
+    _ret="${_ret//\\/\\\\}"
+    echo "\"${_ret//\"/\\\"}\""
   else
     echo "${_ret}"
   fi
@@ -192,7 +193,7 @@ function _paths_type_of() {
 
 function _perform_templating() {
   local _content="${1}"
-  local _ret
+  local _ret="${_content}"
   local i
   local -a _keys
   debug "templating"
@@ -204,17 +205,13 @@ function _perform_templating() {
     debug "processing:${i}"
     _node_value="$(value_at "${i}" "${_content}")"
     _templated_node_value="$(_render_text_node "${_node_value}" "${i}")"
-    if [[ -z "${_ret+empty}" ]]; then
-      debug "first node:'${i}':'${_templated_node_value}'"
-      _ret="$(jq -r -c -n "${i}=input" "$(mktemp_with_content "${_templated_node_value}")")"
-    else
-      local _a
-      local _b
-      debug "node:'${_ret}':'${i}':'${_templated_node_value}'"
-      _a=$(mktemp_with_content "${_ret}")
-      _b=$(mktemp_with_content "${_templated_node_value}")
-      _ret="$(jq -r -c -n "input|${i}=input" "${_a}" "${_b}")"
-    fi
+    local _a
+    local _b
+    debug "node:'${_ret}':'${i}':'${_templated_node_value}'"
+    _a=$(mktemp_with_content "${_ret}")
+    _b=$(mktemp_with_content "${_templated_node_value}")
+    _ret="$(jq -r -c -n "input|${i}=input" "${_a}" "${_b}")"
+    [[ $? == 0 ]] || abort "Failed to replace node at '${i}' with '$(cat ${_b})'"
     debug "processed:${i}"
   done
   debug "templated:'${_ret}'"
