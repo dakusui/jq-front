@@ -76,29 +76,20 @@ function _expand_nodelevel_inheritances() {
   local _in
   local _keys
   _cur=$(mktemp_with_content '{}')
-  debug "(begin:_expand_nodelevel_inheritances:1:${_target})"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   IFS=$'\n' read -d '' -r -a _keys <<<"$(all_paths "$(cat "${_target}")" | grep '"$extends"$')"
   for i in "${_keys[@]}"; do
-    debug "->_expand_nodelevel_inheritances:2:i='${i}')"
     local -a _extendeds
+    local _p="${i%.\"\$extends\"}"
     IFS=$'\n' read -d '' -r -a _extendeds <<<"$(jq -r -c "${i}[]" "${_target}")"
     for j in "${_extendeds[@]}"; do
-      local _next
       local _jj
       local _merged_piece
-      local _p
       local _cur_content
       local _tmp_content
-      debug "-->_expand_nodelevel_inheritances:3:j='${j}')"
-      _jj="$(find_file_in_path "${j}" "${_path}")"
-      debug "-->_expand_nodelevel_inheritances:4:resolved '${j}'->'${_jj}'"
-      validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
-      debug "-->_expand_nodelevel_inheritances:5:validated '${_jj}'"
-      _p="${i%.\"\$extends\"}"
+      _jj="$(load_file_from_path "${j}" "${_validation_mode}" "${_path}")"
       _cur_content="$(cat "${_cur}")"
-      debug "-->_expand_nodelevel_inheritances:6:merging nodes at '${_p}'"
       if [[ $(has_value_at "${_p}" "${_cur_content}") == true ]]; then
         local _cur_piece
         _cur_piece=$(mktemp_with_content "$(echo "${_cur_content}" | jq "${_p}")")
@@ -106,17 +97,24 @@ function _expand_nodelevel_inheritances() {
       else
         _merged_piece="${_jj}"
       fi
-      debug "-->_expand_nodelevel_inheritances:7:merged"
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")"
       [[ $? == 0 ]] || abort "Failed to merge nodes:_p=${_p},_merged_piece=${_merged_piece}"
-      debug "-->_expand_nodelevel_inheritances:8:written:$?"
-      _next=$(mktemp_with_content "${_tmp_content}")
-      _cur="${_next}"
-      debug "-->_expand_nodelevel_inheritances:9:trying:i=${i} on _target=${_target}"
+      _cur=$(mktemp_with_content "${_tmp_content}")
     done
   done
-  debug "(end:_expand_nodelevel_inheritances:1)"
   jq -r -c . "${_cur}"
+}
+
+function load_file_from_path() {
+  local _in="${1}"
+  local _mode="${2}"
+  local _path="${3}"
+  local _ret
+  _ret="$(find_file_in_path "${j}" "${_path}")"
+  debug "validating ${_in}"
+  validate_jf_json "${_in}" "${_validation_mode}"
+  debug "...validated"
+  echo "${_ret}"
 }
 
 function _validate_jf_json_with() {
@@ -141,8 +139,7 @@ function _render_text_node() {
   if [[ "${_node_value}" == template:* || "${_node_value}" == raw:* ]]; then
     _mode="${_node_value%%:*}"
     _body="${_node_value#*:}"
-    if [[ "${_body}" == object:* || "${_body}" == array:* ||
-    "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
+    if [[ "${_body}" == object:* || "${_body}" == array:* || "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
       ; then
       if [[ "${_body}" != string:* ]]; then
         _quote="no"
