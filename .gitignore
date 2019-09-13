@@ -56,5 +56,6 @@ dkms.conf
 .idea/
 .asciidoctor
 test-output*
+test-error*
 \?
 coverage/

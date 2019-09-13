@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -Eeu
+set -E -eu -o pipefail
+shopt -s inherit_errexit
 
 JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
@@ -10,6 +11,11 @@ source "${JF_BASEDIR}/lib/shared.sh"
 # shellcheck disable=SC1090
 # source = lib/templating.sh
 source "${JF_BASEDIR}/lib/templating.sh"
+
+function _debug_abort() {
+  print_stacktrace "DEBUG: error trapped"
+  exit 1
+}
 
 function _mangle_path() {
   local _path="${1}"
@@ -38,16 +44,15 @@ function _mangle_path() {
 }
 
 function _remove_meta_nodes() {
-  local _target="${1}"
+  local _content="${1}"
   local _cur
-  local _content
-  _content="$(cat "${_target}")"
-  if [[ $(is_object "${_content}") == true ]]; then
-    _cur="$(mktemp_with_content "$(cat "${_target}")")"
+  if is_object "${_content}"; then
     local _keys
-    IFS=$'\n' read -d '' -r -a _keys <<<"$(all_paths "${_content}" | grep '"$extends"$')"
+    local i
+    _cur="$(mktemp_with_content "${_content}")"
     # Intentional single quote to find a keyword that starts with '$'
     # shellcheck disable=SC2016
+    mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
     for i in "${_keys[@]}"; do
       local _next
       _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
@@ -63,60 +68,77 @@ function _remove_meta_nodes() {
 function _merge_object_nodes() {
   local _a="${1}"
   local _b="${2}"
-  jq -s '.[0] * .[1]' "${_a}" "${_b}" || {
-    abort "Failed to merge object nodes:'${_a}' and '${_b}'"
+  local _error
+  _error=$(mktemp)
+  jq -r -c -n '$a * $b' --argjson a "${_a}" --argjson b "${_b}" || {
+    abort "Failed to merge object nodes:'${_a}' and '${_b}': error: ${_error}"
+  }
+}
+
+# Latter overrides former
+function _merge_object_node_files() {
+  local _a="${1}"
+  local _b="${2}"
+  local _error
+  _error=$(mktemp)
+  jq -s '.[0] * .[1]' "${_a}" "${_b}" 2>"${_error}" || {
+    abort "Failed to merge object node files:'${_a}' and '${_b}': error: ${_error}"
   }
 }
 
 function _expand_nodelevel_inheritances() {
-  local _target="${1}"
+  local _content="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
   local _cur
   local _in
-  local _keys
+  local -a _keys
   _cur=$(mktemp_with_content '{}')
-  debug "(begin:_expand_nodelevel_inheritances:1:${_target})"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
-  IFS=$'\n' read -d '' -r -a _keys <<<"$(all_paths "$(cat "${_target}")" | grep '"$extends"$')"
+  mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
   for i in "${_keys[@]}"; do
-    debug "->_expand_nodelevel_inheritances:2:i='${i}')"
     local -a _extendeds
-    IFS=$'\n' read -d '' -r -a _extendeds <<<"$(jq -r -c "${i}[]" "${_target}")"
+    local _p="${i%.\"\$extends\"}"
+    mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for j in "${_extendeds[@]}"; do
-      local _next
       local _jj
       local _merged_piece
-      local _p
       local _cur_content
       local _tmp_content
-      debug "-->_expand_nodelevel_inheritances:3:j='${j}')"
-      _jj="$(find_file_in_path "${j}" "${_path}")"
-      debug "-->_expand_nodelevel_inheritances:4:resolved '${j}'->'${_jj}'"
-      validate_jf_json "${_jj}" "${_validation_mode}" || abort "failed on validation"
-      debug "-->_expand_nodelevel_inheritances:5:validated '${_jj}'"
-      _p="${i%.\"\$extends\"}"
+      if ! _jj="$(locate_file_in_path "${j}" "${_validation_mode}" "${_path}")"; then
+        abort "Failed to locate file '${j}'"
+      fi
+      local _next_content
+      _next_content="$(cat "${_jj}")"
+      is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
-      debug "-->_expand_nodelevel_inheritances:6:merging nodes at '${_p}'"
-      if [[ $(has_value_at "${_p}" "${_cur_content}") == true ]]; then
+      if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece
-        _cur_piece=$(mktemp_with_content "$(echo "${_cur_content}" | jq "${_p}")")
-        _merged_piece=$(mktemp_with_content "$(_merge_object_nodes "${_cur_piece}" "${_jj}")")
+        _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
+        _merged_piece=$(mktemp_with_content "$(_merge_object_nodes "${_cur_piece}" "$(cat "${_jj}")")")
       else
         _merged_piece="${_jj}"
       fi
-      debug "-->_expand_nodelevel_inheritances:7:merged"
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")"
-      [[ $? == 0 ]] || abort "Failed to merge nodes:_p=${_p},_merged_piece=${_merged_piece}"
-      debug "-->_expand_nodelevel_inheritances:8:written:$?"
-      _next=$(mktemp_with_content "${_tmp_content}")
-      _cur="${_next}"
-      debug "-->_expand_nodelevel_inheritances:9:trying:i=${i} on _target=${_target}"
+      _cur=$(mktemp_with_content "${_tmp_content}")
     done
   done
-  debug "(end:_expand_nodelevel_inheritances:1)"
   jq -r -c . "${_cur}"
+}
+
+function locate_file_in_path() {
+  local _in="${1}"
+  local _mode="${2}"
+  local _path="${3}"
+  local _ret
+  if ! _ret="$(find_file_in_path "${j}" "${_path}")"; then
+    abort "Failed to find file '${_in}'"
+  fi
+  debug "validating ${_in}"
+  validate_jf_json "${_in}" "${_validation_mode}"
+  debug "...validated"
+  echo "${_ret}"
 }
 
 function _validate_jf_json_with() {
@@ -126,7 +148,7 @@ function _validate_jf_json_with() {
   {
     _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
   } || {
-    quit "Validation by ajv for '${_in}' was failed:\n${_out}"
+    abort "Validation by ajv for '${_in}' was failed:\n${_out}"
   }
 }
 
@@ -141,8 +163,7 @@ function _render_text_node() {
   if [[ "${_node_value}" == template:* || "${_node_value}" == raw:* ]]; then
     _mode="${_node_value%%:*}"
     _body="${_node_value#*:}"
-    if [[ "${_body}" == object:* || "${_body}" == array:* ||
-    "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
+    if [[ "${_body}" == object:* || "${_body}" == array:* || "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
       ; then
       if [[ "${_body}" != string:* ]]; then
         _quote="no"
@@ -166,6 +187,8 @@ function _render_text_node() {
     echo "${_ret}"
   fi
 }
+
+#" double quotetion is placed here to resest broken syntax hilighting of IntelliJ 'shell-support' plugin
 
 function _type_of() {
   local _path="${1}"
@@ -205,13 +228,8 @@ function _perform_templating() {
     debug "processing:${i}"
     _node_value="$(value_at "${i}" "${_content}")"
     _templated_node_value="$(_render_text_node "${_node_value}" "${i}")"
-    local _a
-    local _b
     debug "node:'${_ret}':'${i}':'${_templated_node_value}'"
-    _a=$(mktemp_with_content "${_ret}")
-    _b=$(mktemp_with_content "${_templated_node_value}")
-    _ret="$(jq -r -c -n "input|${i}=input" "${_a}" "${_b}")"
-    [[ $? == 0 ]] || abort "Failed to replace node at '${i}' with '$(cat ${_b})'"
+    _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
     debug "processed:${i}"
   done
   debug "templated:'${_ret}'"
@@ -224,17 +242,15 @@ function find_file_in_path() {
   IFS=';' read -r -a _arr <<<"${_target}"
   if [[ ${#_arr[@]} -le 1 ]]; then
     search_file_in "${1}" "${2}"
-    return $?
   elif [[ ${#_arr[@]} -gt 1 ]]; then
     ####
     # In case the file name contains one or more semi-colons(';'), the name will be splitted by it.
     # And a command line is constructed from them and executed.
     local _f
-    _f="$(search_file_in "${_arr[0]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
+    _f="$(search_file_in "${_arr[0]}" "${_path}")" || abort "Script file ${_arr[1]} was not found in '${_path}'"
     export _path
     mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
     unset _path
-    return $?
   fi
 }
 
@@ -254,7 +270,7 @@ function find_file() {
 function export_names_for_script_inheritance() {
   export -f find_file
   export -f search_file_in
-  export -f quit
+  export -f abort
   export -f message
   export _JF_PATH
   export _JF_PATH_BASE
@@ -296,23 +312,21 @@ function expand_filelevel_inheritances() {
   _in="$(find_file_in_path "${_target}" "${_path}")"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
-  ####
-  # Strangely the line above does not causes a quit on a failure.
-  # Explitly check and abotrt this functino.
-  [[ $? == 0 ]] || abort "Failed to process '${_target}'"
   debug "...validated"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
-  if [[ $(is_object "${_content}") == true ]]; then
+  if is_object "${_content}"; then
     # shellcheck disable=SC2016
     # this is intentionally suppressing expansion to pass the value to jq.
-    if [[ $(has_value_at '."$extends"' "${_content}") == true ]]; then
+    if has_value_at '."$extends"' "${_content}"; then
       local i
       while IFS= read -r i; do
         local _next
-        local _tmp
-        _tmp=$(mktemp_with_content "$(run_jqfront "${i}" "${_validation_mode}" "${_path}")")
-        _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
+        local _c
+        local _parent
+        _parent="$(run_jqfront "${i}" "${_validation_mode}" "${_path}")"
+        _c="$(_merge_object_nodes "${_parent}" "$(cat "${_cur}")")"
+        _next=$(mktemp_with_content "${_c}")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
@@ -332,7 +346,7 @@ function materialize_private_nodes() {
   _ret="$(mktemp -d)"
   # Intentional single quotes for jq.
   # shellcheck disable=SC2016
-  if [[ $(has_value_at '."$local"' "${_content}") == true ]]; then
+  if has_value_at '."$local"' "${_content}"; then
     # shellcheck disable=SC2016
     for i in $(keys_of '."$local"' "${_content}"); do
       echo "${_content}" | jq '."$local".''"'"${i}"'"' >"${_ret}/${i}"
@@ -349,14 +363,12 @@ function expand_nodelevel_inheritances() {
   local _expanded
   local _expanded_clean
   local _clean
+  local _content
   debug "begin:expand_nodelevel_inheritances:_target=${_target}"
-  debug "step(1):main:_target=${_target}: $?"
-  _expanded=$(mktemp_with_content "$(_expand_nodelevel_inheritances "${_target}" "${_validation_mode}" "${_path}")")
-  debug "step(2a):remove meta nodes from target: $?"
-  _clean=$(mktemp_with_content "$(_remove_meta_nodes "${_target}")")
-  debug "step(2b):remove meta nodes from expanded: $?"
-  _expanded_clean=$(mktemp_with_content "$(_remove_meta_nodes "${_expanded}")")
-  debug "step(3):merge object nodes"
+  _content="$(cat "${_target}")"
+  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")"
+  _clean="$(_remove_meta_nodes "${_content}")"
+  _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
   _merge_object_nodes "${_expanded_clean}" "${_clean}"
   debug "end:expand_nodelevel_inheritances"
 }
@@ -392,19 +404,24 @@ function run_jqfront() {
   local _jf_path="${3}"
   local _content
   local _out
-  debug "begin:run_jf:_target=${_target}"
+  debug "begin:run_jqfront:_target=${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
+  [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
   _jf_path="$(dirof "${_target}"):${_jf_path}"
-  _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
-  if [[ $(is_object "${_content}") == true ]]; then
+  _content="$(cat "${_target}")"
+  if ! is_json "${_content}"; then
+    abort "Malformed JSON was given:'${_target}'='${_content}'"
+  fi
+  if is_object "${_content}"; then
     local _tmp
     local _private_nodes_dir
     local _c
-    _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
-    [[ $? == 0 ]] || abort "File-level expansion failed for '${_target}'"
+    if ! _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"; then
+      abort "File-level expansion failed for '${_target}'"
+    fi
     _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
@@ -416,7 +433,7 @@ function run_jqfront() {
     _out="$(mktemp_with_content "${_content}")"
   fi
   cat "${_out}"
-  debug "end:run_jf"
+  debug "end:run_jqfront"
 }
 
 function perform_jqfront() {
@@ -500,6 +517,10 @@ debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
+
+if [[ ${_JF_DEBUG} == enabled ]]; then
+  trap _debug_abort ERR
+fi
 
 ####
 # Export JF_PATH_BASE, which is set for executions under Docker
