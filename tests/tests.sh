@@ -34,6 +34,42 @@ function run_normal_test() {
   return ${_ret}
 }
 
+function run_negative_test() {
+  local _testfile="${1}"
+  local _dirname
+  local _ret=1
+  _dirname="$(dirname ${_testfile})"
+  ${_JF} "${_dirname}/input.json" >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" && {
+   quit "ABNORMAL EXIT WAS EXPECTED BUT IT WAS NORMAL:<${_JF}>:<$?>"
+  }
+  local _missings="${_dirname}/test-output.diff"
+  {
+    local _expected
+    local _error
+    _error="$(cat "${_dirname}/test-error.txt")"
+    IFS=$'\n' read -d '' -a _expected <"${_dirname}/expected.txt"
+    for i in "${_expected[@]}"; do
+      if [[ ${_error} == *${i}* ]]; then
+        continue
+      else
+        echo "${i}" >>"${_missings}"
+      fi
+    done
+  }
+  if [[ -f ${_missings} ]]; then
+    local _diff
+    _diff=$(cat "${_missings}") || return
+    _ret=1
+    message "FAILED: missing messages in stderr--->
+    ${_diff}
+    ---"
+  else
+    message "PASSED"
+    _ret=0
+  fi
+  return ${_ret}
+}
+
 function _failure_message() {
   local _expected_validity_level="${1}"
   local _schema="${2}"

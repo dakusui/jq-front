@@ -2,7 +2,7 @@
 set -eu
 
 function mktemp_with_content() {
-  local _content="${1}"
+  local _content="${1:?No content was given}"
   local _ret
   # shellcheck disable=SC2154
   if [[ -z ${_content+x} ]]; then
@@ -45,7 +45,7 @@ function quit() {
 }
 
 function abort() {
-  quit "${@}" || exit $?
+  quit "${@}" || exit 1
 }
 
 function all_paths() {

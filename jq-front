@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -Eeu
+set -E -eu -o pipefail
 
 JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
@@ -89,6 +89,7 @@ function _expand_nodelevel_inheritances() {
       local _cur_content
       local _tmp_content
       _jj="$(load_file_from_path "${j}" "${_validation_mode}" "${_path}")"
+      [[ $? == 0 ]] || abort "Failed to load file '${j}'"
       _cur_content="$(cat "${_cur}")"
       if [[ $(has_value_at "${_p}" "${_cur_content}") == true ]]; then
         local _cur_piece
@@ -111,6 +112,7 @@ function load_file_from_path() {
   local _path="${3}"
   local _ret
   _ret="$(find_file_in_path "${j}" "${_path}")"
+  [[ $? == 0 ]] || abort "Failed to find file '${_in}'"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "...validated"
@@ -348,7 +350,7 @@ function expand_nodelevel_inheritances() {
   local _clean
   debug "begin:expand_nodelevel_inheritances:_target=${_target}"
   debug "step(1):main:_target=${_target}: $?"
-  _expanded=$(mktemp_with_content "$(_expand_nodelevel_inheritances "${_target}" "${_validation_mode}" "${_path}")")
+  _expanded=$(mktemp_with_content "$(_expand_nodelevel_inheritances "${_target}" "${_validation_mode}" "${_path}")") || abort "!!!"
   debug "step(2a):remove meta nodes from target: $?"
   _clean=$(mktemp_with_content "$(_remove_meta_nodes "${_target}")")
   debug "step(2b):remove meta nodes from expanded: $?"
@@ -392,7 +394,7 @@ function run_jqfront() {
   debug "begin:run_jf:_target=${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
   _jf_path="$(dirof "${_target}"):${_jf_path}"
-  _content="$(cat "${_target}")" || abort "Failed to read file '${_target}'"
+  _content="$(cat "${_target}")"
   if [[ $(is_object "${_content}") == true ]]; then
     local _tmp
     local _private_nodes_dir
