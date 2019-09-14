@@ -2,7 +2,7 @@
 set -eu
 
 function mktemp_with_content() {
-  local _content="${1}"
+  local _content="${1:?No content was given}"
   local _ret
   _ret="$(mktemp)"
   echo "${_content}" >"${_ret}"

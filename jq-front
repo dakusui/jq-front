@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -E -eu -o pipefail
+shopt -s inherit_errexit
 
 JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
