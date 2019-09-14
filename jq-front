@@ -88,8 +88,9 @@ function _expand_nodelevel_inheritances() {
       local _merged_piece
       local _cur_content
       local _tmp_content
-      _jj="$(load_file_from_path "${j}" "${_validation_mode}" "${_path}")"
-      [[ $? == 0 ]] || abort "Failed to load file '${j}'"
+      if ! _jj="$(load_file_from_path "${j}" "${_validation_mode}" "${_path}")"; then
+        abort "Failed to load file '${j}'"
+      fi
       _cur_content="$(cat "${_cur}")"
       if [[ $(has_value_at "${_p}" "${_cur_content}") == true ]]; then
         local _cur_piece
@@ -111,8 +112,9 @@ function load_file_from_path() {
   local _mode="${2}"
   local _path="${3}"
   local _ret
-  _ret="$(find_file_in_path "${j}" "${_path}")"
-  [[ $? == 0 ]] || abort "Failed to find file '${_in}'"
+  if ! _ret="$(find_file_in_path "${j}" "${_path}")"; then
+    abort "Failed to find file '${_in}'"
+  fi
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "...validated"
@@ -126,7 +128,7 @@ function _validate_jf_json_with() {
   {
     _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
   } || {
-    quit "Validation by ajv for '${_in}' was failed:\n${_out}"
+    abort "Validation by ajv for '${_in}' was failed:\n${_out}"
   }
 }
 
@@ -166,6 +168,8 @@ function _render_text_node() {
   fi
 }
 
+#" double quotetion is placed here to resest broken syntax hilighting of IntelliJ 'shell-support' plugin
+
 function _type_of() {
   local _path="${1}"
   local _content="${2}"
@@ -204,12 +208,8 @@ function _perform_templating() {
     debug "processing:${i}"
     _node_value="$(value_at "${i}" "${_content}")"
     _templated_node_value="$(_render_text_node "${_node_value}" "${i}")"
-    local _a
-    local _b
     debug "node:'${_ret}':'${i}':'${_templated_node_value}'"
-    _a=$(mktemp_with_content "${_ret}")
-    _b=$(mktemp_with_content "${_templated_node_value}")
-    _ret="$(jq -r -c -n "input|${i}=input" "${_a}" "${_b}")"
+    _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
     [[ $? == 0 ]] || abort "Failed to replace node at '${i}' with '$(cat ${_b})'"
     debug "processed:${i}"
   done
@@ -223,17 +223,15 @@ function find_file_in_path() {
   IFS=';' read -r -a _arr <<<"${_target}"
   if [[ ${#_arr[@]} -le 1 ]]; then
     search_file_in "${1}" "${2}"
-    return $?
   elif [[ ${#_arr[@]} -gt 1 ]]; then
     ####
     # In case the file name contains one or more semi-colons(';'), the name will be splitted by it.
     # And a command line is constructed from them and executed.
     local _f
-    _f="$(search_file_in "${_arr[0]}" "${_path}")" || quit "Script file ${_arr[1]} was not found in '${_path}'"
+    _f="$(search_file_in "${_arr[0]}" "${_path}")" || abort "Script file ${_arr[1]} was not found in '${_path}'"
     export _path
     mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
     unset _path
-    return $?
   fi
 }
 
@@ -253,7 +251,7 @@ function find_file() {
 function export_names_for_script_inheritance() {
   export -f find_file
   export -f search_file_in
-  export -f quit
+  export -f abort
   export -f message
   export _JF_PATH
   export _JF_PATH_BASE
@@ -295,10 +293,6 @@ function expand_filelevel_inheritances() {
   _in="$(find_file_in_path "${_target}" "${_path}")"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
-  ####
-  # Strangely the line above does not causes a quit on a failure.
-  # Explitly check and abotrt this functino.
-  [[ $? == 0 ]] || abort "Failed to process '${_target}'"
   debug "...validated"
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
@@ -350,7 +344,7 @@ function expand_nodelevel_inheritances() {
   local _clean
   debug "begin:expand_nodelevel_inheritances:_target=${_target}"
   debug "step(1):main:_target=${_target}: $?"
-  _expanded=$(mktemp_with_content "$(_expand_nodelevel_inheritances "${_target}" "${_validation_mode}" "${_path}")") || abort "!!!"
+  _expanded=$(mktemp_with_content "$(_expand_nodelevel_inheritances "${_target}" "${_validation_mode}" "${_path}")")
   debug "step(2a):remove meta nodes from target: $?"
   _clean=$(mktemp_with_content "$(_remove_meta_nodes "${_target}")")
   debug "step(2b):remove meta nodes from expanded: $?"
@@ -399,11 +393,12 @@ function run_jqfront() {
     local _tmp
     local _private_nodes_dir
     local _c
-    _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
-    [[ $? == 0 ]] || abort "File-level expansion failed for '${_target}'"
+    if ! _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"; then
+      abort "File-level expansion failed for '${_target}'"
+    fi
     _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \

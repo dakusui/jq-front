@@ -1,20 +1,18 @@
 #!/bin/bash
+set -eu -o pipefail -E
+shopt -s inherit_errexit
 
 function func1() {
-  func2
+  echo "FUNC1"
+  exit 1
 }
 
 function func2() {
-  local v=${1:-0}
-  if [[ ${v} == 0 ]]; then
-    func2 1
-  fi
-  cat "$f"
+  local ret
+  ret=$(func1)
+  echo $ret
+  echo "(func2)This line shouldn't be reached:'${?}'" >&2
 }
 
-
-f="${1}"
-var=$(func1)
-[[ $? == 0 ]] || echo "code=$?:${var}"
-
-echo bye:${var}
+var=$(func2)
+echo "main:This line shouldn't be reached:'${var}':'${?}'" >&2

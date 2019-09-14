@@ -2,12 +2,8 @@
 set -eu
 
 function mktemp_with_content() {
-  local _content="${1:?No content was given}"
+  local _content="${1}"
   local _ret
-  # shellcheck disable=SC2154
-  if [[ -z ${_content+x} ]]; then
-    quit "Content was not set"
-  fi
   _ret="$(mktemp)"
   echo "${_content}" >"${_ret}"
   echo "${_ret}"
@@ -31,9 +27,7 @@ function message() {
   echo -e "${_o}" "$*" >&2
 }
 
-####
-# Used when a condition is not met and a program SHOULD NOT go on.
-function quit() {
+function abort() {
   message "ERROR" "${@}"
   local _i=0
   local _e
@@ -41,11 +35,7 @@ function quit() {
     message "  at ${_e}"
     _i=$((_i + 1))
   done
-  return 1
-}
-
-function abort() {
-  quit "${@}" || exit 1
+  exit 1
 }
 
 function all_paths() {
@@ -74,10 +64,10 @@ function value_at() {
   local _path="${1}" # A path from which the output is retrieved.
   local _json="${2}" # JSON content
   if [[ $(has_value_at "${_path}" "${_json}") == true ]]; then
-    echo "${_json}" | jq -r -c "${_path}" || quit "Failed to access '${_path}'."
+    echo "${_json}" | jq -r -c "${_path}" || abort "Failed to access '${_path}'."
   else
     if [ -z ${3+x} ]; then
-      quit "Failed to access '${_path}' and default value for it was not given."
+      abort "Failed to access '${_path}' and default value for it was not given."
     else
       echo "${3}"
     fi
@@ -87,7 +77,7 @@ function value_at() {
 function keys_of() {
   local _path="${1}" # A path from which the output is retrieved.
   local _json="${2}" # JSON content
-  echo "${_json}" | jq -r -c "${_path} | keys[]" || quit "Failed to access keys of '${_path}' in '${_json}'"
+  echo "${_json}" | jq -r -c "${_path} | keys[]" || abort "Failed to access keys of '${_path}' in '${_json}'"
 }
 
 function search_file_in() {
@@ -105,5 +95,5 @@ function search_file_in() {
       return 0
     fi
   done
-  quit "File '${_target}' was not found in '${_path}'"
+  abort "File '${_target}' was not found in '${_path}'"
 }
