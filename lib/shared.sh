@@ -28,7 +28,7 @@ function message() {
 }
 
 function abort() {
-  print_stacktrace "ERROR"
+  print_stacktrace "ERROR" "${@}"
   exit 1
 }
 
