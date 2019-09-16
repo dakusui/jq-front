@@ -12,6 +12,11 @@ source "${JF_BASEDIR}/lib/shared.sh"
 # source = lib/templating.sh
 source "${JF_BASEDIR}/lib/templating.sh"
 
+function _debug_abort() {
+  print_stacktrace "DEBUG: error trapped"
+  exit 1
+}
+
 function _mangle_path() {
   local _path="${1}"
   local _path_base="${2}"
@@ -46,9 +51,9 @@ function _remove_meta_nodes() {
   if [[ $(is_object "${_content}") == true ]]; then
     _cur="$(mktemp_with_content "$(cat "${_target}")")"
     local _keys
-    IFS=$'\n' read -d '' -r -a _keys <<<"$(all_paths "${_content}" | grep '"$extends"$')"
     # Intentional single quote to find a keyword that starts with '$'
     # shellcheck disable=SC2016
+    mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
     for i in "${_keys[@]}"; do
       local _next
       _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
@@ -75,15 +80,15 @@ function _expand_nodelevel_inheritances() {
   local _path="${3}"
   local _cur
   local _in
-  local _keys
+  local -a _keys
   _cur=$(mktemp_with_content '{}')
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
-  IFS=$'\n' read -d '' -r -a _keys <<<"$(all_paths "$(cat "${_target}")" | grep '"$extends"$')"
+  mapfile -t _keys < <(all_paths "$(cat "${_target}")" | grep '"$extends"$') || _keys=()
   for i in "${_keys[@]}"; do
     local -a _extendeds
     local _p="${i%.\"\$extends\"}"
-    IFS=$'\n' read -d '' -r -a _extendeds <<<"$(jq -r -c "${i}[]" "${_target}")"
+    mapfile -t _extendeds < <(jq -r -c "${i}[]" "${_target}") || _extendeds=()
     for j in "${_extendeds[@]}"; do
       local _jj
       local _merged_piece
@@ -101,7 +106,6 @@ function _expand_nodelevel_inheritances() {
         _merged_piece="${_jj}"
       fi
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")"
-      [[ $? == 0 ]] || abort "Failed to merge nodes:_p=${_p},_merged_piece=${_merged_piece}"
       _cur=$(mktemp_with_content "${_tmp_content}")
     done
   done
@@ -211,7 +215,6 @@ function _perform_templating() {
     _templated_node_value="$(_render_text_node "${_node_value}" "${i}")"
     debug "node:'${_ret}':'${i}':'${_templated_node_value}'"
     _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
-    [[ $? == 0 ]] || abort "Failed to replace node at '${i}' with '$(cat ${_b})'"
     debug "processed:${i}"
   done
   debug "templated:'${_ret}'"
@@ -306,6 +309,7 @@ function expand_filelevel_inheritances() {
         local _next
         local _tmp
         _tmp=$(mktemp_with_content "$(run_jqfront "${i}" "${_validation_mode}" "${_path}")")
+        [[ $? == 0 ]] || abort "Failed to process a file '${i}'."
         _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
@@ -388,6 +392,7 @@ function run_jqfront() {
   local _out
   debug "begin:run_jf:_target=${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
+  [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
   _jf_path="$(dirof "${_target}"):${_jf_path}"
   _content="$(cat "${_target}")"
   if [[ $(is_object "${_content}") == true ]]; then
@@ -495,6 +500,10 @@ debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
+
+if [[ ${_JF_DEBUG} == enabled ]]; then
+  trap _debug_abort ERR
+fi
 
 ####
 # Export JF_PATH_BASE, which is set for executions under Docker

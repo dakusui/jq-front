@@ -28,14 +28,20 @@ function message() {
 }
 
 function abort() {
-  message "ERROR" "${@}"
+  print_stacktrace "ERROR"
+  exit 1
+}
+
+function print_stacktrace() {
+  local _message="${1}"
+  shift
+  message "${_message}" "${@}"
   local _i=0
   local _e
   while _e="$(caller $_i)"; do
     message "  at ${_e}"
     _i=$((_i + 1))
   done
-  exit 1
 }
 
 function all_paths() {
