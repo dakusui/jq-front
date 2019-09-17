@@ -69,8 +69,10 @@ function _remove_meta_nodes() {
 function _merge_object_nodes() {
   local _a="${1}"
   local _b="${2}"
-  jq -s '.[0] * .[1]' "${_a}" "${_b}" || {
-    abort "Failed to merge object nodes:'${_a}' and '${_b}'"
+  local _error
+  _error=$(mktemp)
+  jq -s '.[0] * .[1]' "${_a}" "${_b}" 2>"${_error}" || {
+    abort "Failed to merge object nodes:'${_a}' and '${_b}': error: ${_error}"
   }
 }
 
@@ -307,10 +309,11 @@ function expand_filelevel_inheritances() {
       local i
       while IFS= read -r i; do
         local _next
-        local _tmp
-        _tmp=$(mktemp_with_content "$(run_jqfront "${i}" "${_validation_mode}" "${_path}")")
-        [[ $? == 0 ]] || abort "Failed to process a file '${i}'."
-        _next=$(mktemp_with_content "$(_merge_object_nodes "${_tmp}" "${_cur}")")
+        local _c
+        local _parent
+        _parent="$(run_jqfront "${i}" "${_validation_mode}" "${_path}")"
+        _c="$(_merge_object_nodes <(echo "${_parent}") "${_cur}")"
+        _next=$(mktemp_with_content "${_c}")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
@@ -390,12 +393,16 @@ function run_jqfront() {
   local _jf_path="${3}"
   local _content
   local _out
-  debug "begin:run_jf:_target=${_target}"
+  local _is_object
+  debug "begin:run_jqfront:_target=${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
   [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
   _jf_path="$(dirof "${_target}"):${_jf_path}"
   _content="$(cat "${_target}")"
-  if [[ $(is_object "${_content}") == true ]]; then
+  debug "checking type of ${_target}"
+  _is_object="$(is_object "${_content}")"
+  debug "${_target} is object ${_is_object}"
+  if [[ "${_is_object}" == true ]]; then
     local _tmp
     local _private_nodes_dir
     local _c
@@ -416,7 +423,7 @@ function run_jqfront() {
     _out="$(mktemp_with_content "${_content}")"
   fi
   cat "${_out}"
-  debug "end:run_jf"
+  debug "end:run_jqfront"
 }
 
 function perform_jqfront() {

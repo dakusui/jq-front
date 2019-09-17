@@ -40,12 +40,13 @@ function run_negative_test() {
   local _ret=1
   _dirname="$(dirname ${_testfile})"
   ${_JF} "${_dirname}/input.json" >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" && {
-   quit "ABNORMAL EXIT WAS EXPECTED BUT IT WAS NORMAL:<${_JF}>:<$?>"
+    quit "ABNORMAL EXIT WAS EXPECTED BUT IT WAS NORMAL:<${_JF}>:<$?>"
   }
   local _missings="${_dirname}/test-output.diff"
   {
     local _expected
     local _error
+    local i
     _error="$(cat "${_dirname}/test-error.txt")"
     IFS=$'\n' read -d '' -a _expected <"${_dirname}/expected.txt"
     for i in "${_expected[@]}"; do
@@ -190,13 +191,15 @@ function main() {
   local run=0
   local numtests=0
   local -a tests
+  local _target_tests="${_TARGET_TESTS}"
   message "${_TEST_ROOT_DIR}:target=${_TARGET_TESTS}"
+  _target_tests="*${_TARGET_TESTS}*"
   while IFS='' read -r -d '' i; do
     numtests=$((numtests + 1))
     tests+=("${i}")
   done < <(find "${_TEST_ROOT_DIR}" -type f -name test.json -print0)
   for i in "${tests[@]}"; do
-    if [[ "x${i}" == x${_TARGET_TESTS} ]]; then
+    if [[ "x${i}" == x${_target_tests} ]]; then
       run=$((run + 1))
       {
         runtest "${i}" && passed=$((passed + 1))
