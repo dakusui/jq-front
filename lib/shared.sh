@@ -2,12 +2,8 @@
 set -eu
 
 function mktemp_with_content() {
-  local _content="${1}"
+  local _content="${1:?No content was given}"
   local _ret
-  # shellcheck disable=SC2154
-  if [[ -z ${_content+x} ]]; then
-    quit "Content was not set"
-  fi
   _ret="$(mktemp)"
   echo "${_content}" >"${_ret}"
   echo "${_ret}"
@@ -31,21 +27,21 @@ function message() {
   echo -e "${_o}" "$*" >&2
 }
 
-####
-# Used when a condition is not met and a program SHOULD NOT go on.
-function quit() {
-  message "ERROR" "${@}"
+function abort() {
+  print_stacktrace "ERROR:" "${@}"
+  exit 1
+}
+
+function print_stacktrace() {
+  local _message="${1}"
+  shift
+  message "${_message}" "${@}"
   local _i=0
   local _e
   while _e="$(caller $_i)"; do
     message "  at ${_e}"
     _i=$((_i + 1))
   done
-  return 1
-}
-
-function abort() {
-  quit "${@}" || exit $?
 }
 
 function all_paths() {
@@ -53,31 +49,41 @@ function all_paths() {
   echo "${_json}" | jq -r -c 'path(..)|map(if type=="number" then "["+tostring+"]" else "\""+tostring+"\"" end)|join(".")|gsub("\\.\\[";"[")|"."+tostring'
 }
 
+function is_json() {
+  local _content="${1}"
+  local _exitcode
+  jq 'empty' <(echo "${_content}") >/dev/null 2>&1
+  _exitcode=$?
+  return $_exitcode
+}
+
 function is_object() {
   local _json_content="${1}"
-  echo "${_json_content}" | jq '.|if type=="object" then true else false end'
+  local _ret
+  _ret="$(echo "${_json_content}" | jq '.|if type=="object" then 0 else 1 end' 2>/dev/null)"
+  return "${_ret}"
 }
 
 function has_value_at() {
   local _path="${1}"
   local _json="${2}"
   local _val
-  _val=$(echo "${_json}" | jq "${_path}|select(.)")
+  _val=$(echo "${_json}" | jq "${_path}|select(.)") || return 1
   if [[ -z ${_val} ]]; then
-    echo false
+    return 1
   else
-    echo true
+    return 0
   fi
 }
 
 function value_at() {
   local _path="${1}" # A path from which the output is retrieved.
   local _json="${2}" # JSON content
-  if [[ $(has_value_at "${_path}" "${_json}") == true ]]; then
-    echo "${_json}" | jq -r -c "${_path}" || quit "Failed to access '${_path}'."
+  if has_value_at "${_path}" "${_json}"; then
+    echo "${_json}" | jq -r -c "${_path}" || abort "Failed to access '${_path}'."
   else
     if [ -z ${3+x} ]; then
-      quit "Failed to access '${_path}' and default value for it was not given."
+      abort "Failed to access '${_path}' and default value for it was not given."
     else
       echo "${3}"
     fi
@@ -87,7 +93,7 @@ function value_at() {
 function keys_of() {
   local _path="${1}" # A path from which the output is retrieved.
   local _json="${2}" # JSON content
-  echo "${_json}" | jq -r -c "${_path} | keys[]" || quit "Failed to access keys of '${_path}' in '${_json}'"
+  echo "${_json}" | jq -r -c "${_path} | keys[]" || abort "Failed to access keys of '${_path}' in '${_json}'"
 }
 
 function search_file_in() {
@@ -105,5 +111,5 @@ function search_file_in() {
       return 0
     fi
   done
-  quit "File '${_target}' was not found in '${_path}'"
+  abort "File '${_target}' was not found in '${_path}'"
 }
