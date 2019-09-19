@@ -34,6 +34,42 @@ function run_normal_test() {
   return ${_ret}
 }
 
+function run_help_test() {
+  local _testfile="${1}"
+  local _dirname
+  local _diff
+  local _ret=1
+  _dirname="$(dirname ${_testfile})"
+  ${_JF} --help >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" || return 1
+  local _missings="${_dirname}/test-output.diff"
+  {
+    local _expected
+    local _error
+    local i
+    _error="$(cat "${_dirname}/test-error.txt")"
+    IFS=$'\n' read -d '' -a _expected <"${_dirname}/expected.txt"
+    for i in "${_expected[@]}"; do
+      if [[ ${_error} == *"${i}"* ]]; then
+        continue
+      else
+        echo "${i}" >>"${_missings}"
+      fi
+    done
+  }
+  if [[ -f ${_missings} ]]; then
+    local _diff
+    _diff=$(cat "${_missings}") || return
+    _ret=1
+    message "FAILED: missing messages in stderr--->
+    ${_diff}
+    ---"
+  else
+    message "PASSED"
+    _ret=0
+  fi
+  return ${_ret}
+}
+
 function run_negative_test() {
   local _testfile="${1}"
   local _dirname

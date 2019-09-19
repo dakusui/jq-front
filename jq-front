@@ -452,8 +452,8 @@ function perform_jqfront() {
   echo "${_content}"
 }
 
-function usage_exit() {
-  abort "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET"
+function usage() {
+  message "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET"
 }
 
 function main() {
@@ -466,7 +466,8 @@ function main() {
     while true; do
       case "${1}" in
       -h | --help)
-        usage_exit
+        usage
+        exit 0
         ;;
       -d | --disable-templating)
         _JF_TEMPLATING_ENABLED=no
