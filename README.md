@@ -69,13 +69,13 @@ Add a following entry to your `.bashrc` or a file sourced through it.
 ```shell script
 
 function docker-jq-front() {
-  docker run --rm \
+  docker run --rm -i \
     -v /:/var/lib/jf \
     -e JF_PATH_BASE="/var/lib/jf" \
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.8}" "${@}"
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.9}" "${@}"
 }
 
 ```

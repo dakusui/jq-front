@@ -79,17 +79,7 @@ function execute_test_package() {
   _test_package "${TARGET_VERSION}-snapshot" "${_target_tests}"
 }
 
-function execute_package_release() {
-  _build "${TARGET_VERSION}"
-  _build "latest"
-}
-
-function execute_test_release() {
-  local _target_tests="${1:-*}"
-  _test_package "${TARGET_VERSION}" "${_target_tests}"
-}
-
-function execute_release() {
+function execute_check_release() {
   local uncommitted_changes
   local unmerged_commits
   local release_branch="master"
@@ -113,6 +103,19 @@ function execute_release() {
     message "${unmerged_commits}"
     return 1
   fi
+}
+
+function execute_package_release() {
+  _build "${TARGET_VERSION}"
+  _build "latest"
+}
+
+function execute_test_release() {
+  local _target_tests="${1:-*}"
+  _test_package "${TARGET_VERSION}" "${_target_tests}"
+}
+
+function execute_release() {
   docker login
   docker push "${DOCKER_REPO_NAME}:${TARGET_VERSION}"
   docker push "${DOCKER_REPO_NAME}:latest"
@@ -122,12 +125,12 @@ function execute_post_release() {
   local tmp
   git tag "${TARGET_VERSION}"
   tmp=$(mktemp)
-  jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json > "${tmp}" || abort "Failed to bump up the version."
+  jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json >"${tmp}" || abort "Failed to bump up the version."
   cp "${tmp}" build_info.json
   message "Updated build_info.json"
   git commit -a -m "$(printf "Bump up target version to v%s.%s" \
-                     "$(jq '.version.target.major' "${tmp}")"  \
-                     "$(jq '.version.target.minor' "${tmp}")")" || abort "Failed to commit bumped up version."
+    "$(jq '.version.target.major' "${tmp}")" \
+    "$(jq '.version.target.minor' "${tmp}")")" || abort "Failed to commit bumped up version."
   message "Committed the change"
   git push origin master:master || abort "Failed to push the change."
   message "Pushed it to the remote"
@@ -168,7 +171,7 @@ function main() {
     main doc test package test_package deploy
     return 0
   elif [[ ${1} == RELEASE ]]; then
-    main doc test package_release test_release release post_release
+    main check_release doc test package_release test_release check_release release post_release
     return 0
   fi
 
