@@ -156,6 +156,7 @@ function _render_text_node() {
   local _quote="yes"
   local _body
   local _ret
+  local _ret_code=0
   debug "rendering"
   if [[ "${_node_value}" == template:* || "${_node_value}" == raw:* ]]; then
     _mode="${_node_value%%:*}"
@@ -172,32 +173,36 @@ function _render_text_node() {
   fi
 
   if [[ "${_mode}" == "template" ]]; then
+    local _error_prefix="ERROR: "
     ####
     #
     # This is a function intended to be used on templating (_render_text_node)
     function ref() {
+      # shellcheck disable=SC2181
+      [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
       local _path="${1}"
       value_at "${_path}" "$(cat "$(self)")"
     }
-
     ####
     # Prints the entire file (before templating).
     #
     # This is a function intended to be used on templating (_render_text_node)
     function self() {
+      # shellcheck disable=SC2181
+      [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
       ####
       # This variable is assigned by a function that executes "eval" for templating.
       # That is, run_jf() in the main script file.
       # shellcheck disable=SC2154
       echo "${_out}"
     }
-
     ####
     # A function that prints a node path to an element that encloses the attribute.
     function cur() {
+      # shellcheck disable=SC2181
+      [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
       echo "${_path%.*}"
     }
-
     ####
     # Prints a path to a parent node of a given path.
     # Note that single level path results in an empty string.
@@ -205,6 +210,8 @@ function _render_text_node() {
     # This is intentional to be able to do ```$(ref $(parent $(cur)).uncle)``` even if ```$(cur)``` is either
     # ```.node``` or ```.node.child```
     function parent() {
+      # shellcheck disable=SC2181
+      [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
       local _p="${1?Path was not given}"
       local _ret="${_p}"
       if [[ ! "${_ret}" == .* ]]; then
@@ -216,7 +223,13 @@ function _render_text_node() {
       _ret="${_ret%.*}"
       echo "${_ret}"
     }
-    _ret=$(eval echo "${_body}")
+    local _error
+    local _error_out
+    _error="$(mktemp)"
+    _ret="$(eval "echo \"${_body}\"" 2> ${_error})"
+    # shellcheck disable=SC2002
+    _error_out="$(cat "${_error}")"
+    [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "Error was detected during templating: $(cat "${_error}")"
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
   fi
@@ -227,6 +240,7 @@ function _render_text_node() {
   else
     echo "${_ret}"
   fi
+  return "${_ret_code}"
 }
 
 #" double quotetion is placed here to resest broken syntax hilighting of IntelliJ 'shell-support' plugin

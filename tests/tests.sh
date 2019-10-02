@@ -1,5 +1,6 @@
 #!/bin/bash -eu
-set -E -eu
+set -E -eu -o pipefail
+shopt -s inherit_errexit
 
 _JF="${1:?Specify 'jf' to test in absolute path}"
 _TEST_ROOT_DIR="${2:?Specify a directory in which test dirs are stored.}"
@@ -40,7 +41,7 @@ function run_negative_test() {
   local _ret=1
   _dirname="$(dirname ${_testfile})"
   ${_JF} "${_dirname}/input.json" >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" && {
-    quit "ABNORMAL EXIT WAS EXPECTED BUT IT WAS NORMAL:<${_JF}>:<$?>"
+    abort "ABNORMAL EXIT WAS EXPECTED BUT IT WAS NORMAL:<${_JF}>:<$?>"
   }
   local _missings="${_dirname}/test-output.diff"
   {
