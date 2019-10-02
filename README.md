@@ -75,7 +75,7 @@ function docker-jq-front() {
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.9}" "${@}"
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.10}" "${@}"
 }
 
 ```
