@@ -128,6 +128,9 @@ function execute_post_release() {
   jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json >"${tmp}" || abort "Failed to bump up the version."
   cp "${tmp}" build_info.json
   message "Updated build_info.json"
+  message "Synchronize documentation"
+  execute_doc
+  message "Documenatation was synchronized"
   git commit -a -m "$(printf "Bump up target version to v%s.%s" \
     "$(jq '.version.target.major' "${tmp}")" \
     "$(jq '.version.target.minor' "${tmp}")")" || abort "Failed to commit bumped up version."
