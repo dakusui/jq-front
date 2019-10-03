@@ -152,6 +152,7 @@ function _validate_jf_json_with() {
 function _render_text_node() {
   local _node_value="${1}"
   local _path="${2}"
+  local _self="${3}"
   local _mode="raw"
   local _quote="yes"
   local _body
@@ -190,11 +191,7 @@ function _render_text_node() {
     function self() {
       # shellcheck disable=SC2181
       [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
-      ####
-      # This variable is assigned by a function that executes "eval" for templating.
-      # That is, run_jf() in the main script file.
-      # shellcheck disable=SC2154
-      echo "${_out}"
+      echo "${_self}"
     }
     ####
     # A function that prints a node path to an element that encloses the attribute.
@@ -225,8 +222,10 @@ function _render_text_node() {
     }
     local _error
     local _error_out
+    export _path
     _error="$(mktemp)"
-    _ret="$(eval "echo \"${_body}\"" 2> ${_error})"
+    _ret="$(eval "echo \"${_body}\"" 2>${_error})"
+    unset _path
     # shellcheck disable=SC2002
     _error_out="$(cat "${_error}")"
     [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "Error was detected during templating: $(cat "${_error}")"
@@ -280,12 +279,14 @@ function _perform_templating() {
   for i in "${_keys[@]}"; do
     local _node_value
     local _templated_node_value
+    local _ret_file
     debug "processing:${i}"
-    _node_value="$(value_at "${i}" "${_content}")"
-    _templated_node_value="$(_render_text_node "${_node_value}" "${i}")"
+    _node_value="$(value_at "${i}" "${_ret}")"
+    _ret_file=$(mktemp_with_content "${_ret}")
+    _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
     debug "node:'${_ret}':'${i}':'${_templated_node_value}'"
     _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
-    debug "processed:${i}"
+    debug "processed:${i}:_ret='${_ret}'"
   done
   debug "templated:'${_ret}'"
   echo "${_ret}"
