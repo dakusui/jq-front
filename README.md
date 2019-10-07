@@ -17,38 +17,38 @@ jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--valid
  
 ### Example
 
-Suppose that you have `name.json` and `greeting.json`.
+
+Let's prepare files, `name.json` and `greeting.json`, from which you want to create a new JSON by extending them.
 
 ```shell script
+$ echo '{"yourname":"Mark"}' > name.json
 $ cat name.json
 {"yourname":"Mark"}
 
+$ echo '{"greeting":"Hello"}' > greeting.json
 $ cat greeting.json
 {"greeting":"Hello"}
 ```
 
-And now we want to create another attribute ```sayHello```, whose value is ```Hello, Mark.```
 Then create a file that extends them.
 
 ```shell script
 $ echo '{
     "$extends": ["greeting.json", "name.json"],
-    "sayHello": "template:$(ref .greeting), $(ref .yourname)."
+    "sayHello": "$(ref .greeting), $(ref .yourname). Toady is $(date). How are you doing?"
   }' > sayHello.json
 ```
 
 Now, let's try `jq-front`.
-
 ```shell script
 $ jq-front sayHello.json
 {
   "yourname": "Mark",
   "greeting": "Hello",
-  "sayHello": "Hello, Mark."
+  "sayHello": "Hello, Mark. Toady is Fri Aug 30 22:04:40 UTC 2019. How are you doing?"
 }
 $
 ```
-
 Doesn't it seem useful? Have fun!
 
 ## Installation

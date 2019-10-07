@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.10">
-<title>Terminology update</title>
+<title>Environment variables</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -441,207 +441,464 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_terminology_update">Terminology update</a></li>
+<li><a href="#_environment_variables">Environment variables</a>
+<ul class="sectlevel2">
+<li><a href="#_jf_path">JF_PATH</a></li>
+<li><a href="#_jf_templating_enabled">JF_TEMPLATING_ENABLED</a></li>
+<li><a href="#_jf_debug">JF_DEBUG</a></li>
+</ul>
+</li>
+<li><a href="#_features">Features</a>
+<ul class="sectlevel2">
+<li><a href="#_file_level_inheritance">File-level Inheritance</a></li>
+<li><a href="#_node_level_inheritance">Node-level Inheritance</a></li>
+<li><a href="#_templating">Templating</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
 <div id="content">
-<div class="ulist">
-<ul>
-<li>
-<p>Entry point</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Source</p>
-<div class="ulist">
-<ul>
-<li>
-<p>stdin</p>
-</li>
-<li>
-<p>file</p>
-<div class="ulist">
-<ul>
-<li>
-<p>rel</p>
-</li>
-<li>
-<p>abs</p>
-</li>
-<li>
-<p>./&#8230;&#8203;</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Presence</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Absent</p>
-</li>
-<li>
-<p>Present</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Validity</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Malformed</p>
-</li>
-<li>
-<p>Invalid</p>
-</li>
-<li>
-<p>Valid</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Type</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Object</p>
-</li>
-<li>
-<p>Array</p>
-</li>
-<li>
-<p>Text</p>
-</li>
-<li>
-<p>Number</p>
-</li>
-<li>
-<p>Boolean</p>
-</li>
-<li>
-<p>null</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>File Level Inheritance</p>
-<div class="ulist">
-<ul>
-<li>
-<p>None</p>
-</li>
-<li>
-<p>Single</p>
-</li>
-<li>
-<p>Multiple</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Node Level Inheritance</p>
-<div class="ulist">
-<ul>
-<li>
-<p>None</p>
-</li>
-<li>
-<p>Single</p>
-</li>
-<li>
-<p>Multiple</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p># of Node Level Inheritances</p>
-<div class="ulist">
-<ul>
-<li>
-<p>None</p>
-</li>
-<li>
-<p>1</p>
-</li>
-<li>
-<p>2&#8230;&#8203;</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Inheritee Node</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Generation Method</p>
-<div class="ulist">
-<ul>
-<li>
-<p>File node</p>
-</li>
-<li>
-<p>Private (local) node</p>
-</li>
-<li>
-<p>Script rendered node</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Presence</p>
-</li>
-<li>
-<p>Validity</p>
-</li>
-<li>
-<p>Type</p>
-</li>
-<li>
-<p>File Level Inheritance</p>
-</li>
-<li>
-<p>Node Level Inheritance</p>
-</li>
-<li>
-<p># of Node Level Inheritance</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
 <div class="sect1">
-<h2 id="_terminology_update">Terminology update</h2>
+<h2 id="_environment_variables">Environment variables</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><code>$private</code> &#8594; <code>$local</code></p>
+<p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
+</div>
+<div class="sect2">
+<h3 id="_jf_path">JF_PATH</h3>
+<div class="paragraph">
+<p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
+Entries in the variable are separated by colons(<code>:</code>).</p>
 </div>
 <div class="paragraph">
-<p>external inheritance &#8594; File Level Inheritance
-internal inheritance &#8594; Node Level Inheritance</p>
+<p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value">Default value</h4>
+<div class="paragraph">
+<p><code>.</code></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h3>
+<div class="paragraph">
+<p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
+If any other value is set to the variable, it will not be executed.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value_2">Default value</h4>
+<div class="paragraph">
+<p><code>yes</code></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jf_debug">JF_DEBUG</h3>
+<div class="paragraph">
+<p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value_3">Default value</h4>
+<div class="paragraph">
+<p><code>disabled</code></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_features">Features</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With <code>jq-front</code>, you can build a JSON object reusing other JSON objects.
+To specify JSON objects to be referenced, <code>jq-front</code> searches for keys which have special names in a given object.
+<code>$extends</code> and <code>$local</code> are keywords used for this purpose.</p>
+</div>
+<div class="paragraph">
+<p>Basic features offered by the product are following</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>File-level Inheritance</p>
+</li>
+<li>
+<p>Node-level Inheritance</p>
+</li>
+<li>
+<p>Script-output Inheritance</p>
+</li>
+<li>
+<p>Templating</p>
+</li>
+<li>
+<p>Validation</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>And usage of them will be discussed in this section.</p>
+</div>
+<div class="paragraph">
+<p>In this section, we introduce features of the product using following data.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="examples/A.json">A.json</a></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": "A",
+  "o": "A"
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a href="examples/AA.json">AA.json</a></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json" ],
+  "aa": "AA"
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a href="examples/B.json">B.json</a></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": "B",
+  "o": "B"
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><a href="examples/T.json">T.json</a></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "versionStem": "2.12.0",
+  "snapshotVersion": "$(ref .versionStem)-SNAPSHOT"
+}</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_file_level_inheritance">File-level Inheritance</h3>
+<div class="paragraph">
+<p>In programming languages, inheritance is an indispensable technique to reuse a component.
+<code>jq-front</code> offers it for the purpose.
+A usage example is as follows.</p>
+</div>
+<div class="listingblock">
+<div class="title">I.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json" ],
+  "o": "hello world"
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>jq-front I.json</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>I.json</code> will be rendered into the following JSON object with this command line.</p>
+</div>
+<div class="listingblock">
+<div class="title">File-level Inheritance output</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": "A",
+  "o": "hello world"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you see in the example, the attribute <code>o</code> whose value is set to <code>"A"</code> in <code>A.json</code>, is overridden by the value in <code>I.json</code>.</p>
+</div>
+<div class="paragraph">
+<p>Multiple inheritance is also supported by <code>jq-front</code>.
+Just by listing file names of JSONs to be inherited, multiple inheritance happens, like <code>"$extends": ["A.json", "B.json"]</code>.
+When both <code>A.json</code> and <code>B.json</code> have attributes at the same path, <code>A.json</code> side&#8217;s value will be used.</p>
+</div>
+<div class="listingblock">
+<div class="title">J.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json", "B.json" ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That is, <code>J.json</code> will be rendered into following output.</p>
+</div>
+<div class="listingblock">
+<div class="title">File-level Multiple Inheritance output</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": "A",
+  "b": "B",
+  "o": "A"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As it is so in normal programming language that supports multiple inheritance, avoiding diamond inheritance is a good idea.
+Multiple inheritance was implemented to cope with a situation where you want to reuse two JSON objects defined for completely different purposes.
+For instance, one is for authentication information and the other is for GUI flavor.</p>
+</div>
+<div class="paragraph">
+<p>JSON objects that are inherited can also inherit some other JSON files.</p>
+</div>
+<div class="listingblock">
+<div class="title">K.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "AA.json", "B.json" ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That is, <code>K.json</code> is rendered into a following JSON file.</p>
+</div>
+<div class="listingblock">
+<div class="title">File-level Inheritance output (2)</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": "A",
+  "aa": "AA",
+  "b": "B",
+  "o": "A"
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">
+Ensure that inheritance hierarchy does not have any cyclic dependencies.
+Behaviour for this situation is not defined and it will result in stack overflow.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_node_level_inheritance">Node-level Inheritance</h3>
+<div class="paragraph">
+<p>"Node-level Inheritance" refers to an inheritance happens on an internal (object) node of a given JSON file.
+Although it is implemented as a separate mechanism from the file-level one as it will be discussed in "Design" section, it behaves almost the same as the "file-level" one.</p>
+</div>
+<div class="listingblock">
+<div class="title">L.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "$extends": [ "A.json" ],
+    "a": "L"
+  }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Node-level Inheritance output</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "a": "L",
+    "o": "A"
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As it worked for File-level Inheritance, multiple inheritance works also for Node-level Inheritance.</p>
+</div>
+<div class="paragraph">
+<p>However, for internal nodes, you can also reference "local" nodes not only external files.</p>
+</div>
+<div class="listingblock">
+<div class="title">P.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$local": {
+    "nodeA": {
+       "aa": "aa"
+    },
+    "nodeB": {
+    }
+  },
+  "a": {
+    "$extends": ["nodeA"],
+    "a": "a"
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These nodes can be referenced through "node-level inheritance feature" as shown in the example.
+Note that you do not need to specify <code>.json</code> extension.
+And <code>P.json</code> will result in following output.</p>
+</div>
+<div class="listingblock">
+<div class="title">Local Node Inheritance output</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "aa": "aa",
+    "a": "a"
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_templating">Templating</h3>
+<div class="paragraph">
+<p>Sometimes we need to compose a value of text node from a value of another.
+Following is a such an example.</p>
+</div>
+<div class="listingblock">
+<div class="title">Version file</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "releaseVersion": "2.12.0",
+  "snapshotVersion": "2.12.0-SNAPSHOT"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example, the version to be released next is <code>2.12.0</code>, however the version under the development for it has a suffix <code>-SNAPSHOT</code></p>
+</div>
+<div class="paragraph">
+<p>To follow the principle of D-R-Y, how should we fix it?
+Templating is a feature to offer a solution to this challenge.</p>
+</div>
+<div class="paragraph">
+<p>We can describe this relationship by using the templating feature of <code>jq-front</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">T.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "releaseVersion": "2.12.0",
+  "snapshotVersion": "$(ref .releaseVersion)-SNAPSHOT"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once you render this file with <code>jq-front</code>, you will get the first file (Version file).</p>
+</div>
+<div class="paragraph">
+<p><code>$ref</code> is a built-in function of <code>jq-front</code>, which expands the value of the node specified by the path given as an argument.
+Not only built-in functions but also any commands (bash expressions) valid on a platform on which <code>jq-front</code> is running can be used here.</p>
+</div>
+<div class="paragraph">
+<p>For instance, following is a valid input to <code>jq-front</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "releaseVersion": "2.12.0",
+  "snapshotVersion": "$(ref .releaseVersion)-$(date \"+%Y-%m-%d\")"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And this will result in an output below.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "releaseVersion": "2.12.0",
+  "snapshotVersion": "2.12.0-2019-08-28"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This feature can be disabled by <code>-d</code> (<code>--disable-templating</code>) option.
+And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templating</code>) in case <code>JF_TEMPLATING_ENABLED</code> is set to <code>no</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_built_in_jq_front_functions">Built-in <code>jq-front</code> functions</h4>
+<div class="sect4">
+<h5 id="_ref_function"><code>ref</code> function</h5>
+<div class="paragraph">
+<p>A function that returns a value of a node specified by an argument.
+This function can only work from inside "Work(2)" file.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>parameter:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>_path</code>: path to a node in the file "Work(2)"</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>returned value:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>A value of a node specified by <code>_path</code></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_self_function"><code>self</code> function</h5>
+<div class="paragraph">
+<p>A function that returns a path to a file "Work(2)"
+This function can only work from inside "Work(2)" file.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>parameter: (none)</p>
+</li>
+<li>
+<p>returned value:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>A path to "Work(2)" file.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-12 21:21:43 UTC
+Last updated 2019-10-04 21:14:40 UTC
 </div>
 </div>
 </body>
