@@ -436,10 +436,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
 </head>
-<body class="article">
+<body class="article toc2 toc-left">
 <div id="header">
 <h1><code>jq-front</code>: JSON with inheritance and templating</h1>
-<div id="toc" class="toc">
+<div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#_environment_variables">Environment variables</a>
@@ -495,7 +495,7 @@ For instance, under a situation, where we need to generate similar but slightly 
 <h3 id="_jf_path">JF_PATH</h3>
 <div class="paragraph">
 <p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
-Entries in the variable is separated by colons(<code>:</code>).</p>
+Entries in the variable are separated by colons(<code>:</code>).</p>
 </div>
 <div class="paragraph">
 <p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
@@ -929,7 +929,7 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/pipeline.png" alt="pipeline" width="850" height="532">
+<img src="images/pipeline.png" alt="pipeline" width="920" height="574">
 </div>
 <div class="title">Figure 1. jq-front&#8217;s pipeline</div>
 </div>
@@ -994,7 +994,14 @@ The 'local node directory' and its contents are utilized by the "node-level inhe
 <div class="sect2">
 <h3 id="_templating_2">Templating</h3>
 <div class="paragraph">
-<p>Templating is executed by performing <code>eval</code> on a string below.</p>
+<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>template:</code> in a JSON object <code><code>Work(2)</code></code>.
+The order where it is applied is determined by <code><code>jq</code>&#8217;s <code>`path(..)</code></code> function.
+Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[6]</a> how keys are sorted within an object node although they seem to be sorted by dictionary order.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre></pre>
+</div>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1028,19 +1035,26 @@ The 'local node directory' and its contents are utilized by the "node-level inhe
 <div class="ulist bibliography">
 <ul class="bibliography">
 <li>
-<p><a id="jq-front"></a> jq-front project in github.org. <a href="https://github.com/dakusui/jq-front">jq-front</a>: 2019</p>
+<p><a id="jq-front"></a> jq-front project in github.org. <a href="https://github.com/dakusui/jq-front">jq-front</a>:
+2019</p>
 </li>
 <li>
-<p><a id="Cfront"></a>[2] Cfront article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/Cfront">Cfront</a>: 2019</p>
+<p><a id="Cfront"></a>[2] Cfront article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/Cfront">Cfront</a>:
+2019</p>
 </li>
 <li>
-<p><a id="cr"></a>[3] Thayne McCombs. <a href="https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/">Why JSON isn’t a Good Configuration Language</a>: 2018.</p>
+<p><a id="cr"></a>[3] Thayne McCombs. <a href="https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/">Why JSON isn’t a Good Configuration Language</a>:
+2018.</p>
 </li>
 <li>
-<p><a id="yaml"></a>[4] YAML article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/YAML">YAML</a>: 2019</p>
+<p><a id="yaml"></a>[4] YAML article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/YAML">YAML</a>:
+2019</p>
 </li>
 <li>
 <p><a id="json"></a>[5] json.org. <a href="http://www.json.org/">JSON</a>:2019</p>
+</li>
+<li>
+<p><a id="jq"></a>[6]  jq <a href="https://stedolan.github.io/jq/manual/" class="bare">https://stedolan.github.io/jq/manual/</a></p>
 </li>
 </ul>
 </div>
@@ -1050,12 +1064,12 @@ The 'local node directory' and its contents are utilized by the "node-level inhe
 <div id="footnotes">
 <hr>
 <div class="footnote" id="_footnotedef_1">
-<a href="#_footnoteref_1">1</a>. This is not merely a weakness of JSON but also other notations even YAML. YAML has a way to reference another object node from one, still it cannot embed a string value of a text node in another by itself.
+<a href="#_footnoteref_1">1</a>. This is not merely a weakness of JSON but also other notations even YAML. YAML has a way to reference another object node from one,still it cannot embed a string value of a text node in another by itself.
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-12 21:21:43 UTC
+Last updated 2019-10-04 21:32:11 UTC
 </div>
 </div>
 </body>

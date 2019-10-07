@@ -60,7 +60,7 @@ function execute_doc() {
       --user 1000:1000 \
       -v "$(pwd)":/documents/ \
       asciidoctor/docker-asciidoctor \
-      asciidoctor -r asciidoctor-diagram "${i}" -o "${i%.adoc}.html"
+      asciidoctor -r asciidoctor-diagram -a toc=left "${i}" -o "${i%.adoc}.html"
     message "...done"
   done < <(find "docs" -type f -name '*.adoc' -print0)
 }
