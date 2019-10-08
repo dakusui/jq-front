@@ -235,6 +235,9 @@ function _render_text_node() {
       _ret="${_ret%.*}"
       echo "${_ret}"
     }
+    function error() {
+      abort "${@}"
+    }
     local _error
     local _error_out
     export _path
