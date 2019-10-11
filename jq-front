@@ -174,7 +174,7 @@ function _render_text_node() {
   local _ret
   local _ret_code=0
   debug "rendering"
-  if [[ "${_node_value}" == template:* || "${_node_value}" == raw:* ]]; then
+  if [[ "${_node_value}" == template:* || "${_node_value}" == eval:*|| "${_node_value}" == raw:* ]]; then
     _mode="${_node_value%%:*}"
     _body="${_node_value#*:}"
     if [[ "${_body}" == object:* || "${_body}" == array:* || "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
@@ -188,7 +188,7 @@ function _render_text_node() {
     _body="${_node_value}"
   fi
 
-  if [[ "${_mode}" == "template" ]]; then
+  if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
     local _error_prefix="ERROR: "
     ####
     #
