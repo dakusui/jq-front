@@ -1,0 +1,44 @@
+== Usage
+
+```shell script
+jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]
+```
+
+- `-h`, `--help`: Shows a help
+- `-e`, `--enable-templating`: Enables templating
+- `-d`, `--disable-templating`: Disables templating
+- `--validation`: Validation mode.
+`no`, `strict`, and `lenient` are available.
+- `TARGET`: A file to be processed.
+
+== Environment variables
+
+You can control behaviours of `jq-front` by setting environment variables described in this section.
+
+=== JF_PATH
+
+From directories listed in `JF_PATH`, `jq-front` searches for requested file.
+Entries in the variable are separated by colons(`:`).
+
+When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
+
+==== Default value
+
+`.`
+
+=== JF_TEMPLATING_ENABLED
+
+You can enable `jq-front` 's templating feature by setting this environment variable's value to `yes`.
+If any other value is set to the variable, it will not be executed.
+
+==== Default value
+
+`yes`
+
+
+=== JF_DEBUG
+
+If this variable is set to `enabled`, debug information will be printed to `stderr`.
+
+==== Default value
+`disabled`

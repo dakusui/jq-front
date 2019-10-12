@@ -3,16 +3,17 @@ set -E -eu -o pipefail
 # shopt -s inherit_errexit
 
 function extract_style() {
-  cat "all.html" | xmllint --html --xpath '//style' - | sed -E 's/^<\/?style>$//g'
+  cat "_style.html" | xmllint --html --xpath '//style' - | sed -E 's/^<\/?style>$//g'
 }
 
 function extract_content() {
   local _filestem="${1}"
   cat "${_filestem}.html" | xmllint --html --xpath '//div[@id="content"]' - | sed -E 's/<div id="content">/<div id="'"${_filestem}"'_content">/g'
 }
+
 function render_style() {
   extract_style
-  cat << STYLE
+  cat <<STYLE
 // For tabs
 body {font-family: Arial;}
 
@@ -54,9 +55,31 @@ body {font-family: Arial;}
 }
 STYLE
 }
+
+function render_default_button() {
+  local _filestem="${1}"
+  echo '<button class="tablinks" onclick="openCity(event, '"'${_filestem}'"')" id="defaultOpen">'"${_filestem}"'</button>'
+}
+
 function render_button() {
   local _filestem="${1}"
   echo '<button class="tablinks" onclick="openCity(event, '"'${_filestem}'"')">'"${_filestem}"'</button>'
+}
+
+function render_all_buttons() {
+  local _top_filestem="${1}"
+  shift
+  local _filestems=("$@")
+  echo '<div class="tab">'
+  local i
+  render_default_button "${_top_filestem}"
+  for i in "${_filestems[@]}"; do
+    if [[ "${i}" == "${_top_filestem}" ]]; then
+      continue
+    fi
+    render_button "${i}"
+  done
+  echo '</div>'
 }
 
 function render_content() {
@@ -64,6 +87,13 @@ function render_content() {
   echo '<div id="'${_filestem}'" class="tabcontent">'
   extract_content "${_filestem}"
   echo '</div>'
+}
+
+function render_all_contents() {
+  local _filestems=("$@")
+  for i in "${_filestems[@]}"; do
+    render_content "${i}"
+  done
 }
 
 function begin_header() {
@@ -115,7 +145,7 @@ document.getElementById("defaultOpen").click();
 FOOTER
 }
 
-function print_footer() {
+function render_footer() {
   echo '</html>'
 }
 
@@ -125,24 +155,18 @@ function render() {
   render_style
   end_header
   begin_body
-
-  echo '<div class="tab">'
-  local i
-  for i in "${_filestems[@]}"; do
-    render_button "${i}"
-  done
-  echo '</div>'
-
-  for i in "${_filestems[@]}"; do
-    render_content "${i}"
-  done
+  # shellcheck disable=SC2068
+  render_all_buttons top ${_targets[@]}
+  # shellcheck disable=SC2068
+  render_all_contents ${_targets[@]}
   end_body
-  print_footer
+  render_footer
 }
 
 function main() {
   local _targets
-  _targets=$(ls *.adoc | sed -E 's/\.adoc$//' | grep -v all| sort)
+  _targets=$(ls *.adoc | sed -E 's/\.adoc$//' | grep -v _style | sort)
+  # shellcheck disable=SC2068
   render ${_targets[@]}
 }
 
