@@ -81,10 +81,6 @@ The order where it is applied is determined by ```jq```'s ```path(..)``` functio
 Note that it is not defined in `jq` 's manual<<jq>> how keys are sorted within an object node although they seem to be sorted by dictionary order.
 
 ----
-
-----
-
-----
 echo {CONTENT OF Work(2)}
 ----
 

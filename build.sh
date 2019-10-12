@@ -63,6 +63,9 @@ function execute_doc() {
       asciidoctor -r asciidoctor-diagram -a toc=left "${i}" -o "${i%.adoc}.html"
     message "...done"
   done < <(find "docs" -type f -name '*.adoc' -print0)
+  message -n "Generating 'docs/index.html'"
+  docs/index.sh > docs/index.html
+  message "...done"
 }
 
 function execute_package() {

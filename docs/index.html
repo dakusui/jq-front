@@ -8,6 +8,7 @@
 <title>jq-front: JSON with inheritance and templating</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
+
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
 /* Uncomment @import statement to use as custom stylesheet */
 /*@import "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700";*/
@@ -434,106 +435,148 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
+// For tabs
+body {font-family: Arial;}
+
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
 </style>
 </head>
-<body class="article toc2 toc-left">
-<div id="header">
-<h1><code>jq-front</code>: JSON with inheritance and templating</h1>
-<div id="toc" class="toc2">
-<div id="toctitle">Table of Contents</div>
-<ul class="sectlevel1">
-<li><a href="#_environment_variables">Environment variables</a>
-<ul class="sectlevel2">
-<li><a href="#_jf_path">JF_PATH</a></li>
-<li><a href="#_jf_templating_enabled">JF_TEMPLATING_ENABLED</a></li>
-<li><a href="#_jf_debug">JF_DEBUG</a></li>
-</ul>
-</li>
-<li><a href="#_features">Features</a>
-<ul class="sectlevel2">
-<li><a href="#_file_level_inheritance">File-level Inheritance</a></li>
-<li><a href="#_node_level_inheritance">Node-level Inheritance</a></li>
-<li><a href="#_templating">Templating</a></li>
-</ul>
-</li>
-<li><a href="#_design">Design</a>
-<ul class="sectlevel2">
-<li><a href="#_file_level_inheritance_2">File-level Inheritance</a></li>
-<li><a href="#_local_node_materialization">Local node Materialization</a></li>
-<li><a href="#_node_level_inheritance_2">Node-level Inheritance</a></li>
-<li><a href="#_templating_2">Templating</a></li>
-</ul>
-</li>
-<li><a href="#_limitations_and_future_work">Limitations and Future Work</a></li>
-<li><a href="#_references">References</a></li>
-</ul>
+<body>
+<div class="tab">
+<button class="tablinks" onclick="openCity(event, 'top')" id="defaultOpen">top</button>
+<button class="tablinks" onclick="openCity(event, 'design')">design</button>
+<button class="tablinks" onclick="openCity(event, 'features')">features</button>
+<button class="tablinks" onclick="openCity(event, 'limitationsAndFutureWork')">limitationsAndFutureWork</button>
+<button class="tablinks" onclick="openCity(event, 'manual')">manual</button>
 </div>
-</div>
-<div id="content">
-<div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p><code>jq-front</code> is a simple tool to give your JSON files a power of inheritance and templating.
-It was named after <strong>Cfront</strong><a href="#Cfront">[2]</a>, which is an old component of C&#43;&#43; language that converts C&#43;&#43; source code into C language.</p>
-</div>
-<div class="paragraph">
-<p>Despite that there are criticisms to use JSON<a href="#json">[5]</a> as system configuration information&#8217;s format<a href="#cr">[3]</a>, JSON still has its beauty such as rich tool supports, good balance between machine&#8217;s and human&#8217;s readability and writability, clarity and simplicity in syntax, etc.</p>
-</div>
-<div class="paragraph">
-<p>However, surely it has some weaknesses when we try to define data structure.
-For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
-</div>
-</div>
-</div>
+<div id="design" class="tabcontent">
+<div id="design_content">
 <div class="sect1">
-<h2 id="_environment_variables">Environment variables</h2>
+<h2 id="_design">Design</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
+<p>Following is a diagram that illustrates <code>jq-front</code> 's processing pipeline design.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/pipeline.png" alt="pipeline" width="920" height="574">
+</div>
+<div class="title">Figure 1. jq-front’s pipeline</div>
+</div>
+<div class="paragraph">
+<p>As shown, it consists of four main components, which are "file-level inheritance", "local node materialization", "node-level inheritance", and "templating".</p>
+</div>
+<div class="paragraph">
+<p>Designs of those components will be described in the rest of this section.</p>
 </div>
 <div class="sect2">
-<h3 id="_jf_path">JF_PATH</h3>
+<h3 id="_file_level_inheritance">File-level Inheritance</h3>
 <div class="paragraph">
-<p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
-Entries in the variable are separated by colons(<code>:</code>).</p>
+<p>'File-level Inheritance' composes a new JSON file from a given one by expanding the files provided through the top-level <code>$extends</code> attribute.</p>
 </div>
 <div class="paragraph">
-<p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
-</div>
-<div class="sect3">
-<h4 id="_default_value">Default value</h4>
-<div class="paragraph">
-<p><code>.</code></p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h3>
-<div class="paragraph">
-<p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
-If any other value is set to the variable, it will not be executed.</p>
-</div>
-<div class="sect3">
-<h4 id="_default_value_2">Default value</h4>
-<div class="paragraph">
-<p><code>yes</code></p>
-</div>
+<p>At the end of this process, the attribute is removed and copied to the output, "Work(1)" in the diagram.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_jf_debug">JF_DEBUG</h3>
+<h3 id="_local_node_materialization">Local node Materialization</h3>
 <div class="paragraph">
-<p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
+<p>If the file, "Work(1)" has <code>$local</code> attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
+The temporary directory is called 'local node directory'.
+The 'local node directory' and its contents are utilized by the "node-level inheritance' mechanism.</p>
 </div>
-<div class="sect3">
-<h4 id="_default_value_3">Default value</h4>
+</div>
+<div class="sect2">
+<h3 id="_node_level_inheritance">Node-level Inheritance</h3>
 <div class="paragraph">
-<p><code>disabled</code></p>
+<p>Node-level Inheritance mechanism is a bit more complicated than the file-level one.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a base JSON object by the following procedure.</p>
+<div class="olist loweralpha">
+<ol class="loweralpha">
+<li>
+<p>Scan paths of all internal nodes.</p>
+</li>
+<li>
+<p>For each path, if it ends with <code>"$extends"</code>, expand the files specified by the attribute.</p>
+</li>
+<li>
+<p>Assign the JSON node created in step b. to the parent of the <code>$extends</code> attribute.</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Overlay the JSON object created in the step. 1 with an original JSON object.</p>
+</li>
+<li>
+<p>Remove nodes, i.e., <code>$extends</code> and <code>$local</code> nodes from the JSON object created in the step 2.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>'Local node directory' is inserted before the first entry of <code>JF_PATH</code> environment variable when a file to be expanded is searched during the step 1. b.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_templating">Templating</h3>
+<div class="paragraph">
+<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>template:</code> in a JSON object <code><code>Work(2)</code></code>.
+The order where it is applied is determined by <code><code>jq</code>’s <code>`path(..)</code></code> function.
+Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> how keys are sorted within an object node although they seem to be sorted by dictionary order.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>echo {CONTENT OF Work(2)}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And this causes expansions of bash expressions inside the content of "Work(2)" and that expanded string will be printed by the <code>echo</code> command.</p>
 </div>
 </div>
 </div>
 </div>
-</div>
+</div></div>
+<div id="features" class="tabcontent">
+<div id="features_content">
 <div class="sect1">
 <h2 id="_features">Features</h2>
 <div class="sectionbody">
@@ -657,7 +700,7 @@ A usage example is as follows.</p>
 <div class="paragraph">
 <p>Multiple inheritance is also supported by <code>jq-front</code>.
 Just by listing file names of JSONs to be inherited, multiple inheritance happens, like <code>"$extends": ["A.json", "B.json"]</code>.
-When both <code>A.json</code> and <code>B.json</code> have attributes at the same path, <code>A.json</code> side&#8217;s value will be used.</p>
+When both <code>A.json</code> and <code>B.json</code> have attributes at the same path, <code>A.json</code> side’s value will be used.</p>
 </div>
 <div class="listingblock">
 <div class="title">J.json</div>
@@ -921,99 +964,9 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 </div>
 </div>
-<div class="sect1">
-<h2 id="_design">Design</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Following is a diagram that illustrates <code>jq-front</code> 's processing pipeline design.</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="images/pipeline.png" alt="pipeline" width="920" height="574">
-</div>
-<div class="title">Figure 1. jq-front&#8217;s pipeline</div>
-</div>
-<div class="paragraph">
-<p>As shown, it consists of four main components, which are "file-level inheritance", "local node materialization", "node-level inheritance", and "templating".</p>
-</div>
-<div class="paragraph">
-<p>Designs of those components will be described in the rest of this section.</p>
-</div>
-<div class="sect2">
-<h3 id="_file_level_inheritance_2">File-level Inheritance</h3>
-<div class="paragraph">
-<p>'File-level Inheritance' composes a new JSON file from a given one by expanding the files provided through the top-level <code>$extends</code> attribute.</p>
-</div>
-<div class="paragraph">
-<p>At the end of this process, the attribute is removed and copied to the output, "Work(1)" in the diagram.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_local_node_materialization">Local node Materialization</h3>
-<div class="paragraph">
-<p>If the file, "Work(1)" has <code>$local</code> attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
-The temporary directory is called 'local node directory'.
-The 'local node directory' and its contents are utilized by the "node-level inheritance' mechanism.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_node_level_inheritance_2">Node-level Inheritance</h3>
-<div class="paragraph">
-<p>Node-level Inheritance mechanism is a bit more complicated than the file-level one.</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Create a base JSON object by the following procedure.</p>
-<div class="olist loweralpha">
-<ol class="loweralpha">
-<li>
-<p>Scan paths of all internal nodes.</p>
-</li>
-<li>
-<p>For each path, if it ends with <code>"$extends"</code>, expand the files specified by the attribute.</p>
-</li>
-<li>
-<p>Assign the JSON node created in step b. to the parent of the <code>$extends</code> attribute.</p>
-</li>
-</ol>
-</div>
-</li>
-<li>
-<p>Overlay the JSON object created in the step. 1 with an original JSON object.</p>
-</li>
-<li>
-<p>Remove nodes, i.e., <code>$extends</code> and <code>$local</code> nodes from the JSON object created in the step 2.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>'Local node directory' is inserted before the first entry of <code>JF_PATH</code> environment variable when a file to be expanded is searched during the step 1. b.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_templating_2">Templating</h3>
-<div class="paragraph">
-<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>template:</code> in a JSON object <code><code>Work(2)</code></code>.
-The order where it is applied is determined by <code><code>jq</code>&#8217;s <code>`path(..)</code></code> function.
-Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[6]</a> how keys are sorted within an object node although they seem to be sorted by dictionary order.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>echo {CONTENT OF Work(2)}</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And this causes expansions of bash expressions inside the content of "Work(2)" and that expanded string will be printed by the <code>echo</code> command.</p>
-</div>
-</div>
-</div>
-</div>
+</div></div>
+<div id="limitationsAndFutureWork" class="tabcontent">
+<div id="limitationsAndFutureWork_content">
 <div class="sect1">
 <h2 id="_limitations_and_future_work">Limitations and Future Work</h2>
 <div class="sectionbody">
@@ -1026,6 +979,107 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[6]</a> ho
 <p>Handling of characters that need escaping on templating is naive.</p>
 </li>
 </ul>
+</div>
+</div>
+</div>
+</div></div>
+<div id="manual" class="tabcontent">
+<div id="manual_content">
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-shell script" data-lang="shell script">jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>-h</code>, <code>--help</code>: Shows a help</p>
+</li>
+<li>
+<p><code>-e</code>, <code>--enable-templating</code>: Enables templating</p>
+</li>
+<li>
+<p><code>-d</code>, <code>--disable-templating</code>: Disables templating</p>
+</li>
+<li>
+<p><code>--validation</code>: Validation mode.
+<code>no</code>, <code>strict</code>, and <code>lenient</code> are available.</p>
+</li>
+<li>
+<p><code>TARGET</code>: A file to be processed.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_environment_variables">Environment variables</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
+</div>
+<div class="sect2">
+<h3 id="_jf_path">JF_PATH</h3>
+<div class="paragraph">
+<p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
+Entries in the variable are separated by colons(<code>:</code>).</p>
+</div>
+<div class="paragraph">
+<p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value">Default value</h4>
+<div class="paragraph">
+<p><code>.</code></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h3>
+<div class="paragraph">
+<p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable’s value to <code>yes</code>.
+If any other value is set to the variable, it will not be executed.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value_2">Default value</h4>
+<div class="paragraph">
+<p><code>yes</code></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jf_debug">JF_DEBUG</h3>
+<div class="paragraph">
+<p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value_3">Default value</h4>
+<div class="paragraph">
+<p><code>disabled</code></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+<div id="top" class="tabcontent">
+<div id="top_content">
+<div class="sect1">
+<h2 id="_jq_front"><code>./</code> jq-front</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>jq-front</code> is a simple tool to give your JSON files a power of inheritance and templating.
+It was named after <strong>Cfront</strong><a href="#Cfront">[2]</a>, which is an old component of C++ language that converts C++ source code into C language.</p>
+</div>
+<div class="paragraph">
+<p>Despite that there are criticisms to use JSON<a href="#json">[5]</a> as system configuration information’s format<a href="#cr">[3]</a>, JSON still has its beauty such as rich tool supports, good balance between machine’s and human’s readability and writability, clarity and simplicity in syntax, etc.</p>
+</div>
+<div class="paragraph">
+<p>However, surely it has some weaknesses when we try to define data structure.
+For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
 </div>
 </div>
 </div>
@@ -1060,17 +1114,25 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[6]</a> ho
 </div>
 </div>
 </div>
-</div>
-<div id="footnotes">
-<hr>
-<div class="footnote" id="_footnotedef_1">
-<a href="#_footnoteref_1">1</a>. This is not merely a weakness of JSON but also other notations even YAML. YAML has a way to reference another object node from one,still it cannot embed a string value of a text node in another by itself.
-</div>
-</div>
-<div id="footer">
-<div id="footer-text">
-Last updated 2019-10-07 14:50:43 UTC
-</div>
-</div>
+</div></div>
+<script>
+function openCity(evt, cityName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+// Get the element with id="defaultOpen" and click on it
+document.getElementById("defaultOpen").click();
+
+</script>
 </body>
 </html>
