@@ -1,6 +1,6 @@
 = `jq-front`: JSON with inheritance and templating
 
-:toc: left
+== `./` jq-front
 
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
 It was named after *Cfront*<<Cfront>>, which is an old component of {cpp} language that converts {cpp} source code into C language.
