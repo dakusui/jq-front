@@ -1,20 +1,67 @@
+#!/usr/bin/env bash
+set -E -eu -o pipefail
+# shopt -s inherit_errexit
+
 function extract_style() {
-  cat "index.html" | xmllint --html --xpath '//style' - | sed -E 's/^<\/?style>$//g'
+  cat "all.html" | xmllint --html --xpath '//style' - | sed -E 's/^<\/?style>$//g'
 }
 
 function extract_content() {
   local _filestem="${1}"
-  cat "${_filestem}.html" | xmllint --html --xpath '//div[@id="content"]' -
+  cat "${_filestem}.html" | xmllint --html --xpath '//div[@id="content"]' - | sed -E 's/<div id="content">/<div id="'"${_filestem}"'_content">/g'
+}
+function render_style() {
+  extract_style
+  cat << STYLE
+// For tabs
+body {font-family: Arial;}
+
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
 }
 
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+STYLE
+}
 function render_button() {
   local _filestem="${1}"
-  echo '<button class="tablinks" onclick="openCity(event, '"'${_filestem}'"')" id="defaultOpen">'"${_filestem^}"'</button>'
+  echo '<button class="tablinks" onclick="openCity(event, '"'${_filestem}'"')">'"${_filestem}"'</button>'
 }
 
 function render_content() {
   local _filestem="${1}"
-  echo '<div id="'${_filestem^}'" class="tabcontent">'
+  echo '<div id="'${_filestem}'" class="tabcontent">'
   extract_content "${_filestem}"
   echo '</div>'
 }
@@ -41,7 +88,6 @@ function end_header() {
 
 function begin_body() {
   echo '<body>'
-  echo '<div class="tab">'
 }
 
 function end_body() {
@@ -76,19 +122,29 @@ function print_footer() {
 function render() {
   local _filestems=("$@")
   begin_header
-  extract_style
+  render_style
   end_header
+  begin_body
+
+  echo '<div class="tab">'
   local i
   for i in "${_filestems[@]}"; do
     render_button "${i}"
   done
+  echo '</div>'
 
   for i in "${_filestems[@]}"; do
     render_content "${i}"
   done
-
   end_body
   print_footer
 }
 
-render features design
+function main() {
+  local _targets
+  _targets=$(ls *.adoc | sed -E 's/\.adoc$//' | grep -v all| sort)
+  render ${_targets[@]}
+}
+
+cd "$(dirname ${0})"
+main
