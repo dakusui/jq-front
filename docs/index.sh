@@ -58,12 +58,12 @@ STYLE
 
 function render_default_button() {
   local _filestem="${1}"
-  echo '<button class="tablinks" onclick="openCity(event, '"'${_filestem}'"')" id="defaultOpen">'"${_filestem}"'</button>'
+  echo '<button class="tablinks" onclick="openTab(event, '"'${_filestem}'"')" id="defaultOpen">'"${_filestem}"'</button>'
 }
 
 function render_button() {
   local _filestem="${1}"
-  echo '<button class="tablinks" onclick="openCity(event, '"'${_filestem}'"')">'"${_filestem}"'</button>'
+  echo '<button class="tablinks" onclick="openTab(event, '"'${_filestem}'"')">'"${_filestem}"'</button>'
 }
 
 function render_all_buttons() {
@@ -123,7 +123,7 @@ function begin_body() {
 function end_body() {
   cat <<FOOTER
 <script>
-function openCity(evt, cityName) {
+function openTab(evt, cityName) {
   var i, tabcontent, tablinks;
   tabcontent = document.getElementsByClassName("tabcontent");
   for (i = 0; i < tabcontent.length; i++) {
