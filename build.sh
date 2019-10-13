@@ -127,6 +127,7 @@ function execute_release() {
 function execute_post_release() {
   local tmp
   git tag "${TARGET_VERSION}"
+  git push origin "${TARGET_VERSION}"
   tmp=$(mktemp)
   jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json >"${tmp}" || abort "Failed to bump up the version."
   cp "${tmp}" build_info.json
@@ -177,7 +178,7 @@ function main() {
     main doc test package test_package deploy
     return 0
   elif [[ ${1} == RELEASE ]]; then
-    main check_release doc test package_release test_release check_release release post_release
+    main check_release doc test package_release test_release check_release release prepare post_release
     return 0
   fi
 
