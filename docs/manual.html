@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.10">
-<title>Design</title>
+<title>Usage</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -441,12 +441,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_design">Design</a>
+<li><a href="#_usage">Usage</a></li>
+<li><a href="#_environment_variables">Environment variables</a>
 <ul class="sectlevel2">
-<li><a href="#_file_level_inheritance">File-level Inheritance</a></li>
-<li><a href="#_local_node_materialization">Local node Materialization</a></li>
-<li><a href="#_node_level_inheritance">Node-level Inheritance</a></li>
-<li><a href="#_templating">Templating</a></li>
+<li><a href="#_jf_path">JF_PATH</a></li>
+<li><a href="#_jf_templating_enabled">JF_TEMPLATING_ENABLED</a></li>
+<li><a href="#_jf_debug">JF_DEBUG</a></li>
 </ul>
 </li>
 </ul>
@@ -454,89 +454,80 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="content">
 <div class="sect1">
-<h2 id="_design">Design</h2>
+<h2 id="_usage">Usage</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Following is a diagram that illustrates <code>jq-front</code> 's processing pipeline design.</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="images/pipeline.png" alt="pipeline" width="920" height="574">
-</div>
-<div class="title">Figure 1. jq-front&#8217;s pipeline</div>
-</div>
-<div class="paragraph">
-<p>As shown, it consists of four main components, which are "file-level inheritance", "local node materialization", "node-level inheritance", and "templating".</p>
-</div>
-<div class="paragraph">
-<p>Designs of those components will be described in the rest of this section.</p>
-</div>
-<div class="sect2">
-<h3 id="_file_level_inheritance">File-level Inheritance</h3>
-<div class="paragraph">
-<p>'File-level Inheritance' composes a new JSON file from a given one by expanding the files provided through the top-level <code>$extends</code> attribute.</p>
-</div>
-<div class="paragraph">
-<p>At the end of this process, the attribute is removed and copied to the output, "Work(1)" in the diagram.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_local_node_materialization">Local node Materialization</h3>
-<div class="paragraph">
-<p>If the file, "Work(1)" has <code>$local</code> attribute whose value is an object node, nodes associated with keys under the attribute are dumped under a temporary directory.
-The temporary directory is called 'local node directory'.
-The 'local node directory' and its contents are utilized by the "node-level inheritance' mechanism.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_node_level_inheritance">Node-level Inheritance</h3>
-<div class="paragraph">
-<p>Node-level Inheritance mechanism is a bit more complicated than the file-level one.</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Create a base JSON object by the following procedure.</p>
-<div class="olist loweralpha">
-<ol class="loweralpha">
-<li>
-<p>Scan paths of all internal nodes.</p>
-</li>
-<li>
-<p>For each path, if it ends with <code>"$extends"</code>, expand the files specified by the attribute.</p>
-</li>
-<li>
-<p>Assign the JSON node created in step b. to the parent of the <code>$extends</code> attribute.</p>
-</li>
-</ol>
-</div>
-</li>
-<li>
-<p>Overlay the JSON object created in the step. 1 with an original JSON object.</p>
-</li>
-<li>
-<p>Remove nodes, i.e., <code>$extends</code> and <code>$local</code> nodes from the JSON object created in the step 2.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>'Local node directory' is inserted before the first entry of <code>JF_PATH</code> environment variable when a file to be expanded is searched during the step 1. b.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_templating">Templating</h3>
-<div class="paragraph">
-<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>template:</code> in a JSON object <code><code>Work(2)</code></code>.
-The order where it is applied is determined by <code><code>jq</code>&#8217;s <code>`path(..)</code></code> function.
-Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> how keys are sorted within an object node although they seem to be sorted by dictionary order.</p>
-</div>
 <div class="listingblock">
 <div class="content">
-<pre>echo {CONTENT OF Work(2)}</pre>
+<pre class="highlight"><code class="language-shell script" data-lang="shell script">jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
 </div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>-h</code>, <code>--help</code>: Shows a help</p>
+</li>
+<li>
+<p><code>-e</code>, <code>--enable-templating</code>: Enables templating</p>
+</li>
+<li>
+<p><code>-d</code>, <code>--disable-templating</code>: Disables templating</p>
+</li>
+<li>
+<p><code>--validation</code>: Validation mode.
+<code>no</code>, <code>strict</code>, and <code>lenient</code> are available.</p>
+</li>
+<li>
+<p><code>TARGET</code>: A file to be processed.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_environment_variables">Environment variables</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
+</div>
+<div class="sect2">
+<h3 id="_jf_path">JF_PATH</h3>
+<div class="paragraph">
+<p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
+Entries in the variable are separated by colons(<code>:</code>).</p>
 </div>
 <div class="paragraph">
-<p>And this causes expansions of bash expressions inside the content of "Work(2)" and that expanded string will be printed by the <code>echo</code> command.</p>
+<p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value">Default value</h4>
+<div class="paragraph">
+<p><code>.</code></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h3>
+<div class="paragraph">
+<p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
+If any other value is set to the variable, it will not be executed.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value_2">Default value</h4>
+<div class="paragraph">
+<p><code>yes</code></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jf_debug">JF_DEBUG</h3>
+<div class="paragraph">
+<p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_value_3">Default value</h4>
+<div class="paragraph">
+<p><code>disabled</code></p>
+</div>
 </div>
 </div>
 </div>
@@ -544,7 +535,7 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-12 04:52:36 UTC
+Last updated 2019-10-12 04:31:50 UTC
 </div>
 </div>
 </body>
