@@ -1,6 +1,6 @@
 = `jq-front`: JSON with inheritance and templating
 
-:toc: left
+== `./` jq-front
 
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
 It was named after *Cfront*<<Cfront>>, which is an old component of {cpp} language that converts {cpp} source code into C language.
@@ -9,14 +9,6 @@ Despite that there are criticisms to use JSON<<json>> as system configuration in
 
 However, surely it has some weaknesses when we try to define data structure.
 For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.footnote:[This is not merely a weakness of JSON but also other notations even YAML. YAML has a way to reference another object node from one,still it cannot embed a string value of a text node in another by itself.]
-
-include::features.adoc[]
-include::design.adoc[]
-
-== Limitations and Future Work
-
-* Cyclic dependencies are not checked and such a model will result in a stack-overflow.
-* Handling of characters that need escaping on templating is naive.
 
 [bibliography]
 == References

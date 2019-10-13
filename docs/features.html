@@ -441,13 +441,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_environment_variables">Environment variables</a>
-<ul class="sectlevel2">
-<li><a href="#_jf_path">JF_PATH</a></li>
-<li><a href="#_jf_templating_enabled">JF_TEMPLATING_ENABLED</a></li>
-<li><a href="#_jf_debug">JF_DEBUG</a></li>
-</ul>
-</li>
 <li><a href="#_features">Features</a>
 <ul class="sectlevel2">
 <li><a href="#_file_level_inheritance">File-level Inheritance</a></li>
@@ -459,55 +452,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_environment_variables">Environment variables</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
-</div>
-<div class="sect2">
-<h3 id="_jf_path">JF_PATH</h3>
-<div class="paragraph">
-<p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
-Entries in the variable are separated by colons(<code>:</code>).</p>
-</div>
-<div class="paragraph">
-<p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
-</div>
-<div class="sect3">
-<h4 id="_default_value">Default value</h4>
-<div class="paragraph">
-<p><code>.</code></p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h3>
-<div class="paragraph">
-<p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
-If any other value is set to the variable, it will not be executed.</p>
-</div>
-<div class="sect3">
-<h4 id="_default_value_2">Default value</h4>
-<div class="paragraph">
-<p><code>yes</code></p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_jf_debug">JF_DEBUG</h3>
-<div class="paragraph">
-<p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
-</div>
-<div class="sect3">
-<h4 id="_default_value_3">Default value</h4>
-<div class="paragraph">
-<p><code>disabled</code></p>
-</div>
-</div>
-</div>
-</div>
-</div>
 <div class="sect1">
 <h2 id="_features">Features</h2>
 <div class="sectionbody">
@@ -898,7 +842,7 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-08 02:37:52 UTC
+Last updated 2019-10-12 04:28:56 UTC
 </div>
 </div>
 </body>
