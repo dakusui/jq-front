@@ -110,6 +110,7 @@ function _expand_nodelevel_inheritances() {
       if ! _jj="$(locate_file_in_path "${j}" "${_validation_mode}" "${_path}")"; then
         abort "Failed to locate file '${j}'"
       fi
+      _check_cyclic_dependency "${j}" inheritance
       debug "** _expand_nodelevel_inheritances:          :_jj='${_jj}'"
       local _next_content
       _next_content="$(cat "${_jj}")"
@@ -133,6 +134,7 @@ function _expand_nodelevel_inheritances() {
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")"
       debug "** _expand_nodelevel_inheritances: _tmp_content: '${_tmp_content}'"
       _cur=$(mktemp_with_content "${_tmp_content}")
+      _unmark_as_in_progress "${j}" inheritance
     done
   done
   debug "** _expand_nodelevel_inheritances:end"
@@ -375,22 +377,25 @@ function dirof() {
 
 function _encode_filename() {
   local _filename="${1}"
+  local _dependency_space="${2}"
   local _ret
-  _ret="${_JF_SESSION_DIR}/$(echo "${_filename}" | md5sum | cut -f 1 -d ' ').txt"
+  _ret="${_JF_SESSION_DIR}/${_dependency_space}-$(echo "${_filename}" | md5sum | cut -f 1 -d ' ').txt"
   echo "${_ret}"
 }
 
 function _mark_as_in_progress() {
   local _filename="${1}"
+  local _dependency_space="${2}"
   local _encoded_filename
-  _encoded_filename="$(_encode_filename "${_filename}")"
+  _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
   touch "${_encoded_filename}"
 }
 
 function _unmark_as_in_progress() {
   local _filename="${1}"
+  local _dependency_space="${2}"
   local _encoded_filename
-  _encoded_filename="$(_encode_filename "${_filename}")"
+  _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
   rm "${_encoded_filename}" || {
     message "WARN: ${_filename} was not found."
   }
@@ -399,11 +404,22 @@ function _unmark_as_in_progress() {
 function _is_in_progress() {
   local _filename="${1}"
   local _encoded_filename
-  _encoded_filename="$(_encode_filename "${_filename}")"
+  local _dependency_space="${2}"
+  _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
   if [[ -e "${_encoded_filename}" ]]; then
     return 0
   fi
   return 1
+}
+
+function _check_cyclic_dependency() {
+  local _in="${1}"
+  local _dependency_space="${2}"
+  if _is_in_progress "${_in}" inheritance; then
+    abort "Cyclic ${_dependency_space} was detected on:'${_in}'"
+  else
+    _mark_as_in_progress "${_in}" inheritance
+  fi
 }
 
 function expand_filelevel_inheritances() {
@@ -421,11 +437,7 @@ function expand_filelevel_inheritances() {
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "...validated"
-  if _is_in_progress "${_in}"; then
-    abort "Cyclic inheritance was detected on:'${_target}'"
-  else
-    _mark_as_in_progress "${_in}"
-  fi
+  _check_cyclic_dependency "${_in}" inheritance
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
   if is_object "${_content}"; then
@@ -447,7 +459,7 @@ function expand_filelevel_inheritances() {
   else
     cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
-  _unmark_as_in_progress "${_in}"
+  _unmark_as_in_progress "${_in}" inheritance
   debug "end:expand_filelevel_inheritances"
 }
 
