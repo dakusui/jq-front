@@ -174,7 +174,7 @@ function _render_text_node() {
   local _ret
   local _ret_code=0
   debug "rendering"
-  if [[ "${_node_value}" == template:* || "${_node_value}" == eval:*|| "${_node_value}" == raw:* ]]; then
+  if [[ "${_node_value}" == template:* || "${_node_value}" == eval:* || "${_node_value}" == raw:* ]]; then
     _mode="${_node_value%%:*}"
     _body="${_node_value#*:}"
     if [[ "${_body}" == object:* || "${_body}" == array:* || "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
@@ -373,6 +373,39 @@ function dirof() {
   echo "${_ret}"
 }
 
+function _encode_filename() {
+  local _filename="${1}"
+  local _ret
+  _ret="${_JF_SESSION_DIR}/$(echo "${_filename}" | md5sum | cut -f 1 -d ' ').txt"
+  echo "${_ret}"
+}
+
+function _mark_as_in_progress() {
+  local _filename="${1}"
+  local _encoded_filename
+  _encoded_filename="$(_encode_filename "${_filename}")"
+  touch "${_encoded_filename}"
+}
+
+function _unmark_as_in_progress() {
+  local _filename="${1}"
+  local _encoded_filename
+  _encoded_filename="$(_encode_filename "${_filename}")"
+  rm "${_encoded_filename}" || {
+    message "WARN: ${_filename} was not found."
+  }
+}
+
+function _is_in_progress() {
+  local _filename="${1}"
+  local _encoded_filename
+  _encoded_filename="$(_encode_filename "${_filename}")"
+  if [[ -e "${_encoded_filename}" ]]; then
+    return 0
+  fi
+  return 1
+}
+
 function expand_filelevel_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
@@ -388,6 +421,11 @@ function expand_filelevel_inheritances() {
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "...validated"
+  if _is_in_progress "${_in}"; then
+    abort "Cyclic inheritance was detected on:'${_target}'"
+  else
+    _mark_as_in_progress "${_in}"
+  fi
   _content="$(cat "${_in}")"
   _cur="$(mktemp_with_content "${_content}")"
   if is_object "${_content}"; then
@@ -409,6 +447,7 @@ function expand_filelevel_inheritances() {
   else
     cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
+  _unmark_as_in_progress "${_in}"
   debug "end:expand_filelevel_inheritances"
 }
 
@@ -572,6 +611,7 @@ function main() {
   else
     _target="${1}"
   fi
+  mkdir -p "${_JF_SESSION_DIR}"
   perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
@@ -583,6 +623,8 @@ _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 _JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
 _JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
+_JF_SESSION_ID="$(date +%s.%N)"
+_JF_SESSION_DIR="/tmp/jq-front-${_JF_SESSION_ID}"
 
 debug "_JF_CWD=${_JF_CWD}"
 debug "_JF_BASEDIR=${_JF_BASEDIR}"
