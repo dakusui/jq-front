@@ -207,7 +207,7 @@ We can describe this relationship by using the templating feature of `jq-front`.
 ----
 {
   "releaseVersion": "2.12.0",
-  "snapshotVersion": "$(ref .releaseVersion)-SNAPSHOT"
+  "snapshotVersion": "eval:$(ref .releaseVersion)-SNAPSHOT"
 }
 ----
 
@@ -221,7 +221,7 @@ For instance, following is a valid input to `jq-front`.
 ----
 {
   "releaseVersion": "2.12.0",
-  "snapshotVersion": "$(ref .releaseVersion)-$(date \"+%Y-%m-%d\")"
+  "snapshotVersion": "eval:$(ref .releaseVersion)-$(date \"+%Y-%m-%d\")"
 }
 ----
 
