@@ -866,7 +866,7 @@ Templating is a feature to offer a solution to this challenge.</p>
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "releaseVersion": "2.12.0",
-  "snapshotVersion": "$(ref .releaseVersion)-SNAPSHOT"
+  "snapshotVersion": "eval:$(ref .releaseVersion)-SNAPSHOT"
 }</code></pre>
 </div>
 </div>
@@ -884,7 +884,7 @@ Not only built-in functions but also any commands (bash expressions) valid on a 
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "releaseVersion": "2.12.0",
-  "snapshotVersion": "$(ref .releaseVersion)-$(date \"+%Y-%m-%d\")"
+  "snapshotVersion": "eval:$(ref .releaseVersion)-$(date \"+%Y-%m-%d\")"
 }</code></pre>
 </div>
 </div>

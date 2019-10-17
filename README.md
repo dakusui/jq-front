@@ -35,7 +35,7 @@ Then create a file that extends them.
 ```shell script
 $ echo '{
     "$extends": ["greeting.json", "name.json"],
-    "sayHello": "eval:$(ref .greeting), $(ref .yourname). Toady is $(date). How are you doing?"
+    "sayHello": "$(ref .greeting), $(ref .yourname). Toady is $(date). How are you doing?"
   }' > sayHello.json
 ```
 
@@ -75,7 +75,7 @@ function docker-jq-front() {
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.12}" "${@}"
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.13}" "${@}"
 }
 
 ```
