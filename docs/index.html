@@ -654,7 +654,7 @@ To specify JSON objects to be referenced, <code>jq-front</code> searches for key
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "versionStem": "2.12.0",
-  "snapshotVersion": "$(ref .versionStem)-SNAPSHOT"
+  "snapshotVersion": "eval:$(ref .versionStem)-SNAPSHOT"
 }</code></pre>
 </div>
 </div>
