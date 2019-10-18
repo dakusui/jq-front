@@ -1,5 +1,4 @@
 == Limitations and Future Work
 
-* Cyclic dependencies are not checked and such a model will result in a stack-overflow.
-* Handling of characters that need escaping on templating is naive.
+* Handling of characters that need escaping on templating is naive right now.
 
