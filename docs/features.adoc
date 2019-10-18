@@ -114,8 +114,7 @@ That is, `K.json` is rendered into a following JSON file.
 ----
 
 CAUTION: Ensure that inheritance hierarchy does not have any cyclic dependencies.
-Behaviour for this situation is not defined and it will result in stack overflow.
-
+It will be checked and result in an error.
 
 === Node-level Inheritance
 

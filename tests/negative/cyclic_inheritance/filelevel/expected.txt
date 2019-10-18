@@ -1,0 +1,1 @@
+ERROR: Cyclic inheritance was detected on
