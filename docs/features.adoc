@@ -259,3 +259,13 @@ This function can only work from inside "Work(2)" file.
 * A path to "Work(2)" file.
 
 
+=== Script Inheritance
+
+(t.b.d.)
+
+=== Yaml file inheritance
+
+
+Experimental.
+
+(t.b.d.)
