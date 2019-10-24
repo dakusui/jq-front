@@ -178,7 +178,7 @@ function main() {
     main doc test package test_package deploy
     return 0
   elif [[ ${1} == RELEASE ]]; then
-    main check_release doc test package_release test_release check_release release prepare post_release
+    main check_release doc test package_release test_release release prepare post_release
     return 0
   fi
 
