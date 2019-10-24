@@ -318,7 +318,15 @@ function find_file_in_path() {
   local _path="${2}"
   IFS=';' read -r -a _arr <<<"${_target}"
   if [[ ${#_arr[@]} -le 1 ]]; then
-    search_file_in "${1}" "${2}"
+    local _file
+    _file="$(search_file_in "${_target}" "${_path}")"
+    if [[ "${_target}" == *.yaml || "${_target}" == *.yml ]]; then
+      local _content
+      _content="$(yq . "${_file}")"
+      mktemp_with_content "${_content}"
+    else
+      echo "${_file}"
+    fi
   elif [[ ${#_arr[@]} -gt 1 ]]; then
     ####
     # In case the file name contains one or more semi-colons(';'), the name will be splitted by it.
