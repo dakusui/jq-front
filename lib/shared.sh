@@ -13,8 +13,13 @@ function mktempdir() {
   mktemp -d
 }
 
+function is_debug_enabled() {
+  [[ ${_JF_DEBUG:-""} == "enabled" ]] && return 0
+  return 1
+}
+
 function debug() {
-  if [[ ${_JF_DEBUG:-""} == "enabled" ]]; then
+  if is_debug_enabled; then
     message "DEBUG" "$@"
   fi
 }
@@ -63,6 +68,11 @@ function is_object() {
   local _ret
   _ret="$(echo "${_json_content}" | jq '.|if type=="object" then 0 else 1 end' 2>/dev/null)"
   return "${_ret}"
+}
+
+function type_of() {
+  local _json_content="${1}"
+  jq -r -c '.|type' <(echo "${_json_content}") || echo "string"
 }
 
 function has_value_at() {
