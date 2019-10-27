@@ -206,7 +206,9 @@ function _render_text_node() {
       message "type:'${type}'"
       if [[ "${type}" == string && "${value}" == eval:* ]]; then
         local ret
+        _check_cyclic_dependency "${_path}" reference
         ret="$(_render_text_node "${value}" "${_path}" "${_self}")"
+        _unmark_as_in_progress "${_path}" reference
         jq -r -c '.' <(echo "${ret}")
       else
         echo "${value}"
