@@ -261,6 +261,8 @@ This function can only work from inside "Work(2)" file.
 
 === Script Inheritance
 
+Experimental.
+
 (t.b.d.)
 
 === Yaml file inheritance

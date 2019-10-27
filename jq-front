@@ -199,7 +199,20 @@ function _render_text_node() {
       # shellcheck disable=SC2181
       [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
       local _path="${1}"
-      value_at "${_path}" "$(cat "$(self)")"
+      local value type
+      value=$(value_at "${_path}" "$(cat "$(self)")")
+      type="$(type_of "${value}")"
+      message "value:'${value}'"
+      message "type:'${type}'"
+      if [[ "${type}" == string && "${value}" == eval:* ]]; then
+        local ret
+        _check_cyclic_dependency "${_path}" reference
+        ret="$(_render_text_node "${value}" "${_path}" "${_self}")"
+        _unmark_as_in_progress "${_path}" reference
+        jq -r -c '.' <(echo "${ret}")
+      else
+        echo "${value}"
+      fi
     }
     ####
     # Prints the entire file (before templating).
@@ -244,11 +257,12 @@ function _render_text_node() {
     local _error_out
     export _path
     _error="$(mktemp)"
-    _ret="$(eval "echo \"${_body}\"" 2>${_error})"
+    _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
     unset _path
     # shellcheck disable=SC2002
     _error_out="$(cat "${_error}")"
     [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "Error was detected during templating: $(cat "${_error}")"
+    debug "err during eval:'${_error_out}'"
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
   fi
