@@ -133,7 +133,7 @@ function execute_post_release() {
   cp "${tmp}" build_info.json
   message "Updated build_info.json"
   message "Synchronize documentation"
-  execute_doc
+  execute_prepare
   message "Documenatation was synchronized"
   git commit -a -m "$(printf "Bump up target version to v%s.%s" \
     "$(jq '.version.target.major' "${tmp}")" \
@@ -178,7 +178,7 @@ function main() {
     main doc test package test_package deploy
     return 0
   elif [[ ${1} == RELEASE ]]; then
-    main check_release doc test package_release test_release release prepare post_release
+    main check_release doc test package_release test_release release post_release
     return 0
   fi
 
