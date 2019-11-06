@@ -67,6 +67,7 @@ function _merge_object_nodes() {
   local _b="${2}"
   local _error
   _error=$(mktemp)
+  debug "merging _a:'${_a}' and _b:'${_b}'"
   jq -r -c -n '$a * $b' --argjson a "${_a}" --argjson b "${_b}" || {
     abort "Failed to merge object nodes:'${_a}' and '${_b}': error: ${_error}"
   }
@@ -91,8 +92,8 @@ function _expand_nodelevel_inheritances() {
   local _cur
   local _in
   local -a _keys
-  debug "** _expand_nodelevel_inheritances:begin"
-  _cur=$(mktemp_with_content '{}')
+  debug "** _expand_nodelevel_inheritances:begin:_content:'${_content}'"
+  _cur=$(mktemp_with_content "${_content}")
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
@@ -100,18 +101,15 @@ function _expand_nodelevel_inheritances() {
     local j
     local -a _extendeds
     local _p="${i%.\"\$extends\"}"
-    debug "** _expand_nodelevel_inheritances:processing:i='${i}'"
+    debug "** _expand_nodelevel_inheritances:processing: i='${i}'"
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for j in "${_extendeds[@]}"; do
-      local _jj
-      local _merged_piece
-      local _cur_content
-      local _tmp_content
+      local _jj _merged_piece _cur_content _tmp_content
       if ! _jj="$(locate_file_in_path "${j}" "${_validation_mode}" "${_path}")"; then
         abort "Failed to locate file '${j}'"
       fi
       _check_cyclic_dependency "${j}" inheritance
-      debug "** _expand_nodelevel_inheritances:          :_jj='${_jj}'"
+      debug "** _expand_nodelevel_inheritances: _jj='${_jj}'"
       local _next_content
       _next_content="$(cat "${_jj}")"
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
@@ -119,14 +117,14 @@ function _expand_nodelevel_inheritances() {
       if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece
         local _next_piece
-        debug "** _expand_nodelevel_inheritances:          :value found at _p:'${_p}' in '${_cur_content}'"
-        debug "** _expand_nodelevel_inheritances:          :_p='${_p}'"
-        debug "** _expand_nodelevel_inheritances:          :_cur_content='${_cur_content}'"
+        debug "** _expand_nodelevel_inheritances: value found at _p:'${_p}' in '${_cur_content}'"
+        debug "** _expand_nodelevel_inheritances: _p='${_p}'"
+        debug "** _expand_nodelevel_inheritances: _cur_content='${_cur_content}'"
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece="$(mktemp_with_content "$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")")"
       else
-        debug "_expand_nodelevel_inheritances:          :value NOT found at _p:'${_p}' in '${_cur_content}'"
+        debug "_expand_nodelevel_inheritances: value NOT found at _p:'${_p}' in '${_cur_content}'"
         local _expanded_tmp
         _expanded_tmp="$(run_jqfront ${_jj} "${_validation_mode}" "${_path}")"
         _merged_piece="$(mktemp_with_content "${_expanded_tmp}")"
@@ -137,7 +135,7 @@ function _expand_nodelevel_inheritances() {
       _unmark_as_in_progress "${j}" inheritance
     done
   done
-  debug "** _expand_nodelevel_inheritances:end"
+  debug "** _expand_nodelevel_inheritances:end:_cur='$(cat ${_cur})'"
   jq -r -c . "${_cur}"
 }
 
