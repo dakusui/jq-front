@@ -6,10 +6,12 @@ To specify JSON objects to be referenced, `jq-front` searches for keys which hav
 
 Basic features offered by the product are following
 
-* File-level Inheritance
-* Node-level Inheritance
-* Script-output Inheritance
-* Templating
+* Inheritance
+** File-level Inheritance
+** Node-level Inheritance
+** Script-output Inheritance
+** Yaml inheritance
+* Templating ("eval" feature)
 * Validation
 
 And usage of them will be discussed in this section.
@@ -19,17 +21,21 @@ In this section, we introduce features of the product using following data.
 * link:examples/A.json[A.json]
 [source, json]
 include::examples/A.json[]
+
 * link:examples/AA.json[AA.json]
 [source, json]
 include::examples/AA.json[]
+
 * link:examples/B.json[B.json]
 [source, json]
 include::examples/B.json[]
+
 * link:examples/T.json[T.json]
 [source, json]
 include::examples/T.json[]
 
-=== File-level Inheritance
+=== Inheritance
+==== File-level Inheritance
 
 In programming languages, inheritance is an indispensable technique to reuse a component.
 `jq-front` offers it for the purpose.
@@ -180,6 +186,19 @@ And `P.json` will result in following output.
 }
 ----
 
+==== Script Inheritance
+
+This feature is experimental.
+
+(t.b.d.)
+
+==== Yaml file inheritance
+
+
+Experimental.
+
+(t.b.d.)
+
 === Templating
 
 Sometimes we need to compose a value of text node from a value of another.
@@ -258,16 +277,6 @@ This function can only work from inside "Work(2)" file.
 - returned value:
 * A path to "Work(2)" file.
 
+===== `parent` function
 
-=== Script Inheritance
-
-Experimental.
-
-(t.b.d.)
-
-=== Yaml file inheritance
-
-
-Experimental.
-
-(t.b.d.)
+A function that prints a path to a parent node of a given path.

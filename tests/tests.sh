@@ -108,6 +108,10 @@ function run_negative_test() {
   return ${_ret}
 }
 
+run_ignore_test() {
+  message "IGNORED"
+}
+
 function _failure_message() {
   local _expected_validity_level="${1}"
   local _schema="${2}"

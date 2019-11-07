@@ -1,0 +1,30 @@
+= FAQ
+
+== Why objects inside an array are rendered differently on inheritance fom ones outside?
+
+It is because of the behaviour of `*` operator of `jq`, which treats them differently(https://github.com/dakusui/jq-front/issues/60[issue-60]).
+`jq-front` relies on the operator for implementing its inheritance feature.
+
+Maybe we should implement our own operator for inheritance in future.
+
+The workaround for this is to have an intermediate node like following.
+
+[source,json]
+----
+{
+    "$local": {
+      "nodeX": {
+        "x":"X"
+      }
+    },
+    "work": {
+      "nodeA": {
+         "$extends": ["nodeX"]
+      }
+    },
+    "P":[
+       "eval:object:$(ref .work.nodeA)"
+    ]
+}
+----
+

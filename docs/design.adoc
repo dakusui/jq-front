@@ -5,7 +5,7 @@ Following is a diagram that illustrates `jq-front` 's processing pipeline design
 [ditaa, target="images/pipeline"]
 .jq-front's pipeline
 ----
-_Inheritance!
+Inheritance
 +--------------------------------------------------------------------------------------+
 |                                                                                      |
 |          file-level inheritance             local node materialization               |
