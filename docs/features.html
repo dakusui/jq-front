@@ -443,11 +443,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel1">
 <li><a href="#_features">Features</a>
 <ul class="sectlevel2">
-<li><a href="#_file_level_inheritance">File-level Inheritance</a></li>
+<li><a href="#_inheritance">Inheritance</a></li>
 <li><a href="#_node_level_inheritance">Node-level Inheritance</a></li>
 <li><a href="#_templating">Templating</a></li>
-<li><a href="#_script_inheritance">Script Inheritance</a></li>
-<li><a href="#_yaml_file_inheritance">Yaml file inheritance</a></li>
 </ul>
 </li>
 </ul>
@@ -468,6 +466,10 @@ To specify JSON objects to be referenced, <code>jq-front</code> searches for key
 <div class="ulist">
 <ul>
 <li>
+<p>Inheritance</p>
+<div class="ulist">
+<ul>
+<li>
 <p>File-level Inheritance</p>
 </li>
 <li>
@@ -477,7 +479,13 @@ To specify JSON objects to be referenced, <code>jq-front</code> searches for key
 <p>Script-output Inheritance</p>
 </li>
 <li>
-<p>Templating</p>
+<p>Yaml inheritance</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Templating ("eval" feature)</p>
 </li>
 <li>
 <p>Validation</p>
@@ -539,7 +547,9 @@ To specify JSON objects to be referenced, <code>jq-front</code> searches for key
 </ul>
 </div>
 <div class="sect2">
-<h3 id="_file_level_inheritance">File-level Inheritance</h3>
+<h3 id="_inheritance">Inheritance</h3>
+<div class="sect3">
+<h4 id="_file_level_inheritance">File-level Inheritance</h4>
 <div class="paragraph">
 <p>In programming languages, inheritance is an indispensable technique to reuse a component.
 <code>jq-front</code> offers it for the purpose.
@@ -644,6 +654,7 @@ It will be checked and result in an error.
 </table>
 </div>
 </div>
+</div>
 <div class="sect2">
 <h3 id="_node_level_inheritance">Node-level Inheritance</h3>
 <div class="paragraph">
@@ -710,6 +721,24 @@ And <code>P.json</code> will result in following output.</p>
     "a": "a"
   }
 }</code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_script_inheritance">Script Inheritance</h4>
+<div class="paragraph">
+<p>This feature is experimental.</p>
+</div>
+<div class="paragraph">
+<p>(t.b.d.)</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_yaml_file_inheritance">Yaml file inheritance</h4>
+<div class="paragraph">
+<p>Experimental.</p>
+</div>
+<div class="paragraph">
+<p>(t.b.d.)</p>
 </div>
 </div>
 </div>
@@ -837,24 +866,12 @@ This function can only work from inside "Work(2)" file.</p>
 </ul>
 </div>
 </div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_script_inheritance">Script Inheritance</h3>
+<div class="sect4">
+<h5 id="_parent_function"><code>parent</code> function</h5>
 <div class="paragraph">
-<p>Experimental.</p>
-</div>
-<div class="paragraph">
-<p>(t.b.d.)</p>
+<p>A function that prints a path to a parent node of a given path.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_yaml_file_inheritance">Yaml file inheritance</h3>
-<div class="paragraph">
-<p>Experimental.</p>
-</div>
-<div class="paragraph">
-<p>(t.b.d.)</p>
 </div>
 </div>
 </div>
@@ -862,7 +879,7 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-27 00:36:20 UTC
+Last updated 2019-11-03 00:18:44 UTC
 </div>
 </div>
 </body>

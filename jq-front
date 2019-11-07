@@ -93,7 +93,7 @@ function _expand_nodelevel_inheritances() {
   local _in
   local -a _keys
   debug "** _expand_nodelevel_inheritances:begin:_content:'${_content}'"
-  _cur=$(mktemp_with_content "${_content}")
+  _cur=$(mktemp_with_content '{}')
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
