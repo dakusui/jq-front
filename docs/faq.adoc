@@ -1,6 +1,6 @@
 = FAQ
 
-== Why objects inside an array are rendered differently on inheritance fom ones outside?
+== Why objects inside an array are rendered differently on inheritance from ones outside?
 
 It is because of the behaviour of `*` operator of `jq`, which treats them differently(https://github.com/dakusui/jq-front/issues/60[issue-60]).
 `jq-front` relies on the operator for implementing its inheritance feature.
@@ -28,3 +28,7 @@ The workaround for this is to have an intermediate node like following.
 }
 ----
 
+== Why is jq-front so slow?
+
+It is because it's written as a bash script and creates quite a lot of process an input file.
+If somebody starts a project to rewrite this in Java, for instance, I would be contributing to it!

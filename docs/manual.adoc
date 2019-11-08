@@ -1,44 +1,104 @@
 == Usage
 
-```shell script
+=== Command Line Interface
+
+[source, bash]
+----
 jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]
-```
+----
 
 - `-h`, `--help`: Shows a help
-- `-e`, `--enable-templating`: Enables templating
+- `-e`, `--enable-templating`: Enables templating (default)
 - `-d`, `--disable-templating`: Disables templating
 - `--validation`: Validation mode.
 `no`, `strict`, and `lenient` are available.
+The default is `no`.
 - `TARGET`: A file to be processed.
 
-== Environment variables
+=== Environment variables
 
 You can control behaviours of `jq-front` by setting environment variables described in this section.
 
-=== JF_PATH
+==== JF_PATH
 
 From directories listed in `JF_PATH`, `jq-front` searches for requested file.
 Entries in the variable are separated by colons(`:`).
 
 When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.
 
-==== Default value
+===== Default value
 
 `.`
 
-=== JF_TEMPLATING_ENABLED
+==== JF_TEMPLATING_ENABLED
 
 You can enable `jq-front` 's templating feature by setting this environment variable's value to `yes`.
 If any other value is set to the variable, it will not be executed.
 
-==== Default value
+===== Default value
 
 `yes`
 
 
-=== JF_DEBUG
+==== JF_DEBUG
 
 If this variable is set to `enabled`, debug information will be printed to `stderr`.
 
-==== Default value
+===== Default value
 `disabled`
+
+== Syntax
+
+=== `$extends` keyword
+
+This keyword can be used as a key whose associated value is an array.
+Each element in the array must be a text node.
+
+The string can be one of
+
+* A file in `JF_PATH`.
+* A script invocation directive.
+* A name of a local node, which is defined as a key in an object associated with `$local` keyword at the top level of a file.
+
+==== File in `JF_PATH`
+
+You can specify a file in `JF_PATH` environment variable.
+If the name ends with `.yaml` or `.yml`, it will be treated as a YAML file and converted into a JSON file by `yq` command.
+
+==== Script invocation directive
+
+You can specify a program which generates a JSON object with a following syntax.
+
+[source, json]
+----
+{
+  "$extends": [
+    "SS.sh;bash -eu;dir1/J.json"
+  ]
+}
+----
+
+`SS.sh` is a script file to be executed.
+`bash -eu` is a program which executes the script.
+`dir1/J.json` is an argument which is passed to the program `SS.sh`.
+
+The string is split by semicolons and the first token is treated as a name of a program to be executed.
+The program is searched from `JF_PATH`.
+The second toke is a shell with which the program is executed.
+And the rest will be passed to the program as arguments.
+
+NOTE: By inserting one or more semicolons, this syntax is triggred.
+
+==== Local node name
+(t.b.d.)
+
+=== `$local` keyword
+
+This keyword can be used as a key whose associated value is an object.
+A value in the object must be an object.
+
+This keyword can only be placed at the top-level of a flie.
+
+=== `eval:` keyword
+
+This keyword can be used in a text node.
