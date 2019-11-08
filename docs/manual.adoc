@@ -57,15 +57,34 @@ Each element in the array must be a text node.
 The string can be one of
 
 * A file in `JF_PATH`.
+* When it is placed NOT at the top level of an object node file, a name of a "local node".
 * A script invocation directive.
-* A name of a local node, which is defined as a key in an object associated with `$local` keyword at the top level of a file.
 
-==== File in `JF_PATH`
+==== File in `JF_PATH` and Local Node
 
-You can specify a file in `JF_PATH` environment variable.
+You can specify a file on `JF_PATH` environment variable.
 If the name ends with `.yaml` or `.yml`, it will be treated as a YAML file and converted into a JSON file by `yq` command.
 
-==== Script invocation directive
+As long as your file is under a directory specified by an element in `JF_PATH`, you can use it.
+That is, suppose that you have `JF_PATH` and it has a value `dir1:dir2`.
+
+
+[tree]
+----
+dir1
+└── child
+    └── J.json
+----
+The file `J.json` can be referenced by
+
+----
+"$extends": ["child/J.json"]
+----
+
+(t.b.d.)
+, which is defined as a key in an object associated with `$local` keyword at the top level of a file.
+
+==== Script Invocation Directive
 
 You can specify a program which generates a JSON object with a following syntax.
 
@@ -88,9 +107,6 @@ The second toke is a shell with which the program is executed.
 And the rest will be passed to the program as arguments.
 
 NOTE: By inserting one or more semicolons, this syntax is triggred.
-
-==== Local node name
-(t.b.d.)
 
 === `$local` keyword
 
