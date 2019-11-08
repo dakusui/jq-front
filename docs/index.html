@@ -435,6 +435,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
+
 // For tabs
 body {font-family: Arial;}
 
@@ -575,11 +576,12 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="faq" class="tabcontent">
 <div id="faq_content">
 <div class="sect1">
-<h2 id="_why_objects_inside_an_array_are_rendered_differently_on_inheritance_fom_ones_outside">Why objects inside an array are rendered differently on inheritance fom ones outside?</h2>
+<h2 id="_why_objects_inside_an_array_are_rendered_differently_on_inheritance_from_ones_outside">Why objects inside an array are rendered differently on inheritance from ones outside?</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>It is because of the behaviour of <code>*</code> operator of <code>jq</code>, which treats them differently(<a href="https://github.com/dakusui/jq-front/issues/60">issue-60</a>).
@@ -612,7 +614,17 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div></div>
+<div class="sect1">
+<h2 id="_why_is_jq_front_so_slow">Why is jq-front so slow?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is because it’s written as a bash script and creates quite a lot of process an input file.
+If somebody starts a project to rewrite this in Java, for instance, I would be contributing to it!</p>
+</div>
+</div>
+</div>
+</div>
+</div>
 <div id="features" class="tabcontent">
 <div id="features_content">
 <div class="sect1">
@@ -1039,7 +1051,8 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="limitationsAndFutureWork" class="tabcontent">
 <div id="limitationsAndFutureWork_content">
 <div class="sect1">
@@ -1054,15 +1067,18 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="manual" class="tabcontent">
 <div id="manual_content">
 <div class="sect1">
 <h2 id="_usage">Usage</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_command_line_interface">Command Line Interface</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-shell script" data-lang="shell script">jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
+<pre class="highlight"><code class="language-bash" data-lang="bash">jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -1071,14 +1087,15 @@ This function can only work from inside "Work(2)" file.</p>
 <p><code>-h</code>, <code>--help</code>: Shows a help</p>
 </li>
 <li>
-<p><code>-e</code>, <code>--enable-templating</code>: Enables templating</p>
+<p><code>-e</code>, <code>--enable-templating</code>: Enables templating (default)</p>
 </li>
 <li>
 <p><code>-d</code>, <code>--disable-templating</code>: Disables templating</p>
 </li>
 <li>
 <p><code>--validation</code>: Validation mode.
-<code>no</code>, <code>strict</code>, and <code>lenient</code> are available.</p>
+<code>no</code>, <code>strict</code>, and <code>lenient</code> are available.
+The default is <code>no</code>.</p>
 </li>
 <li>
 <p><code>TARGET</code>: A file to be processed.</p>
@@ -1086,15 +1103,13 @@ This function can only work from inside "Work(2)" file.</p>
 </ul>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_environment_variables">Environment variables</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_environment_variables">Environment variables</h3>
 <div class="paragraph">
 <p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
 </div>
-<div class="sect2">
-<h3 id="_jf_path">JF_PATH</h3>
+<div class="sect3">
+<h4 id="_jf_path">JF_PATH</h4>
 <div class="paragraph">
 <p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
 Entries in the variable are separated by colons(<code>:</code>).</p>
@@ -1102,33 +1117,33 @@ Entries in the variable are separated by colons(<code>:</code>).</p>
 <div class="paragraph">
 <p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
 </div>
-<div class="sect3">
-<h4 id="_default_value">Default value</h4>
+<div class="sect4">
+<h5 id="_default_value">Default value</h5>
 <div class="paragraph">
 <p><code>.</code></p>
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h3>
+<div class="sect3">
+<h4 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h4>
 <div class="paragraph">
 <p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable’s value to <code>yes</code>.
 If any other value is set to the variable, it will not be executed.</p>
 </div>
-<div class="sect3">
-<h4 id="_default_value_2">Default value</h4>
+<div class="sect4">
+<h5 id="_default_value_2">Default value</h5>
 <div class="paragraph">
 <p><code>yes</code></p>
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_jf_debug">JF_DEBUG</h3>
+<div class="sect3">
+<h4 id="_jf_debug">JF_DEBUG</h4>
 <div class="paragraph">
 <p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
 </div>
-<div class="sect3">
-<h4 id="_default_value_3">Default value</h4>
+<div class="sect4">
+<h5 id="_default_value_3">Default value</h5>
 <div class="paragraph">
 <p><code>disabled</code></p>
 </div>
@@ -1136,7 +1151,104 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 </div>
 </div>
-</div></div>
+</div>
+<div class="sect1">
+<h2 id="_syntax">Syntax</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_extends_keyword"><code>$extends</code> keyword</h3>
+<div class="paragraph">
+<p>This keyword can be used as a key whose associated value is an array.
+Each element in the array must be a text node.</p>
+</div>
+<div class="paragraph">
+<p>The string can be one of</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A file in <code>JF_PATH</code>.</p>
+</li>
+<li>
+<p>A script invocation directive.</p>
+</li>
+<li>
+<p>A name of a local node, which is defined as a key in an object associated with <code>$local</code> keyword at the top level of a file.</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_file_in_jf_path">File in <code>JF_PATH</code></h4>
+<div class="paragraph">
+<p>You can specify a file in <code>JF_PATH</code> environment variable.
+If the name ends with <code>.yaml</code> or <code>.yml</code>, it will be treated as a YAML file and converted into a JSON file by <code>yq</code> command.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_script_invocation_directive">Script invocation directive</h4>
+<div class="paragraph">
+<p>You can specify a program which generates a JSON object with a following syntax.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [
+    "SS.sh;bash -eu;dir1/J.json"
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>SS.sh</code> is a script file to be executed.
+<code>bash -eu</code> is a program which executes the script.
+<code>dir1/J.json</code> is an argument which is passed to the program <code>SS.sh</code>.</p>
+</div>
+<div class="paragraph">
+<p>The string is split by semicolons and the first token is treated as a name of a program to be executed.
+The program is searched from <code>JF_PATH</code>.
+The second toke is a shell with which the program is executed.
+And the rest will be passed to the program as arguments.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+By inserting one or more semicolons, this syntax is triggred.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_local_node_name">Local node name</h4>
+<div class="paragraph">
+<p>(t.b.d.)</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_local_keyword"><code>$local</code> keyword</h3>
+<div class="paragraph">
+<p>This keyword can be used as a key whose associated value is an object.
+A value in the object must be an object.</p>
+</div>
+<div class="paragraph">
+<p>This keyword can only be placed at the top-level of a flie.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_eval_keyword"><code>eval:</code> keyword</h3>
+<div class="paragraph">
+<p>This keyword can be used in a text node.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 <div id="top" class="tabcontent">
 <div id="top_content">
 <div class="sect1">
@@ -1186,7 +1298,8 @@ For instance, under a situation, where we need to generate similar but slightly 
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <script>
 function openTab(evt, cityName) {
   var i, tabcontent, tablinks;

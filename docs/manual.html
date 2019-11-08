@@ -441,12 +441,17 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_usage">Usage</a></li>
-<li><a href="#_environment_variables">Environment variables</a>
+<li><a href="#_usage">Usage</a>
 <ul class="sectlevel2">
-<li><a href="#_jf_path">JF_PATH</a></li>
-<li><a href="#_jf_templating_enabled">JF_TEMPLATING_ENABLED</a></li>
-<li><a href="#_jf_debug">JF_DEBUG</a></li>
+<li><a href="#_command_line_interface">Command Line Interface</a></li>
+<li><a href="#_environment_variables">Environment variables</a></li>
+</ul>
+</li>
+<li><a href="#_syntax">Syntax</a>
+<ul class="sectlevel2">
+<li><a href="#_extends_keyword"><code>$extends</code> keyword</a></li>
+<li><a href="#_local_keyword"><code>$local</code> keyword</a></li>
+<li><a href="#_eval_keyword"><code>eval:</code> keyword</a></li>
 </ul>
 </li>
 </ul>
@@ -456,9 +461,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="sect1">
 <h2 id="_usage">Usage</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_command_line_interface">Command Line Interface</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-shell script" data-lang="shell script">jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
+<pre class="highlight"><code class="language-bash" data-lang="bash">jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -467,14 +474,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p><code>-h</code>, <code>--help</code>: Shows a help</p>
 </li>
 <li>
-<p><code>-e</code>, <code>--enable-templating</code>: Enables templating</p>
+<p><code>-e</code>, <code>--enable-templating</code>: Enables templating (default)</p>
 </li>
 <li>
 <p><code>-d</code>, <code>--disable-templating</code>: Disables templating</p>
 </li>
 <li>
 <p><code>--validation</code>: Validation mode.
-<code>no</code>, <code>strict</code>, and <code>lenient</code> are available.</p>
+<code>no</code>, <code>strict</code>, and <code>lenient</code> are available.
+The default is <code>no</code>.</p>
 </li>
 <li>
 <p><code>TARGET</code>: A file to be processed.</p>
@@ -482,15 +490,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_environment_variables">Environment variables</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_environment_variables">Environment variables</h3>
 <div class="paragraph">
 <p>You can control behaviours of <code>jq-front</code> by setting environment variables described in this section.</p>
 </div>
-<div class="sect2">
-<h3 id="_jf_path">JF_PATH</h3>
+<div class="sect3">
+<h4 id="_jf_path">JF_PATH</h4>
 <div class="paragraph">
 <p>From directories listed in <code>JF_PATH</code>, <code>jq-front</code> searches for requested file.
 Entries in the variable are separated by colons(<code>:</code>).</p>
@@ -498,33 +504,33 @@ Entries in the variable are separated by colons(<code>:</code>).</p>
 <div class="paragraph">
 <p>When it is searching for a file during node-level inheritance resolution, it first searches for local node directory, which is created for temporarily, and if nothing is found, it will then traverses the variable.</p>
 </div>
-<div class="sect3">
-<h4 id="_default_value">Default value</h4>
+<div class="sect4">
+<h5 id="_default_value">Default value</h5>
 <div class="paragraph">
 <p><code>.</code></p>
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h3>
+<div class="sect3">
+<h4 id="_jf_templating_enabled">JF_TEMPLATING_ENABLED</h4>
 <div class="paragraph">
 <p>You can enable <code>jq-front</code> 's templating feature by setting this environment variable&#8217;s value to <code>yes</code>.
 If any other value is set to the variable, it will not be executed.</p>
 </div>
-<div class="sect3">
-<h4 id="_default_value_2">Default value</h4>
+<div class="sect4">
+<h5 id="_default_value_2">Default value</h5>
 <div class="paragraph">
 <p><code>yes</code></p>
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_jf_debug">JF_DEBUG</h3>
+<div class="sect3">
+<h4 id="_jf_debug">JF_DEBUG</h4>
 <div class="paragraph">
 <p>If this variable is set to <code>enabled</code>, debug information will be printed to <code>stderr</code>.</p>
 </div>
-<div class="sect3">
-<h4 id="_default_value_3">Default value</h4>
+<div class="sect4">
+<h5 id="_default_value_3">Default value</h5>
 <div class="paragraph">
 <p><code>disabled</code></p>
 </div>
@@ -533,9 +539,105 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_syntax">Syntax</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_extends_keyword"><code>$extends</code> keyword</h3>
+<div class="paragraph">
+<p>This keyword can be used as a key whose associated value is an array.
+Each element in the array must be a text node.</p>
+</div>
+<div class="paragraph">
+<p>The string can be one of</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A file in <code>JF_PATH</code>.</p>
+</li>
+<li>
+<p>A script invocation directive.</p>
+</li>
+<li>
+<p>A name of a local node, which is defined as a key in an object associated with <code>$local</code> keyword at the top level of a file.</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_file_in_jf_path">File in <code>JF_PATH</code></h4>
+<div class="paragraph">
+<p>You can specify a file in <code>JF_PATH</code> environment variable.
+If the name ends with <code>.yaml</code> or <code>.yml</code>, it will be treated as a YAML file and converted into a JSON file by <code>yq</code> command.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_script_invocation_directive">Script invocation directive</h4>
+<div class="paragraph">
+<p>You can specify a program which generates a JSON object with a following syntax.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [
+    "SS.sh;bash -eu;dir1/J.json"
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>SS.sh</code> is a script file to be executed.
+<code>bash -eu</code> is a program which executes the script.
+<code>dir1/J.json</code> is an argument which is passed to the program <code>SS.sh</code>.</p>
+</div>
+<div class="paragraph">
+<p>The string is split by semicolons and the first token is treated as a name of a program to be executed.
+The program is searched from <code>JF_PATH</code>.
+The second toke is a shell with which the program is executed.
+And the rest will be passed to the program as arguments.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+By inserting one or more semicolons, this syntax is triggred.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_local_node_name">Local node name</h4>
+<div class="paragraph">
+<p>(t.b.d.)</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_local_keyword"><code>$local</code> keyword</h3>
+<div class="paragraph">
+<p>This keyword can be used as a key whose associated value is an object.
+A value in the object must be an object.</p>
+</div>
+<div class="paragraph">
+<p>This keyword can only be placed at the top-level of a flie.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_eval_keyword"><code>eval:</code> keyword</h3>
+<div class="paragraph">
+<p>This keyword can be used in a text node.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-13 05:52:57 UTC
+Last updated 2019-11-08 12:35:04 UTC
 </div>
 </div>
 </body>
