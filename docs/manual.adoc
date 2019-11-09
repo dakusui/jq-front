@@ -66,15 +66,20 @@ You can specify a file on `JF_PATH` environment variable.
 If the name ends with `.yaml` or `.yml`, it will be treated as a YAML file and converted into a JSON file by `yq` command.
 
 As long as your file is under a directory specified by an element in `JF_PATH`, you can use it.
-That is, suppose that you have `JF_PATH` and it has a value `dir1:dir2`.
+That is, suppose that you have `JF_PATH` and it has a value `.:dir1`.
 
 
 [tree]
 ----
-dir1
-└── child
-    └── J.json
+/
+ ├ dir1
+  └── child
+      |
+      └── J.json
+ └ home
+  ├ you
 ----
+
 The file `J.json` can be referenced by
 
 ----
