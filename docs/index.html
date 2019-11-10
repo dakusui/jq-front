@@ -1180,13 +1180,15 @@ If the name ends with <code>.yaml</code> or <code>.yml</code>, it will be treate
 </div>
 <div class="paragraph">
 <p>As long as your file is under a directory specified by an element in <code>JF_PATH</code>, you can use it.
-That is, suppose that you have <code>JF_PATH</code> and it has a value <code>dir1:dir2</code>.</p>
+That is, suppose that you have <code>JF_PATH</code> and it has a value <code>.:dir1</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre>dir1
-└── child
-    └── J.json</pre>
+ |
+ `--- child
+      |
+      `--- J.json</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1198,8 +1200,24 @@ That is, suppose that you have <code>JF_PATH</code> and it has a value <code>dir
 </div>
 </div>
 <div class="paragraph">
-<p>(t.b.d.)
-, which is defined as a key in an object associated with <code>$local</code> keyword at the top level of a file.</p>
+<p>In case you have <code>child/J.json</code> in multiple places under elements in <code>JF_PATH</code>, the first one will be used.
+For instance, in the following example, <code>dir1/child/J.json</code> will be referenced for the example abobe.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>dir1
+ +--- child
+ |    |
+ |     `--- J.json
+dir2
+ |
+ `--- child
+      |
+      `--- J.json</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also specify names of "local nodes". (See the section for <code>$local</code> keyword)</p>
 </div>
 </div>
 <div class="sect3">
@@ -1248,13 +1266,117 @@ By inserting one or more semicolons, this syntax is triggred.
 A value in the object must be an object.</p>
 </div>
 <div class="paragraph">
-<p>This keyword can only be placed at the top-level of a flie.</p>
+<p>This keyword can only be placed at the top-level of a file.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$local": {
+    "A": {
+      "a": "valueInA"
+    },
+    "B": {
+      "b": "valueInB"
+    },
+    "C": {
+      "$extends": ["A","B"]
+    }
+  },
+  "D": {
+    "$extends": ["C"]
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example, local nodes <code>A</code>, <code>B</code>, and <code>C</code> are defined.
+And a node at the top level, <code>D</code> extends <code>C</code>, which then extends <code>A</code> and <code>B</code>.
+This results in a following JSON object.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "D": {
+    "a": "valueInA",
+    "b": "valueInB"
+  }
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+In case you have a local node and a file with the same name, <code>jq-node</code> picks up a local node, although you do not need to mind it usually because you do not want to give a suffix <code>.json</code> to a local node.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_eval_keyword"><code>eval:</code> keyword</h3>
 <div class="paragraph">
-<p>This keyword can be used in a text node.</p>
+<p>This keyword can be used in a text node.
+The syntax can be defined as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>  eval:[TYPE:]STRING
+  TYPE ::= object array string number boolean</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If <code>TYPE:</code> is omitted, in other words <code>eval:</code> is followed by anything else than the defined <code>TYPE`s, `jq-front</code> behaves as if <code>string</code> is specified.</p>
+</div>
+<div class="paragraph">
+<p>The <code>STRING</code> is evaluated by a following command line.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">    eval "echo \"${_body}\"" 2&gt;"${_error}"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As seen in the above fragment, stderr is redirected to an internal file and the file is checked if a string <code>ERROR: ` is contained in it.
+If the string is found in it, `jq-front</code> considers that something went wrong during the evaluation and aborts the rest of the process.
+Such a string is</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">
+There are similar keywords <code>template:</code>, but it is only kept for compatibility and will be removed n the future version of this product.
+Please refrain from using it.
+In case you want to define a text node that starts with the string itself, you can do <code><code>raw:template:…​</code></code>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_raw_keyword"><code>raw:</code> keyword</h3>
+<div class="paragraph">
+<p>You may sometimes want to define a text node which starts with other keywords such as <code>eval:</code> itself.
+In such cases you can use <code>raw:</code> keyword to escape it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>   raw:eval:hello</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This results in a following output.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>   eval:hello</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -1284,7 +1406,7 @@ For instance, under a situation, where we need to generate similar but slightly 
 <div class="ulist bibliography">
 <ul class="bibliography">
 <li>
-<p><a id="jq-front"></a> jq-front project in github.org. <a href="https://github.com/dakusui/jq-front">jq-front</a>:
+<p><a id="jq-front"></a>[1] jq-front project in github.org. <a href="https://github.com/dakusui/jq-front">jq-front</a>:
 2019</p>
 </li>
 <li>

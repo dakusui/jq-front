@@ -135,7 +135,7 @@ function _expand_nodelevel_inheritances() {
       _unmark_as_in_progress "${j}" inheritance
     done
   done
-  debug "** _expand_nodelevel_inheritances:end:_cur='$(cat ${_cur})'"
+  debug "** _expand_nodelevel_inheritances:end:_cur='$(cat "${_cur}")'"
   jq -r -c . "${_cur}"
 }
 

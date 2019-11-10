@@ -69,15 +69,12 @@ As long as your file is under a directory specified by an element in `JF_PATH`, 
 That is, suppose that you have `JF_PATH` and it has a value `.:dir1`.
 
 
-[tree]
 ----
-/
- ├ dir1
-  └── child
+dir1
+ |
+ `--- child
       |
-      └── J.json
- └ home
-  ├ you
+      `--- J.json
 ----
 
 The file `J.json` can be referenced by
@@ -86,8 +83,22 @@ The file `J.json` can be referenced by
 "$extends": ["child/J.json"]
 ----
 
-(t.b.d.)
-, which is defined as a key in an object associated with `$local` keyword at the top level of a file.
+In case you have `child/J.json` in multiple places under elements in `JF_PATH`, the first one will be used.
+For instance, in the following example, `dir1/child/J.json` will be referenced for the example abobe.
+
+----
+dir1
+ +--- child
+ |    |
+ |     `--- J.json
+dir2
+ |
+ `--- child
+      |
+      `--- J.json
+----
+
+You can also specify names of "local nodes". (See the section for `$local` keyword)
 
 ==== Script Invocation Directive
 
@@ -118,8 +129,86 @@ NOTE: By inserting one or more semicolons, this syntax is triggred.
 This keyword can be used as a key whose associated value is an object.
 A value in the object must be an object.
 
-This keyword can only be placed at the top-level of a flie.
+This keyword can only be placed at the top-level of a file.
+
+[source, json]
+----
+{
+  "$local": {
+    "A": {
+      "a": "valueInA"
+    },
+    "B": {
+      "b": "valueInB"
+    },
+    "C": {
+      "$extends": ["A","B"]
+    }
+  },
+  "D": {
+    "$extends": ["C"]
+  }
+}
+----
+
+In this example, local nodes `A`, `B`, and `C` are defined.
+And a node at the top level, `D` extends `C`, which then extends `A` and `B`.
+This results in a following JSON object.
+
+[source, json]
+----
+{
+  "D": {
+    "a": "valueInA",
+    "b": "valueInB"
+  }
+}
+----
+
+NOTE: In case you have a local node and a file with the same name, `jq-node` picks up a local node, although you do not need to mind it usually because you do not want to give a suffix `.json` to a local node.
 
 === `eval:` keyword
 
 This keyword can be used in a text node.
+The syntax can be defined as follows.
+
+[source]
+----
+  eval:[TYPE:]STRING
+  TYPE ::= object array string number boolean
+----
+
+If `TYPE:` is omitted, in other words `eval:` is followed by anything else than the defined `TYPE`s, `jq-front` behaves as if `string` is specified.
+
+The `STRING` is evaluated by a following command line.
+
+[source, bash]
+----
+    eval "echo \"${_body}\"" 2>"${_error}"
+----
+
+As seen in the above fragment, stderr is redirected to an internal file and the file is checked if a string `ERROR: ` is contained in it.
+If the string is found in it, `jq-front` considers that something went wrong during the evaluation and aborts the rest of the process.
+Such a string is
+
+CAUTION: There are similar keywords `template:`, but it is only kept for compatibility and will be removed n the future version of this product.
+Please refrain from using it.
+In case you want to define a text node that starts with the string itself, you can do ```raw:template:...```
+
+
+=== `raw:` keyword
+
+You may sometimes want to define a text node which starts with other keywords such as `eval:` itself.
+In such cases you can use `raw:` keyword to escape it.
+
+[source]
+----
+   raw:eval:hello
+----
+
+This results in a following output.
+
+[source]
+----
+   eval:hello
+----
