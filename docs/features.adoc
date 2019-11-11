@@ -254,29 +254,3 @@ And this will result in an output below.
 
 This feature can be disabled by `-d` (`--disable-templating`) option.
 And to enable it explicitly, you can use `-e` (`--enable-templating`) in case `JF_TEMPLATING_ENABLED` is set to `no`.
-
-==== Built-in `jq-front` functions
-
-===== `ref` function
-
-A function that returns a value of a node specified by an argument.
-This function can only work from inside "Work(2)" file.
-
-- parameter:
-* `_path`: path to a node in the file "Work(2)"
-- returned value:
-* A value of a node specified by `_path`
-
-
-===== `self` function
-
-A function that returns a path to a file "Work(2)"
-This function can only work from inside "Work(2)" file.
-
-- parameter: (none)
-- returned value:
-* A path to "Work(2)" file.
-
-===== `parent` function
-
-A function that prints a path to a parent node of a given path.

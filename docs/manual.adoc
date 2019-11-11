@@ -191,6 +191,9 @@ As seen in the above fragment, stderr is redirected to an internal file and the 
 If the string is found in it, `jq-front` considers that something went wrong during the evaluation and aborts the rest of the process.
 Such a string is
 
+Not only variables, functions, and commands visible to a bash shell on which `jq-front` runs, you can use functions provided by the processor.
+For more details, refer to <<builtin-functions>> section.
+
 CAUTION: There are similar keywords `template:`, but it is only kept for compatibility and will be removed n the future version of this product.
 Please refrain from using it.
 In case you want to define a text node that starts with the string itself, you can do ```raw:template:...```
@@ -212,3 +215,46 @@ This results in a following output.
 ----
    eval:hello
 ----
+
+[#builtin-functions]
+== Built-in `jq-front` functions
+
+In addition to commands and functions visible to a bash shell on which `jq-front` runs, you can use functions listed in this section.
+
+=== `ref` function
+
+A function that returns a value of a node specified by an argument.
+This function can only work from inside "Work(2)" file.
+
+- parameter:
+* `_path`: path to a node in the file "Work(2)"
+- returned value (stdout):
+* A value of a node specified by `_path`
+
+
+=== `self` function
+
+A function that prints the entire file content before templating.
+
+- parameter: (none)
+- returned value (stdout):
+* Content of the processed file before any templating happens.
+
+=== `cur` function
+
+A function that returns a path to a file "Work(2)"
+This function can only work from inside "Work(2)" file.
+
+- parameter: (none)
+- returned value (stdout):
+* A path to "Work(2)" file.
+
+
+=== `parent` function
+
+A function that prints a path to a parent node of a given path.
+
+- parameter:
+* A path to a node
+- returned value (stdout):
+* A path to a parent of the node.
