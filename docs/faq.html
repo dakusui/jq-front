@@ -444,6 +444,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel1">
 <li><a href="#_why_objects_inside_an_array_are_rendered_differently_on_inheritance_from_ones_outside">Why objects inside an array are rendered differently on inheritance from ones outside?</a></li>
 <li><a href="#_why_is_jq_front_so_slow">Why is jq-front so slow?</a></li>
+<li><a href="#_how_is_error_handling_designed">How is error handling designed?</a></li>
 </ul>
 </div>
 </div>
@@ -491,10 +492,33 @@ If somebody starts a project to rewrite this in Java, for instance, I would be c
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_how_is_error_handling_designed">How is error handling designed?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>jq-front</code> is designed and implemented so that it stops processing on errors.
+However, due to the specification of <code>bash</code>, if you use command substitution in templating and an inner call occurs an error, it CANNOT stop.</p>
+</div>
+<div class="paragraph">
+<p>Except for that, if you think it should stop but it doesn&#8217;t, please file a ticket <a href="https://github.com/dakusui/jq-front/issues">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>On errors, you should see an output like following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>ERROR: Malformed JSON was given:'/home/hiroshi/Documents/jq-front/tests/negative/malformed-node-inheritance/filelevel/M.json'='// MALFORMED'
+  at 36 abort /home/hiroshi/Documents/jq-front/lib/shared.sh
+  at 559 run_jqfront /home/hiroshi/Documents/jq-front/jq-front
+  at 472 expand_filelevel_inheritances /home/hiroshi/Documents/jq-front/jq-front</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-08 21:38:08 UTC
+Last updated 2019-11-12 23:08:05 UTC
 </div>
 </div>
 </body>

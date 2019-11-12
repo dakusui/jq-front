@@ -561,8 +561,8 @@ The 'local node directory' and its contents are utilized by the "node-level inhe
 <div class="sect2">
 <h3 id="_templating">Templating</h3>
 <div class="paragraph">
-<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>template:</code> in a JSON object <code><code>Work(2)</code></code>.
-The order where it is applied is determined by <code><code>jq</code>’s <code>`path(..)</code></code> function.
+<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>template:</code> in a JSON object <code>Work(2)</code>.
+The order where it is applied is determined by <code>jq</code> 's <code>path(..)</code> function.
 Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> how keys are sorted within an object node although they seem to be sorted by dictionary order.</p>
 </div>
 <div class="listingblock">
@@ -619,6 +619,29 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 <div class="paragraph">
 <p>It is because it’s written as a bash script and creates quite a lot of process an input file.
 If somebody starts a project to rewrite this in Java, for instance, I would be contributing to it!</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_is_error_handling_designed">How is error handling designed?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>jq-front</code> is designed and implemented so that it stops processing on errors.
+However, due to the specification of <code>bash</code>, if you use command substitution in templating and an inner call occurs an error, it CANNOT stop.</p>
+</div>
+<div class="paragraph">
+<p>Except for that, if you think it should stop but it doesn’t, please file a ticket <a href="https://github.com/dakusui/jq-front/issues">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>On errors, you should see an output like following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>ERROR: Malformed JSON was given:'/home/hiroshi/Documents/jq-front/tests/negative/malformed-node-inheritance/filelevel/M.json'='// MALFORMED'
+  at 36 abort /home/hiroshi/Documents/jq-front/lib/shared.sh
+  at 559 run_jqfront /home/hiroshi/Documents/jq-front/jq-front
+  at 472 expand_filelevel_inheritances /home/hiroshi/Documents/jq-front/jq-front</pre>
+</div>
 </div>
 </div>
 </div>
@@ -1476,11 +1499,13 @@ This function can only work from inside "Work(2)" file.</p>
 <div class="sect3">
 <h4 id="_example_3">Example</h4>
 <div class="paragraph">
-<p>(t.b.d.)
-===== Input</p>
+<p>(t.b.d.)</p>
 </div>
+<div class="sect4">
+<h5 id="_input_3">Input</h5>
 <div class="paragraph">
 <p>(t.b.d.)</p>
+</div>
 </div>
 <div class="sect4">
 <h5 id="_result_3">Result</h5>
