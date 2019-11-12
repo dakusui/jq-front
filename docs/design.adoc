@@ -76,8 +76,8 @@ c. Assign the JSON node created in step b. to the parent of the `$extends` attri
 
 === Templating
 
-Templating is executed by performing `eval` on every text node whose value starts with `template:` in a JSON object ```Work(2)```.
-The order where it is applied is determined by ```jq```'s ```path(..)``` function.
+Templating is executed by performing `eval` on every text node whose value starts with `template:` in a JSON object `Work(2)`.
+The order where it is applied is determined by `jq` 's `path(..)` function.
 Note that it is not defined in `jq` 's manual<<jq>> how keys are sorted within an object node although they seem to be sorted by dictionary order.
 
 ----
