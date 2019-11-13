@@ -48,13 +48,14 @@ dir2
       `--- J.json
 ----
 
-You can also specify names of "local nodes". (See the section for `$local` keyword)
+You can also specify names of "local nodes".
+(See the section for `$local` keyword)
 
 ==== Script Invocation Directive
 
 You can specify a program which generates a JSON object with a following syntax.
 
-[source, json]
+[source,json]
 ----
 {
   "$extends": [
@@ -81,7 +82,7 @@ A value in the object must be an object.
 
 This keyword can only be placed at the top-level of a file.
 
-[source, json]
+[source,json]
 ----
 {
   "$local": {
@@ -105,7 +106,7 @@ In this example, local nodes `A`, `B`, and `C` are defined.
 And a node at the top level, `D` extends `C`, which then extends `A` and `B`.
 This results in a following JSON object.
 
-[source, json]
+[source,json]
 ----
 {
   "D": {
@@ -132,7 +133,7 @@ If `TYPE:` is omitted, in other words `eval:` is followed by anything else than 
 
 The `STRING` is evaluated by a following command line.
 
-[source, bash]
+[source,bash]
 ----
     eval "echo \"${_body}\"" 2>"${_error}"
 ----
@@ -147,7 +148,6 @@ For more details, refer to <<builtin-functions>> section.
 CAUTION: There are similar keywords `template:`, but it is only kept for compatibility and will be removed n the future version of this product.
 Please refrain from using it.
 In case you want to define a text node that starts with the string itself, you can do ```raw:template:...```
-
 
 === `raw:` keyword
 
@@ -180,7 +180,6 @@ This function can only work from inside "Work(2)" file.
 * `_path`: path to a node in the file "Work(2)"
 - returned value (stdout):
 * A value of a node specified by `_path`
-
 
 ==== Example
 
@@ -222,7 +221,6 @@ A function that returns a path to a node a current node.
 - returned value (stdout):
 * A path to "Work(2)" file.
 
-
 === `parent` function
 
 A function that prints a path to a parent node of a given path.
@@ -238,8 +236,14 @@ A function that prints a path to a parent node of a given path.
 
 ===== Input
 
-(t.b.d.)
+[source,json]
+----
+"eval:$(parent .hello.world)"
+----
 
 ===== Result
 
-(t.b.d.)
+[source,json]
+----
+".hello"
+----
