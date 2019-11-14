@@ -138,14 +138,14 @@ The `STRING` is evaluated by a following command line.
     eval "echo \"${_body}\"" 2>"${_error}"
 ----
 
-As seen in the above fragment, stderr is redirected to an internal file and the file is checked if a string `ERROR: ` is contained in it.
+As seen in the above fragment, stderr is redirected to an internal file and the file is checked if a string ``ERROR: `` is contained in it.
 If the string is found in it, `jq-front` considers that something went wrong during the evaluation and aborts the rest of the process.
-Such a string is
+Such a string is printed to stderr by `error` function (See its definition in <<builtin-functions>> section).
 
 Not only variables, functions, and commands visible to a bash shell on which `jq-front` runs, you can use functions provided by the processor.
 For more details, refer to <<builtin-functions>> section.
 
-CAUTION: There are similar keywords `template:`, but it is only kept for compatibility and will be removed n the future version of this product.
+CAUTION: There are similar keywords `template:`, but it is only kept for compatibility and will be removed in the future version of this product.
 Please refrain from using it.
 In case you want to define a text node that starts with the string itself, you can do ```raw:template:...```
 
@@ -166,6 +166,13 @@ This results in a following output.
    eval:hello
 ----
 
+=== `template:` keyword
+
+Deprecated.
+A keyword that has similar effects to `eval:` keyword.
+This is kept only for compatibility.
+
+
 [#builtin-functions]
 == Built-in `jq-front` functions
 
@@ -181,37 +188,92 @@ This function can only work from inside "Work(2)" file.
 - returned value (stdout):
 * A value of a node specified by `_path`
 
-==== Example
+==== Examples
 
-(t.b.d.)
+[cols="1a,1a"]
+|===
+|Input |Output
 
-===== Input
+|
+[source,json]
+.A.json
+----
+{
+  "a": {
+    "b": {
+       "c": "hello"
+    }
+  },
+  "r": "eval:string:$(ref .a.b.c), world"
+}
+----
+|[source,json]
+----
+{
+  "a": {
+    "b": {
+       "c": "hello"
+    }
+  },
+  "r": "hello, world"
+}
+----
 
-(t.b.d.)
+|
+[source,json]
+.B.JSON
+----
+{
+  "$extends": ["A.json"],
+  "r": "eval:string:$(ref .a.b.c), world"
+}
+----
+|[source,json]
+----
+{
+  "a": {
+    "b": {
+       "c": "hello"
+    }
+  },
+  "r": "hello, world"
+}
+----
 
-===== Result
+|
+[source,json]
+.C.JSON
+----
+{
+  "$extends": ["A.json"],
+  "r": "eval:object:$(ref .a.b)"
+}
+----
+|[source,json]
+----
+{
+  "a": {
+    "b": {
+       "c": "hello"
+    }
+  },
+  "r": {
+    "c": "hello"
+  }
+}
+----
 
-(t.b.d.)
+|===
 
 === `self` function
 
 A function that prints the entire file content before templating.
+This function is intended for internal use.
 
 - parameter: (none)
 - returned value (stdout):
 * Content of the processed file before any templating happens.
 
-==== Example
-
-(t.b.d.)
-
-===== Input
-
-(t.b.d.)
-
-===== Result
-
-(t.b.d.)
 
 === `cur` function
 
@@ -302,6 +364,54 @@ A function that prints a path to a parent node of a given path.
 |[source,json]
 ----
 ".hello"
+----
+
+|===
+
+=== `error` function
+
+A function that prints a given error message and returns a non-zero value.
+
+- parameter:
+* An error message
+- returned value:
+** stdout
+*** (none)
+** sterr
+*** A string starts with ```ERROR: {given error message}```.
+A stack trace follows it.
+** exit code
+*** A non-zero value.
+
+NOTE: If you nest a call to a function or command that fails by another using a command substitution of `bash`, the next call will not be aborted immediately, in general.
+That is, ```"eval:$(echo $(cat missing-file))-$(echo hello)"``` will result in `-hello`.
+This is a behaviour of `bash` and its command substitution.
+However, if you use this function, ```"eval:$(echo $(cat missing-file || error 'something went wrong'))-$(echo hello)"```, `jq-front` will abort the process after evaluating this string because it finds a keyword ```ERROR: ``` in the stderr.
+
+NOTE: Functions discussed in this section check whether `$?` is zero at the beginning.
+If it is not zero, the function will abort and the string evaluation will be aborted in general.
+However, a user is still able to nest the call with another function that not necessarily performs such a check.
+In this case, the evaluation will not stop at the point and `jq-front` will abort the rest of its execution after handling the string since it will find the ```ERROR: ``` keyword.
+
+==== Examples
+
+[cols="1a,1a"]
+|===
+|Input |Output
+
+|
+[source,json]
+----
+"eval:$(error hello)"
+----
+
+|[source,console]
+----
+ERROR: hello
+  at 36 abort /home/who/Documents/jq-front/lib/shared.sh
+  at 439 _check_cyclic_dependency /home/who/Documents/jq-front/jq-front
+  at 111 _expand_nodelevel_inheritances /home/who/Documents/jq-front/jq-front
+...
 ----
 
 |===

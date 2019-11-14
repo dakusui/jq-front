@@ -435,7 +435,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
-
 // For tabs
 body {font-family: Arial;}
 
@@ -577,8 +576,7 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="faq" class="tabcontent">
 <div id="faq_content">
 <div class="sect1">
@@ -647,8 +645,7 @@ However, due to the specification of <code>bash</code>, if you use command subst
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="features" class="tabcontent">
 <div id="features_content">
 <div class="sect1">
@@ -1011,8 +1008,7 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="limitationsAndFutureWork" class="tabcontent">
 <div id="limitationsAndFutureWork_content">
 <div class="sect1">
@@ -1027,8 +1023,7 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="manual" class="tabcontent">
 <div id="manual_content">
 <div class="sect1">
@@ -1112,8 +1107,7 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="syntax" class="tabcontent">
 <div id="syntax_content">
 <div class="sect1">
@@ -1310,9 +1304,9 @@ The syntax can be defined as follows.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>As seen in the above fragment, stderr is redirected to an internal file and the file is checked if a string <code>ERROR: ` is contained in it.
-If the string is found in it, `jq-front</code> considers that something went wrong during the evaluation and aborts the rest of the process.
-Such a string is</p>
+<p>As seen in the above fragment, stderr is redirected to an internal file and the file is checked if a string <code>ERROR: </code> is contained in it.
+If the string is found in it, <code>jq-front</code> considers that something went wrong during the evaluation and aborts the rest of the process.
+Such a string is printed to stderr by <code>error</code> function (See its definition in <a href="#builtin-functions">Built-in <code>jq-front</code> functions</a> section).</p>
 </div>
 <div class="paragraph">
 <p>Not only variables, functions, and commands visible to a bash shell on which <code>jq-front</code> runs, you can use functions provided by the processor.
@@ -1325,7 +1319,7 @@ For more details, refer to <a href="#builtin-functions">Built-in <code>jq-front<
 <div class="title">Caution</div>
 </td>
 <td class="content">
-There are similar keywords <code>template:</code>, but it is only kept for compatibility and will be removed n the future version of this product.
+There are similar keywords <code>template:</code>, but it is only kept for compatibility and will be removed in the future version of this product.
 Please refrain from using it.
 In case you want to define a text node that starts with the string itself, you can do <code><code>raw:template:…​</code></code>
 </td>
@@ -1351,6 +1345,14 @@ In such cases you can use <code>raw:</code> keyword to escape it.</p>
 <div class="content">
 <pre class="highlight"><code>   eval:hello</code></pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_template_keyword"><code>template:</code> keyword</h3>
+<div class="paragraph">
+<p>Deprecated.
+A keyword that has similar effects to <code>eval:</code> keyword.
+This is kept only for compatibility.</p>
 </div>
 </div>
 </div>
@@ -1392,28 +1394,103 @@ This function can only work from inside "Work(2)" file.</p>
 </ul>
 </div>
 <div class="sect3">
-<h4 id="_example">Example</h4>
-<div class="paragraph">
-<p>(t.b.d.)</p>
+<h4 id="_examples">Examples</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Input</th>
+<th class="tableblock halign-left valign-top">Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">A.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": {
+       "c": "hello"
+    }
+  },
+  "r": "eval:string:$(ref .a.b.c), world"
+}</code></pre>
 </div>
-<div class="sect4">
-<h5 id="_input">Input</h5>
-<div class="paragraph">
-<p>(t.b.d.)</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": {
+       "c": "hello"
+    }
+  },
+  "r": "hello, world"
+}</code></pre>
 </div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">B.JSON</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": ["A.json"],
+  "r": "eval:string:$(ref .a.b.c), world"
+}</code></pre>
 </div>
-<div class="sect4">
-<h5 id="_result">Result</h5>
-<div class="paragraph">
-<p>(t.b.d.)</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": {
+       "c": "hello"
+    }
+  },
+  "r": "hello, world"
+}</code></pre>
 </div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">C.JSON</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": ["A.json"],
+  "r": "eval:object:$(ref .a.b)"
+}</code></pre>
 </div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": {
+       "c": "hello"
+    }
+  },
+  "r": {
+    "c": "hello"
+  }
+}</code></pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_self_function"><code>self</code> function</h3>
 <div class="paragraph">
-<p>A function that prints the entire file content before templating.</p>
+<p>A function that prints the entire file content before templating.
+This function is intended for internal use.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -1431,24 +1508,6 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 </li>
 </ul>
-</div>
-<div class="sect3">
-<h4 id="_example_2">Example</h4>
-<div class="paragraph">
-<p>(t.b.d.)</p>
-</div>
-<div class="sect4">
-<h5 id="_input_2">Input</h5>
-<div class="paragraph">
-<p>(t.b.d.)</p>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_result_2">Result</h5>
-<div class="paragraph">
-<p>(t.b.d.)</p>
-</div>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -1474,7 +1533,7 @@ This function can only work from inside "Work(2)" file.</p>
 </ul>
 </div>
 <div class="sect3">
-<h4 id="_examples">Examples</h4>
+<h4 id="_examples_2">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 50%;">
@@ -1584,7 +1643,7 @@ Thus, <code>cur</code> function calls in inherited files are evaluated based on 
 </ul>
 </div>
 <div class="sect3">
-<h4 id="_examples_2">Examples</h4>
+<h4 id="_examples_3">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 50%;">
@@ -1613,10 +1672,130 @@ Thus, <code>cur</code> function calls in inherited files are evaluated based on 
 </table>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_error_function"><code>error</code> function</h3>
+<div class="paragraph">
+<p>A function that prints a given error message and returns a non-zero value.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>parameter:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>An error message</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>returned value:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>stdout</p>
+<div class="ulist">
+<ul>
+<li>
+<p>(none)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>sterr</p>
+<div class="ulist">
+<ul>
+<li>
+<p>A string starts with <code><code>ERROR: {given error message}</code></code>.
+A stack trace follows it.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>exit code</p>
+<div class="ulist">
+<ul>
+<li>
+<p>A non-zero value.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If you nest a call to a function or command that fails by another using a command substitution of <code>bash</code>, the next call will not be aborted immediately, in general.
+That is, <code><code>"eval:$(echo $(cat missing-file))-$(echo hello)"</code></code> will result in <code>-hello</code>.
+This is a behaviour of <code>bash</code> and its command substitution.
+However, if you use this function, <code><code>"eval:$(echo $(cat missing-file || error 'something went wrong'))-$(echo hello)"</code></code>, <code>jq-front</code> will abort the process after evaluating this string because it finds a keyword <code><code>ERROR: </code></code> in the stderr.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Functions discussed in this section check whether <code>$?</code> is zero at the beginning.
+If it is not zero, the function will abort and the string evaluation will be aborted in general.
+However, a user is still able to nest the call with another function that not necessarily performs such a check.
+In this case, the evaluation will not stop at the point and <code>jq-front</code> will abort the rest of its execution after handling the string since it will find the <code><code>ERROR: </code></code> keyword.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_examples_4">Examples</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Input</th>
+<th class="tableblock halign-left valign-top">Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">"eval:$(error hello)"</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">ERROR: hello
+  at 36 abort /home/who/Documents/jq-front/lib/shared.sh
+  at 439 _check_cyclic_dependency /home/who/Documents/jq-front/jq-front
+  at 111 _expand_nodelevel_inheritances /home/who/Documents/jq-front/jq-front
+...</code></pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
 </div>
+</div></div>
 <div id="top" class="tabcontent">
 <div id="top_content">
 <div class="sect1">
@@ -1666,8 +1845,7 @@ For instance, under a situation, where we need to generate similar but slightly 
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <script>
 function openTab(evt, cityName) {
   var i, tabcontent, tablinks;
