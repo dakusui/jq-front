@@ -221,6 +221,63 @@ A function that returns a path to a node a current node.
 - returned value (stdout):
 * A path to "Work(2)" file.
 
+==== Examples
+
+[cols="1a,1a"]
+|===
+|Input |Output
+
+|
+[source,json]
+.A.json
+----
+{
+  "a": {
+    "b": {
+       "c": "eval:$(cur)"
+    }
+  }
+}
+----
+|[source,json]
+----
+{
+  "a": {
+    "b": {
+       "c": ".a.b.c"
+    }
+  }
+}
+----
+
+|
+[source,json]
+.X.JSON
+----
+{
+  "x": {
+    "$extends": ["A.json"]
+  }
+}
+----
+|[source,json]
+----
+{
+  "x": {
+    "a": {
+      "b": {
+         "c": ".x.a.b.c"
+      }
+    }
+  }
+}
+----
+
+|===
+
+NOTE: Notice that jq-front first expands all the inheritances in the input and then invokes the 'templating' mechanism.
+Thus, `cur` function calls in inherited files are evaluated based on paths where they appear in the expanded file.
+
 === `parent` function
 
 A function that prints a path to a parent node of a given path.
@@ -230,20 +287,21 @@ A function that prints a path to a parent node of a given path.
 - returned value (stdout):
 * A path to a parent of the node.
 
-==== Example
+==== Examples
 
-(t.b.d.)
+[cols="1a,1a"]
+|===
+|Input |Output
 
-===== Input
-
+|
 [source,json]
 ----
 "eval:$(parent .hello.world)"
 ----
 
-===== Result
-
-[source,json]
+|[source,json]
 ----
 ".hello"
 ----
+
+|===

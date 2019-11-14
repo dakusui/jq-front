@@ -818,6 +818,86 @@ This function can only work from inside "Work(2)" file.</p>
 </li>
 </ul>
 </div>
+<div class="sect3">
+<h4 id="_examples">Examples</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Input</th>
+<th class="tableblock halign-left valign-top">Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">A.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": {
+       "c": "eval:$(cur)"
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": {
+       "c": ".a.b.c"
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">X.JSON</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "x": {
+    "$extends": ["A.json"]
+  }
+}</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "x": {
+    "a": {
+      "b": {
+         "c": ".x.a.b.c"
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Notice that jq-front first expands all the inheritances in the input and then invokes the 'templating' mechanism.
+Thus, <code>cur</code> function calls in inherited files are evaluated based on paths where they appear in the expanded file.
+</td>
+</tr>
+</table>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_parent_function"><code>parent</code> function</h3>
@@ -849,26 +929,33 @@ This function can only work from inside "Work(2)" file.</p>
 </ul>
 </div>
 <div class="sect3">
-<h4 id="_example_3">Example</h4>
-<div class="paragraph">
-<p>(t.b.d.)</p>
-</div>
-<div class="sect4">
-<h5 id="_input_3">Input</h5>
-<div class="listingblock">
+<h4 id="_examples_2">Examples</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Input</th>
+<th class="tableblock halign-left valign-top">Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">"eval:$(parent .hello.world)"</code></pre>
 </div>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_result_3">Result</h5>
-<div class="listingblock">
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">".hello"</code></pre>
 </div>
-</div>
-</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
@@ -876,7 +963,7 @@ This function can only work from inside "Work(2)" file.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-13 23:09:05 UTC
+Last updated 2019-11-14 12:05:12 UTC
 </div>
 </div>
 </body>
