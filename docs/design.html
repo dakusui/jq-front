@@ -526,17 +526,9 @@ The 'local node directory' and its contents are utilized by the "node-level inhe
 <div class="sect2">
 <h3 id="_templating">Templating</h3>
 <div class="paragraph">
-<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>template:</code> in a JSON object <code>Work(2)</code>.
+<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>eval:</code> in a JSON object <code>Work(2)</code>.
 The order where it is applied is determined by <code>jq</code> 's <code>path(..)</code> function.
 Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> how keys are sorted within an object node although they seem to be sorted by dictionary order.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>echo {CONTENT OF Work(2)}</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And this causes expansions of bash expressions inside the content of "Work(2)" and that expanded string will be printed by the <code>echo</code> command.</p>
 </div>
 </div>
 </div>
@@ -544,7 +536,7 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-12 23:06:43 UTC
+Last updated 2019-11-14 20:15:46 UTC
 </div>
 </div>
 </body>
