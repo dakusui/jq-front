@@ -188,16 +188,81 @@ And `P.json` will result in following output.
 
 ==== Script Inheritance
 
-This feature is experimental.
+`jq-front` can use the output from your shell as a file to be extended if it is a JSON node.
 
-(t.b.d.)
+For instance, if you have a following script file: `S.sh`, which prints something like `{"S":"shell"}`.
+
+[source, bash]
+.S.sh
+----
+echo '{"S":"shell-'${1}'"}'
+----
+
+The output from the script can be extended by a following file, for instance.
+
+[source,json]
+----
+{
+  "i": {
+    "$extends": [
+      "S.sh;bash -eu;hello"
+    ],
+    "o": "hello world"
+  }
+}
+----
+
+This results in a file as follows.
+
+[source,json]
+----
+{
+  "i": {
+    "S": "hello",
+    "o": "hello world"
+  }
+}
+----
+
+The component `bash -eu` is a program with which the script (`S.sh`) is executed.
+This feature is still experimental.
+
 
 ==== Yaml file inheritance
 
+`jq-front` can handle YAML files also.
+If you have following two files,
 
-Experimental.
+[source, yaml]
+.A.yml
+----
+---
+a: A
+o: A
+y: Y
+----
 
-(t.b.d.)
+[source, json]
+----
+{
+  "$extends": [ "A.yml" ],
+  "o": "hello world"
+}
+----
+
+The output will be like following
+
+[source, json]
+----
+{
+  "a": "A",
+  "o": "hello world",
+  "y": "Y"
+}
+----
+
+
+This feature is still experimental.
 
 === Templating
 

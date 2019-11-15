@@ -921,19 +921,87 @@ And <code>P.json</code> will result in following output.</p>
 <div class="sect3">
 <h4 id="_script_inheritance">Script Inheritance</h4>
 <div class="paragraph">
-<p>This feature is experimental.</p>
+<p><code>jq-front</code> can use the output from your shell as a file to be extended if it is a JSON node.</p>
 </div>
 <div class="paragraph">
-<p>(t.b.d.)</p>
+<p>For instance, if you have a following script file: <code>S.sh</code>, which prints something like <code>{"S":"shell"}</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">S.sh</div>
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">echo '{"S":"shell-'${1}'"}'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output from the script can be extended by a following file, for instance.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "i": {
+    "$extends": [
+      "S.sh;bash -eu;hello"
+    ],
+    "o": "hello world"
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This results in a file as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "i": {
+    "S": "hello",
+    "o": "hello world"
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The component <code>bash -eu</code> is a program with which the script (<code>S.sh</code>) is executed.
+This feature is still experimental.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_yaml_file_inheritance">Yaml file inheritance</h4>
 <div class="paragraph">
-<p>Experimental.</p>
+<p><code>jq-front</code> can handle YAML files also.
+If you have following two files,</p>
+</div>
+<div class="listingblock">
+<div class="title">A.yml</div>
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">---
+a: A
+o: A
+y: Y</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.yml" ],
+  "o": "hello world"
+}</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>(t.b.d.)</p>
+<p>The output will be like following</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": "A",
+  "o": "hello world",
+  "y": "Y"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This feature is still experimental.</p>
 </div>
 </div>
 </div>
@@ -1138,11 +1206,7 @@ Each element in the array must be a text node.</p>
 </ul>
 </div>
 <div class="sect3">
-<h4 id="_file_in_jf_path_and_local_node">File in <code>JF_PATH</code> and Local Node</h4>
-<div class="paragraph">
-<p>You can specify a file on <code>JF_PATH</code> environment variable.
-If the name ends with <code>.yaml</code> or <code>.yml</code>, it will be treated as a YAML file and converted into a JSON file by <code>yq</code> command.</p>
-</div>
+<h4 id="_file_in_jf_path">File in <code>JF_PATH</code></h4>
 <div class="paragraph">
 <p>As long as your file is under a directory specified by an element in <code>JF_PATH</code>, you can use it.
 That is, suppose that you have <code>JF_PATH</code> and it has a value <code>.:dir1</code>.</p>
@@ -1184,6 +1248,16 @@ dir2
 <div class="paragraph">
 <p>You can also specify names of "local nodes".
 (See the section for <code>$local</code> keyword)</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inheriting_yaml_files">Inheriting YAML files.</h4>
+<div class="paragraph">
+<p>You can specify a file on <code>JF_PATH</code> environment variable.
+If the name ends with <code>.yaml</code> or <code>.yml</code>, it will be treated as a YAML file and converted into a JSON file by <code>yq</code> command.</p>
+</div>
+<div class="paragraph">
+<p>This feature is still experimental.</p>
 </div>
 </div>
 <div class="sect3">
