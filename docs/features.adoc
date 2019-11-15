@@ -1,8 +1,10 @@
 == Features
 
-With `jq-front`, you can build a JSON object reusing other JSON objects.
-To specify JSON objects to be referenced, `jq-front` searches for keys which have special names in a given object.
+With `jq-front`, you can build a JSON object reusing other JSON objects by its inheritance mechanism.
+To specify JSON objects to be inherited, `jq-front` searches for keys which have special names in a given object.
 `$extends` and `$local` are keywords used for this purpose.
+
+Not only that, it allows you to construct a node by referencing other nodes and executing commands.
 
 Basic features offered by the product are following
 
