@@ -1,6 +1,27 @@
-= FAQ
+== FAQ
 
-== Why objects inside an array are rendered differently on inheritance from ones outside?
+=== Why is jq-front so slow?
+
+It is because it's written as a bash script and creates quite a lot of process an input file.
+If somebody starts a project to rewrite this in Java, for instance, I would be contributing to it!
+
+=== How is error handling designed?
+
+`jq-front` is designed and implemented so that it stops processing on errors.
+However, due to the specification of `bash`, if you use command substitution in templating and an inner call occurs an error, it CANNOT stop.
+
+Except for that, if you think it should stop but it doesn't, please file a ticket https://github.com/dakusui/jq-front/issues[here].
+
+On errors, you should see an output like following.
+
+----
+ERROR: Malformed JSON was given:'/home/hiroshi/Documents/jq-front/tests/negative/malformed-node-inheritance/filelevel/M.json'='// MALFORMED'
+  at 36 abort /home/hiroshi/Documents/jq-front/lib/shared.sh
+  at 559 run_jqfront /home/hiroshi/Documents/jq-front/jq-front
+  at 472 expand_filelevel_inheritances /home/hiroshi/Documents/jq-front/jq-front
+----
+
+=== Why objects inside an array are rendered differently on inheritance from ones outside?
 
 It is because of the behaviour of `*` operator of `jq`, which treats them differently(https://github.com/dakusui/jq-front/issues/60[issue-60]).
 `jq-front` relies on the operator for implementing its inheritance feature.
@@ -26,25 +47,4 @@ The workaround for this is to have an intermediate node like following.
        "eval:object:$(ref .work.nodeA)"
     ]
 }
-----
-
-== Why is jq-front so slow?
-
-It is because it's written as a bash script and creates quite a lot of process an input file.
-If somebody starts a project to rewrite this in Java, for instance, I would be contributing to it!
-
-== How is error handling designed?
-
-`jq-front` is designed and implemented so that it stops processing on errors.
-However, due to the specification of `bash`, if you use command substitution in templating and an inner call occurs an error, it CANNOT stop.
-
-Except for that, if you think it should stop but it doesn't, please file a ticket https://github.com/dakusui/jq-front/issues[here].
-
-On errors, you should see an output like following.
-
-----
-ERROR: Malformed JSON was given:'/home/hiroshi/Documents/jq-front/tests/negative/malformed-node-inheritance/filelevel/M.json'='// MALFORMED'
-  at 36 abort /home/hiroshi/Documents/jq-front/lib/shared.sh
-  at 559 run_jqfront /home/hiroshi/Documents/jq-front/jq-front
-  at 472 expand_filelevel_inheritances /home/hiroshi/Documents/jq-front/jq-front
 ----

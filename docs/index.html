@@ -435,6 +435,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
+
 // For tabs
 body {font-family: Arial;}
 
@@ -506,6 +507,11 @@ body {font-family: Arial;}
 <div class="paragraph">
 <p>Designs of those components will be described in the rest of this section.</p>
 </div>
+<div class="paragraph">
+<p>For both of file-level and node-level inheritances, the inheritance mechanism (the large box in the diagram) is invoked recursively.
+That is, when a file which has <code>$extends</code> attribute, the mechanism will be applied repeatedly until it reaches a file that doesn’t have any.
+In case a cyclic inheritance is found, <code>jq-front</code> will report it and abort.</p>
+</div>
 <div class="sect2">
 <h3 id="_file_level_inheritance">File-level Inheritance</h3>
 <div class="paragraph">
@@ -568,12 +574,43 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="faq" class="tabcontent">
 <div id="faq_content">
 <div class="sect1">
-<h2 id="_why_objects_inside_an_array_are_rendered_differently_on_inheritance_from_ones_outside">Why objects inside an array are rendered differently on inheritance from ones outside?</h2>
+<h2 id="_faq">FAQ</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_why_is_jq_front_so_slow">Why is jq-front so slow?</h3>
+<div class="paragraph">
+<p>It is because it’s written as a bash script and creates quite a lot of process an input file.
+If somebody starts a project to rewrite this in Java, for instance, I would be contributing to it!</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_how_is_error_handling_designed">How is error handling designed?</h3>
+<div class="paragraph">
+<p><code>jq-front</code> is designed and implemented so that it stops processing on errors.
+However, due to the specification of <code>bash</code>, if you use command substitution in templating and an inner call occurs an error, it CANNOT stop.</p>
+</div>
+<div class="paragraph">
+<p>Except for that, if you think it should stop but it doesn’t, please file a ticket <a href="https://github.com/dakusui/jq-front/issues">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>On errors, you should see an output like following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>ERROR: Malformed JSON was given:'/home/hiroshi/Documents/jq-front/tests/negative/malformed-node-inheritance/filelevel/M.json'='// MALFORMED'
+  at 36 abort /home/hiroshi/Documents/jq-front/lib/shared.sh
+  at 559 run_jqfront /home/hiroshi/Documents/jq-front/jq-front
+  at 472 expand_filelevel_inheritances /home/hiroshi/Documents/jq-front/jq-front</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_why_objects_inside_an_array_are_rendered_differently_on_inheritance_from_ones_outside">Why objects inside an array are rendered differently on inheritance from ones outside?</h3>
 <div class="paragraph">
 <p>It is because of the behaviour of <code>*</code> operator of <code>jq</code>, which treats them differently(<a href="https://github.com/dakusui/jq-front/issues/60">issue-60</a>).
 <code>jq-front</code> relies on the operator for implementing its inheritance feature.</p>
@@ -605,39 +642,9 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-<div class="sect1">
-<h2 id="_why_is_jq_front_so_slow">Why is jq-front so slow?</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>It is because it’s written as a bash script and creates quite a lot of process an input file.
-If somebody starts a project to rewrite this in Java, for instance, I would be contributing to it!</p>
 </div>
 </div>
 </div>
-<div class="sect1">
-<h2 id="_how_is_error_handling_designed">How is error handling designed?</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p><code>jq-front</code> is designed and implemented so that it stops processing on errors.
-However, due to the specification of <code>bash</code>, if you use command substitution in templating and an inner call occurs an error, it CANNOT stop.</p>
-</div>
-<div class="paragraph">
-<p>Except for that, if you think it should stop but it doesn’t, please file a ticket <a href="https://github.com/dakusui/jq-front/issues">here</a>.</p>
-</div>
-<div class="paragraph">
-<p>On errors, you should see an output like following.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>ERROR: Malformed JSON was given:'/home/hiroshi/Documents/jq-front/tests/negative/malformed-node-inheritance/filelevel/M.json'='// MALFORMED'
-  at 36 abort /home/hiroshi/Documents/jq-front/lib/shared.sh
-  at 559 run_jqfront /home/hiroshi/Documents/jq-front/jq-front
-  at 472 expand_filelevel_inheritances /home/hiroshi/Documents/jq-front/jq-front</pre>
-</div>
-</div>
-</div>
-</div>
-</div></div>
 <div id="features" class="tabcontent">
 <div id="features_content">
 <div class="sect1">
@@ -1000,7 +1007,8 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="limitationsAndFutureWork" class="tabcontent">
 <div id="limitationsAndFutureWork_content">
 <div class="sect1">
@@ -1015,7 +1023,8 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="manual" class="tabcontent">
 <div id="manual_content">
 <div class="sect1">
@@ -1099,7 +1108,8 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="syntax" class="tabcontent">
 <div id="syntax_content">
 <div class="sect1">
@@ -1360,6 +1370,11 @@ This is kept only for compatibility.</p>
 <div class="paragraph">
 <p>A function that returns a value of a node specified by an argument.
 This function can only work from inside "Work(2)" file.</p>
+</div>
+<div class="paragraph">
+<p>In case this function references a text node that starts with <code>eval:</code>, it performs templating on the node.
+This means, the <code>ref</code> function may be applied recursively.
+In case cyclic reference is found during this process, it will be reported and the process will be aborted.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -1787,7 +1802,8 @@ In this case, the evaluation will not stop at the point and <code>jq-front</code
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="top" class="tabcontent">
 <div id="top_content">
 <div class="sect1">
@@ -1837,7 +1853,8 @@ For instance, under a situation, where we need to generate similar but slightly 
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <script>
 function openTab(evt, cityName) {
   var i, tabcontent, tablinks;

@@ -471,6 +471,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="paragraph">
 <p>Designs of those components will be described in the rest of this section.</p>
 </div>
+<div class="paragraph">
+<p>For both of file-level and node-level inheritances, the inheritance mechanism (the large box in the diagram) is invoked recursively.
+That is, when a file which has <code>$extends</code> attribute, the mechanism will be applied repeatedly until it reaches a file that doesn&#8217;t have any.
+In case a cyclic inheritance is found, <code>jq-front</code> will report it and abort.</p>
+</div>
 <div class="sect2">
 <h3 id="_file_level_inheritance">File-level Inheritance</h3>
 <div class="paragraph">
@@ -536,7 +541,7 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-14 20:15:46 UTC
+Last updated 2019-11-15 12:20:59 UTC
 </div>
 </div>
 </body>

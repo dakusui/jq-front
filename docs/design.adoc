@@ -5,7 +5,7 @@ Following is a diagram that illustrates `jq-front` 's processing pipeline design
 [ditaa, target="images/pipeline"]
 .jq-front's pipeline
 ----
-Inheritance
+Inheritance mechanism
 +--------------------------------------------------------------------------------------+
 |                                                                                      |
 |          file-level inheritance             local node materialization               |
@@ -48,6 +48,10 @@ Inheritance
 As shown, it consists of four main components, which are "file-level inheritance", "local node materialization", "node-level inheritance", and "templating".
 
 Designs of those components will be described in the rest of this section.
+
+For both of file-level and node-level inheritances, the inheritance mechanism (the large box in the diagram) is invoked recursively.
+That is, when a file which has `$extends` attribute, the mechanism will be applied repeatedly until it reaches a file that doesn't have any.
+In case a cyclic inheritance is found, `jq-front` will report it and abort.
 
 === File-level Inheritance
 

@@ -722,6 +722,11 @@ This is kept only for compatibility.</p>
 <p>A function that returns a value of a node specified by an argument.
 This function can only work from inside "Work(2)" file.</p>
 </div>
+<div class="paragraph">
+<p>In case this function references a text node that starts with <code>eval:</code>, it performs templating on the node.
+This means, the <code>ref</code> function may be applied recursively.
+In case cyclic reference is found during this process, it will be reported and the process will be aborted.</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
@@ -1151,7 +1156,7 @@ In this case, the evaluation will not stop at the point and <code>jq-front</code
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-14 20:07:34 UTC
+Last updated 2019-11-15 12:26:35 UTC
 </div>
 </div>
 </body>

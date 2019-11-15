@@ -183,6 +183,10 @@ In addition to commands and functions visible to a bash shell on which `jq-front
 A function that returns a value of a node specified by an argument.
 This function can only work from inside "Work(2)" file.
 
+In case this function references a text node that starts with `eval:`, it performs templating on the node.
+This means, the `ref` function may be applied recursively.
+In case cyclic reference is found during this process, it will be reported and the process will be aborted.
+
 - parameter:
 * `_path`: path to a node in the file "Work(2)"
 - returned value (stdout):
