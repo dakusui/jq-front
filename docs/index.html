@@ -435,7 +435,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
-
 // For tabs
 body {font-family: Arial;}
 
@@ -574,8 +573,7 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="faq" class="tabcontent">
 <div id="faq_content">
 <div class="sect1">
@@ -643,17 +641,19 @@ However, due to the specification of <code>bash</code>, if you use command subst
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="features" class="tabcontent">
 <div id="features_content">
 <div class="sect1">
 <h2 id="_features">Features</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>With <code>jq-front</code>, you can build a JSON object reusing other JSON objects.
-To specify JSON objects to be referenced, <code>jq-front</code> searches for keys which have special names in a given object.
+<p>With <code>jq-front</code>, you can build a JSON object reusing other JSON objects by its inheritance mechanism.
+To specify JSON objects to be inherited, <code>jq-front</code> searches for keys which have special names in a given object.
 <code>$extends</code> and <code>$local</code> are keywords used for this purpose.</p>
+</div>
+<div class="paragraph">
+<p>Not only that, it allows you to construct a node by referencing other nodes and executing commands.</p>
 </div>
 <div class="paragraph">
 <p>Basic features offered by the product are following</p>
@@ -1075,8 +1075,7 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="limitationsAndFutureWork" class="tabcontent">
 <div id="limitationsAndFutureWork_content">
 <div class="sect1">
@@ -1091,8 +1090,7 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="manual" class="tabcontent">
 <div id="manual_content">
 <div class="sect1">
@@ -1176,8 +1174,7 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="syntax" class="tabcontent">
 <div id="syntax_content">
 <div class="sect1">
@@ -1876,8 +1873,7 @@ In this case, the evaluation will not stop at the point and <code>jq-front</code
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="top" class="tabcontent">
 <div id="top_content">
 <div class="sect1">
@@ -1927,8 +1923,7 @@ For instance, under a situation, where we need to generate similar but slightly 
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <script>
 function openTab(evt, cityName) {
   var i, tabcontent, tablinks;

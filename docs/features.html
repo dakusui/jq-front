@@ -456,9 +456,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_features">Features</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>With <code>jq-front</code>, you can build a JSON object reusing other JSON objects.
-To specify JSON objects to be referenced, <code>jq-front</code> searches for keys which have special names in a given object.
+<p>With <code>jq-front</code>, you can build a JSON object reusing other JSON objects by its inheritance mechanism.
+To specify JSON objects to be inherited, <code>jq-front</code> searches for keys which have special names in a given object.
 <code>$extends</code> and <code>$local</code> are keywords used for this purpose.</p>
+</div>
+<div class="paragraph">
+<p>Not only that, it allows you to construct a node by referencing other nodes and executing commands.</p>
 </div>
 <div class="paragraph">
 <p>Basic features offered by the product are following</p>
@@ -883,7 +886,7 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-15 13:17:34 UTC
+Last updated 2019-11-15 14:10:27 UTC
 </div>
 </div>
 </body>
