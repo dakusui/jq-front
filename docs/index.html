@@ -1097,6 +1097,22 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 <h2 id="_usage">Usage</h2>
 <div class="sectionbody">
 <div class="sect2">
+<h3 id="_installation">Installation</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">function docker-jq-front() {
+  docker run --rm -i \\
+    -v /:/var/lib/jf \\
+    -e JF_PATH_BASE="/var/lib/jf" \\
+    -e JF_PATH="$(echo '${JF_PATH}')" \\
+    -e JF_DEBUG=$(echo '${JF_DEBUG:-disabled}') \\
+    -e JF_CWD="$(echo '$(pwd)')" \\
+    ${DOCKER_REPO_NAME}:"$(echo '${JF_DOCKER_TAG'):-${LATEST_RELEASED_VERSION}$(echo '}')" "$(echo '${@}')"
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_command_line_interface">Command Line Interface</h3>
 <div class="listingblock">
 <div class="content">
@@ -1877,7 +1893,7 @@ In this case, the evaluation will not stop at the point and <code>jq-front</code
 <div id="top" class="tabcontent">
 <div id="top_content">
 <div class="sect1">
-<h2 id="_jq_front"><code>./</code> jq-front</h2>
+<h2 id="_jq_front_json_with_inheritance_and_templating"><code>./</code> jq-front: JSON with inheritance and templating</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><code>jq-front</code> is a simple tool to give your JSON files a power of inheritance and templating.

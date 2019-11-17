@@ -443,6 +443,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel1">
 <li><a href="#_usage">Usage</a>
 <ul class="sectlevel2">
+<li><a href="#_installation">Installation</a></li>
 <li><a href="#_command_line_interface">Command Line Interface</a></li>
 <li><a href="#_environment_variables">Environment variables</a></li>
 </ul>
@@ -454,6 +455,22 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="sect1">
 <h2 id="_usage">Usage</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_installation">Installation</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">function docker-jq-front() {
+  docker run --rm -i \\
+    -v /:/var/lib/jf \\
+    -e JF_PATH_BASE="/var/lib/jf" \\
+    -e JF_PATH="$(echo '${JF_PATH}')" \\
+    -e JF_DEBUG=$(echo '${JF_DEBUG:-disabled}') \\
+    -e JF_CWD="$(echo '$(pwd)')" \\
+    ${DOCKER_REPO_NAME}:"$(echo '${JF_DOCKER_TAG'):-${LATEST_RELEASED_VERSION}$(echo '}')" "$(echo '${@}')"
+}</code></pre>
+</div>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_command_line_interface">Command Line Interface</h3>
 <div class="listingblock">
@@ -535,7 +552,7 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-14 19:11:17 UTC
+Last updated 2019-11-17 01:11:13 UTC
 </div>
 </div>
 </body>

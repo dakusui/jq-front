@@ -61,6 +61,7 @@ Followings will be required by `jq-front`
 * `bash`
 * `npm`
   * `ajv-cli`
+* `yq`
 
 ### With Docker
 
@@ -71,8 +72,6 @@ Add a following entry to your `.bashrc` or a file sourced through it.
 $(cat jq-front_aliases)
 
 ```
-
-Please replace `jq-front` in this document with `docker-jq-front` as necessary.
 
 ## Features
 

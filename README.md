@@ -61,6 +61,7 @@ Followings will be required by `jq-front`
 * `bash`
 * `npm`
   * `ajv-cli`
+* `yq`
 
 ### With Docker
 
@@ -68,7 +69,7 @@ Add a following entry to your `.bashrc` or a file sourced through it.
 
 ```shell script
 
-function docker-jq-front() {
+function jq-front() {
   docker run --rm -i \
     -v /:/var/lib/jf \
     -e JF_PATH_BASE="/var/lib/jf" \
@@ -79,8 +80,6 @@ function docker-jq-front() {
 }
 
 ```
-
-Please replace `jq-front` in this document with `docker-jq-front` as necessary.
 
 ## Features
 

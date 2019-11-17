@@ -1,4 +1,4 @@
-function docker-jq-front() {
+function jq-front() {
   docker run --rm -i \
     -v /:/var/lib/jf \
     -e JF_PATH_BASE="/var/lib/jf" \
