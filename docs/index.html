@@ -1094,24 +1094,62 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 <div id="manual" class="tabcontent">
 <div id="manual_content">
 <div class="sect1">
-<h2 id="_usage">Usage</h2>
+<h2 id="_installation">Installation</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_installation">Installation</h3>
+<h3 id="_ubuntu">Ubuntu</h3>
+<div class="paragraph">
+<p>Place the file <code>jq-front</code>, <code>lib</code>, and <code>schema</code> somewhere on your <code>PATH</code>.
+Following dependencies will be required by <code>jq-front</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>bash</code></p>
+</li>
+<li>
+<p><code>jq</code></p>
+</li>
+<li>
+<p><code>npm</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ajv-cli</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>yq</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_with_docker_recommended">With Docker (recommended)</h3>
+<div class="paragraph">
+<p>Add a following entry to your <code>.bashrc</code> or a file sourced through it.</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-json" data-lang="json">function docker-jq-front() {
-  docker run --rm -i \\
-    -v /:/var/lib/jf \\
-    -e JF_PATH_BASE="/var/lib/jf" \\
-    -e JF_PATH="$(echo '${JF_PATH}')" \\
-    -e JF_DEBUG=$(echo '${JF_DEBUG:-disabled}') \\
-    -e JF_CWD="$(echo '$(pwd)')" \\
-    ${DOCKER_REPO_NAME}:"$(echo '${JF_DOCKER_TAG'):-${LATEST_RELEASED_VERSION}$(echo '}')" "$(echo '${@}')"
+<pre class="highlight"><code class="language-bash" data-lang="bash">function jq-front() {
+  docker run --rm -i \
+    -v /:/var/lib/jf \
+    -e JF_PATH_BASE="/var/lib/jf" \
+    -e JF_PATH="${JF_PATH}" \
+    -e JF_DEBUG=${JF_DEBUG:-disabled} \
+    -e JF_CWD="$(pwd)" \
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.15}" "${@}"
 }</code></pre>
 </div>
 </div>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
 <div class="sect2">
 <h3 id="_command_line_interface">Command Line Interface</h3>
 <div class="listingblock">
