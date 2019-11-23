@@ -441,7 +441,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_jq_front_json_with_inheritance_and_templating"><code>./</code> jq-front: JSON with inheritance and templating</a></li>
+<li><a href="#_jq_front_json_with_inheritance_and_templating"><code>./</code> jq-front: JSON with inheritance and templating</a>
+<ul class="sectlevel2">
+<li><a href="#_for_what_is_it_useful">For what is it useful?</a></li>
+<li><a href="#_yaml">YAML?</a></li>
+</ul>
+</li>
 <li><a href="#_references">References</a></li>
 </ul>
 </div>
@@ -451,7 +456,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_jq_front_json_with_inheritance_and_templating"><code>./</code> jq-front: JSON with inheritance and templating</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><code>jq-front</code> is a simple tool to give your JSON files a power of inheritance and templating.
+<p><a href="https://github.com/dakusui/jq-front"><code>jq-front</code></a> is a simple tool to give your JSON files a power of inheritance and templating.
 It was named after <strong>Cfront</strong><a href="#Cfront">[2]</a>, which is an old component of C&#43;&#43; language that converts C&#43;&#43; source code into C language.</p>
 </div>
 <div class="paragraph">
@@ -460,6 +465,193 @@ It was named after <strong>Cfront</strong><a href="#Cfront">[2]</a>, which is an
 <div class="paragraph">
 <p>However, surely it has some weaknesses when we try to define data structure.
 For instance, under a situation, where we need to generate similar but slightly different system configurations repeatedly, it is quite difficult to remove redundant pieces since JSON itself does not define anything about relationships between files or nodes inside files.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
+</div>
+<div class="sect2">
+<h3 id="_for_what_is_it_useful">For what is it useful?</h3>
+<div class="paragraph">
+<p>Haven&#8217;t you ever created configuration files, each of which are slightly different?</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">config for foo</th>
+<th class="tableblock halign-left valign-top">config for bar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "foo_database": {
+    "server": {
+      "ip": "192.168.1.5",
+      "port": 2001
+    },
+    "db_name": "foo",
+    "user": {
+      "name": "root",
+      "password": "foo_root"
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "bar_database": {
+    "server": {
+      "ip": "192.168.1.5",
+      "port": 2001
+    },
+    "db_name": "bar",
+    "user": {
+      "name": "root",
+      "password": "bar_root"
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Probably you want to define a JSON, which defines boring default values like this,</p>
+</div>
+<div class="listingblock">
+<div class="title">database_default</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+    "server": {
+      "ip": "192.168.1.5",
+      "port": 2001
+    },
+    "user": {
+      "name": "root"
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And reuse it from other files as follows</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">foo.json</th>
+<th class="tableblock halign-left valign-top">bar.json</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "foo_database": {
+    "$extends": [ "database_default.json" ],
+    "db_name": "foo",
+    "user": {
+      "password": "foo_root"
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "foo_database": {
+    "$extends": [ "database_default.json" ],
+    "db_name": "bar",
+    "user": {
+       "password": "bar_root"
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><code>jq-front</code> does it for you.
+Try <code>jq-front foo.json</code> from your command line and you will see the <code>config for foo</code> in the first matrix.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_yaml">YAML?</h3>
+<div class="paragraph">
+<p>There is a criticism to use JSON as a configuration language<a href="#cr">[3]</a>.
+Although I am a bit skeptical at the discussion from some view points (e.g., users will eventually end up in desiring GUI not only YAML), <code>jq-front</code> can also be used to make your YAML based configuration language more powerful.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">INPUT</th>
+<th class="tableblock halign-left valign-top">OUTPUT</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">$local:
+  database_default:
+    server:
+      ip: 192.168.1.5
+      port: 2000
+    db_name: test
+    user:
+      name: root
+      password: root
+
+# database foo differs from default by only its port and user password
+foo_database:
+  $extends: [ database_default ]
+  server:
+    port: 2001
+  db_name: foo
+  user:
+    password: foo_root</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">foo_database:
+  server:
+    ip: 192.168.1.5
+    port: 2001
+  db_name: foo
+  user:
+    name: root
+    password: foo_root</code></pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The command line to render the input is following.<a href="#stackoverflow">[7]</a></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-shell script" data-lang="shell script">$ yq . -j in.yaml | jq-front  | yq . -y</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -488,7 +680,10 @@ For instance, under a situation, where we need to generate similar but slightly 
 <p><a id="json"></a>[5] json.org. <a href="http://www.json.org/">JSON</a>:2019</p>
 </li>
 <li>
-<p><a id="jq"></a>[6]  jq <a href="https://stedolan.github.io/jq/manual/" class="bare">https://stedolan.github.io/jq/manual/</a></p>
+<p><a id="jq"></a>[6]  jq <a href="https://stedolan.github.io/jq/manual/">jq manual</a>:2019</p>
+</li>
+<li>
+<p><a id="stackoverflow"></a>[7] More complex inheritance in YAML? <a href="https://stackoverflow.com/questions/14184971/more-complex-inheritance-in-yaml">stackoverflow</a>:2019</p>
 </li>
 </ul>
 </div>
@@ -503,7 +698,7 @@ For instance, under a situation, where we need to generate similar but slightly 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-15 21:39:05 UTC
+Last updated 2019-11-23 00:19:00 UTC
 </div>
 </div>
 </body>
