@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -E -eu -o pipefail
+set -E -eu +o posix -o pipefail
 shopt -s inherit_errexit
 
 JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
@@ -12,6 +12,10 @@ source "${JF_BASEDIR}/lib/shared.sh"
 function _debug_abort() {
   print_stacktrace "DEBUG: error trapped"
   exit 1
+}
+
+function _sourced_files_dir() {
+  echo "${_JF_SESSION_DIR}/source_files"
 }
 
 function _mangle_path() {
@@ -126,7 +130,7 @@ function _expand_nodelevel_inheritances() {
       else
         debug "_expand_nodelevel_inheritances: value NOT found at _p:'${_p}' in '${_cur_content}'"
         local _expanded_tmp
-        _expanded_tmp="$(run_jqfront ${_jj} "${_validation_mode}" "${_path}")"
+        _expanded_tmp="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece="$(mktemp_with_content "${_expanded_tmp}")"
       fi
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")"
@@ -162,6 +166,16 @@ function _validate_jf_json_with() {
   } || {
     abort "Validation by ajv for '${_in}' was failed:\n${_out}"
   }
+}
+
+function _source_files() {
+  local _i _files
+  mapfile -t _files <<<"$(ls "$(_sourced_files_dir)")"
+  for _i in "${_files[@]}"; do
+    [[ "${_i}" == "" ]] && break
+    # shellcheck disable=SC1090
+    source "$(_sourced_files_dir)/${_i}"
+  done
 }
 
 function _render_text_node() {
@@ -255,6 +269,9 @@ function _render_text_node() {
     local _error_out
     export _path
     _error="$(mktemp)"
+    # source files, for which SOURCE directive is specified
+    _source_files
+    # Perform the 'templating'
     _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
     unset _path
     # shellcheck disable=SC2002
@@ -340,14 +357,22 @@ function find_file_in_path() {
       echo "${_file}"
     fi
   elif [[ ${#_arr[@]} -gt 1 ]]; then
-    ####
-    # In case the file name contains one or more semi-colons(';'), the name will be splitted by it.
-    # And a command line is constructed from them and executed.
     local _f
     _f="$(search_file_in "${_arr[0]}" "${_path}")" || abort "Script file ${_arr[1]} was not found in '${_path}'"
-    export _path
-    mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
-    unset _path
+    if [[ ${_arr[1]} == SOURCE ]]; then
+      # shellcheck disable=SC1090
+      #  We know that there are no non-alphanumerically named files.
+      # shellcheck disable=SC2012
+      cat "${_f}" >"$(_sourced_files_dir)/$(ls "$(_sourced_files_dir)" | wc -l)"
+      mktemp_with_content "{}"
+    else
+      ####
+      # In case the file name contains one or more semi-colons(';'), the name will be splitted by it.
+      # And a command line is constructed from them and executed.
+      export _path
+      mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
+      unset _path
+    fi
   fi
 }
 
@@ -552,6 +577,8 @@ function run_jqfront() {
   local _out
   debug "begin:run_jqfront:_target=${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
+  # Fail on command substitution cannot be checked directly
+  # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
   _jf_path="$(dirof "${_target}"):${_jf_path}"
   _content="$(cat "${_target}")"
@@ -588,6 +615,7 @@ function perform_jqfront() {
   local _validation_mode="${3}"
   local _jf_path="${4}"
   local _content
+  mkdir -p "$(_sourced_files_dir)"
   _content="$(run_jqfront "${_target}" "${_validation_mode}" "${_jf_path}")"
   _content=$(echo "${_content}" | jq '.|del(."$local")')
   if [[ "${_templating}" == "yes" ]]; then
