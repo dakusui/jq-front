@@ -2,5 +2,5 @@
   "$extends": [
     "SS.sh;SOURCE"
   ],
-  "key": "eval:string:hello_world=$(hello_world d),$(echo HELLO)"
+  "key": "eval:string:hello_world=$(hello_world),$(echo HELLO)"
 }

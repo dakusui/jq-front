@@ -178,10 +178,75 @@ function _source_files() {
   done
 }
 
+function _define_builtin_functions() {
+  ####
+  #
+  # This is a function intended to be used on templating (_render_text_node)
+  function ref() {
+    # shellcheck disable=SC2181
+    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    local _path="${1}"
+    local value type
+    value=$(value_at "${_path}" "$(cat "$(self)")")
+    type="$(type_of "${value}")"
+    message "value:'${value}'"
+    message "type:'${type}'"
+    if [[ "${type}" == string && "${value}" == eval:* ]]; then
+      local ret
+      _check_cyclic_dependency "${_path}" reference
+      ret="$(_render_text_node "${value}" "${_path}" "${_self}")"
+      _unmark_as_in_progress "${_path}" reference
+      jq -r -c '.' <(echo "${ret}")
+    else
+      echo "${value}"
+    fi
+  }
+
+  ####
+  # Prints the entire file (before templating).
+  #
+  # This is a function intended to be used on templating (_render_text_node)
+  function self() {
+    # shellcheck disable=SC2181
+    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    echo "${_self}"
+  }
+  ####
+  # A function that prints a node path to an element that encloses the attribute.
+  function cur() {
+    # shellcheck disable=SC2181
+    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    echo "${_path%.*}"
+  }
+  ####
+  # Prints a path to a parent node of a given path.
+  # Note that single level path results in an empty string.
+  # That is ```parent .node``` will print nothing.
+  # This is intentional to be able to do ```$(ref $(parent $(cur)).uncle)``` even if ```$(cur)``` is either
+  # ```.node``` or ```.node.child```
+  function parent() {
+    # shellcheck disable=SC2181
+    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    local _p="${1?Path was not given}"
+    local _ret="${_p}"
+    if [[ ! "${_ret}" == .* ]]; then
+      abort "Path was not valid:(${_ret}), it must start with a '.'"
+    fi
+    if [[ "${_ret}" == "." ]]; then
+      abort "Root does not have a parent.:(${_ret})"
+    fi
+    _ret="${_ret%.*}"
+    echo "${_ret}"
+  }
+  function error() {
+    abort "${@}"
+  }
+}
+
 function _render_text_node() {
   local _node_value="${1}"
-  local _path="${2}"
-  local _self="${3}"
+  local _path="${2}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _self="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
   local _mode="raw"
   local _quote="yes"
   local _body
@@ -204,73 +269,9 @@ function _render_text_node() {
 
   if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
     local _error_prefix="ERROR: "
-    ####
-    #
-    # This is a function intended to be used on templating (_render_text_node)
-    function ref() {
-      # shellcheck disable=SC2181
-      [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
-      local _path="${1}"
-      local value type
-      value=$(value_at "${_path}" "$(cat "$(self)")")
-      type="$(type_of "${value}")"
-      message "value:'${value}'"
-      message "type:'${type}'"
-      if [[ "${type}" == string && "${value}" == eval:* ]]; then
-        local ret
-        _check_cyclic_dependency "${_path}" reference
-        ret="$(_render_text_node "${value}" "${_path}" "${_self}")"
-        _unmark_as_in_progress "${_path}" reference
-        jq -r -c '.' <(echo "${ret}")
-      else
-        echo "${value}"
-      fi
-    }
-    ####
-    # Prints the entire file (before templating).
-    #
-    # This is a function intended to be used on templating (_render_text_node)
-    function self() {
-      # shellcheck disable=SC2181
-      [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
-      echo "${_self}"
-    }
-    ####
-    # A function that prints a node path to an element that encloses the attribute.
-    function cur() {
-      # shellcheck disable=SC2181
-      [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
-      echo "${_path%.*}"
-    }
-    ####
-    # Prints a path to a parent node of a given path.
-    # Note that single level path results in an empty string.
-    # That is ```parent .node``` will print nothing.
-    # This is intentional to be able to do ```$(ref $(parent $(cur)).uncle)``` even if ```$(cur)``` is either
-    # ```.node``` or ```.node.child```
-    function parent() {
-      # shellcheck disable=SC2181
-      [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
-      local _p="${1?Path was not given}"
-      local _ret="${_p}"
-      if [[ ! "${_ret}" == .* ]]; then
-        abort "Path was not valid:(${_ret}), it must start with a '.'"
-      fi
-      if [[ "${_ret}" == "." ]]; then
-        abort "Root does not have a parent.:(${_ret})"
-      fi
-      _ret="${_ret%.*}"
-      echo "${_ret}"
-    }
-    function error() {
-      abort "${@}"
-    }
-    local _error
-    local _error_out
+    local _error _error_out
     export _path
     _error="$(mktemp)"
-    # source files, for which SOURCE directive is specified
-    _source_files
     # Perform the 'templating'
     _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
     unset _path
@@ -476,8 +477,7 @@ function expand_filelevel_inheritances() {
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
-  local _cur
-  local _content
+  local _cur _content
   _in="$(find_file_in_path "${_target}" "${_path}")"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
@@ -565,6 +565,10 @@ function perform_templating() {
   local _src_file="${1}"
   local _content
   local _ret
+  # define builtin functions such as "ref", "self"
+  _define_builtin_functions
+  # source files, for which SOURCE directive is specified
+  _source_files
   _perform_templating "$(cat "${_src_file}")"
   debug "end:perform_templating"
 }
