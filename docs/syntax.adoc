@@ -202,8 +202,7 @@ In case cyclic reference is found during this process, it will be reported and t
 |===
 |Input |Output
 
-|
-[source,json]
+|[source,json]
 .A.json
 ----
 {
