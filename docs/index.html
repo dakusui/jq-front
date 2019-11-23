@@ -1129,11 +1129,31 @@ Following dependencies will be required by <code>jq-front</code></p>
 <div class="sect2">
 <h3 id="_with_docker_recommended">With Docker (recommended)</h3>
 <div class="paragraph">
-<p>Add a following entry to your <code>.bashrc</code> or a file sourced through it.</p>
+<p>If you are already using <code>docker</code> and <code>bash</code>, this is the easiest way to use <code>jq-front</code>.
+To install docker, visit</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.docker.com/docker-for-windows/">windows</a></p>
+</li>
+<li>
+<p><a href="https://docs.docker.com/docker-for-mac/install/">mac</a></p>
+</li>
+<li>
+<p><a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/">ubuntu</a></p>
+</li>
+<li>
+<p><a href="https://docs.docker.com/install/linux/docker-ce/centos/">centos</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Add a following entry to your <code>.bashrc</code> or a file sourced through it (such as <code>.profile</code> on Mac OSX).</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">function jq-front() {
+<pre class="highlight"><code class="language-shell script" data-lang="shell script">function jq-front() {
   docker run --rm -i \
     -v /:/var/lib/jf \
     -e JF_PATH_BASE="/var/lib/jf" \
@@ -1143,6 +1163,9 @@ Following dependencies will be required by <code>jq-front</code></p>
     dakusui/jq-front:"${JF_DOCKER_TAG:-v0.16}" "${@}"
 }</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>To install <code>bash</code> on windows, <a href="https://itsfoss.com/install-bash-on-windows/">install-bash-on-windows</a> will be helpful.</p>
 </div>
 </div>
 </div>

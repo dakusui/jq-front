@@ -64,7 +64,7 @@ function execute_doc() {
     message "...done"
   done < <(find "docs" -type f -name '*.adoc' -print0)
   message -n "Generating 'docs/index.html'"
-  docs/index.sh > docs/index.html
+  docs/index.sh >docs/index.html
   message "...done"
 }
 
@@ -134,6 +134,7 @@ function execute_post_release() {
   message "Updated build_info.json"
   message "Synchronize documentation"
   execute_prepare
+  execute_doc
   message "Documenatation was synchronized"
   git commit -a -m "$(printf "Bump up target version to v%s.%s" \
     "$(jq '.version.target.major' "${tmp}")" \
