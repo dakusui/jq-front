@@ -67,14 +67,26 @@ function _remove_meta_nodes() {
 
 # Latter overrides former
 function _merge_object_nodes() {
+
   local _a="${1}"
   local _b="${2}"
   local _error
   _error=$(mktemp)
   debug "merging _a:'${_a}' and _b:'${_b}'"
-  jq -r -c -n '$a * $b' --argjson a "${_a}" --argjson b "${_b}" || {
+  # shellcheck disable=SC2016
+ja -r -c -n --argjson a "${_a}" --argjson b "${_b}" 'def value_at($n; $p):
+  $n | getpath($p);
+
+def merge_objects($a; $b):
+  $a | [paths(scalars_or_empty)]
+     | reduce .[] as $p ($b; setpath($p; value_at($a; $p)));
+     merge_objects($b; $a)' || {
     abort "Failed to merge object nodes:'${_a}' and '${_b}': error: ${_error}"
   }
+
+#  jq -r -c -n '$a * $b' --argjson a "${_a}" --argjson b "${_b}" || {
+#    abort "Failed to merge object nodes:'${_a}' and '${_b}': error: ${_error}"
+#  }
 }
 
 # Latter overrides former
