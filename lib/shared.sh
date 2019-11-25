@@ -63,7 +63,7 @@ function all_paths() {
               def path2pexp(v):
                 reduce .[] as $segment (""; . + ($segment | if type == "string" then ".\"" + . + "\"" else "[\(.)]" end));
 
-              [paths(scalars)]
+              [paths(..)]
                 |sort
                 |sort_by(length)
                 |.[]
