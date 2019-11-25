@@ -63,7 +63,11 @@ function all_paths() {
               def path2pexp(v):
                 reduce .[] as $segment (""; . + ($segment | if type == "string" then ".\"" + . + "\"" else "[\(.)]" end));
 
-              [paths(scalars)]|sort|sort_by(length)|.[]|path2pexp(.)'
+              [paths(scalars)]
+                |sort
+                |sort_by(length)
+                |.[]
+                |path2pexp(.)'
 }
 
 function is_json() {
