@@ -78,9 +78,23 @@ function _merge_object_nodes() {
 def value_at($n; $p):
   $n | getpath($p);
 
+def type_of($v):
+  $v | type;
+
+def setvalue_at($n; $p; $v):
+  $n | if type_of($v)=="object" or type_of($v)=="array" then
+         if type_of(value_at($n; $p))!="object" and type_of(value_at($n; $p)!="array") then
+           setpath($p; $v)
+         else
+           .
+         end
+       else
+         setpath($p; $v)
+       end;
+
 def merge_objects($a; $b):
-  $a | [paths(scalars_or_empty)]
-     | reduce .[] as $p ($b; setpath($p; value_at($a; $p)));
+  $b | [paths(scalars_or_empty)]
+     | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
      merge_objects($a; $b)' || {
     abort "Failed to merge object nodes:'${_a}' and '${_b}': error: ${_error}"
   }
@@ -179,7 +193,9 @@ function _validate_jf_json_with() {
 
 function _source_files() {
   local _i _files
-  mapfile -t _files <<<"$(ls "$(_sourced_files_dir)")"
+  # We know that there is no alphanumerically named files under $(_source_files_dir)
+  # shellcheck disable=SC2012
+  mapfile -t _files <<<"$(ls "$(_sourced_files_dir)" | sort -n)"
   for _i in "${_files[@]}"; do
     [[ "${_i}" == "" ]] && break
     # shellcheck disable=SC1090
