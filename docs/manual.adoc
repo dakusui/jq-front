@@ -1,33 +1,3 @@
-== Installation
-
-=== Ubuntu
-
-Place the file `jq-front`, `lib`, and `schema` somewhere on your `PATH`.
-Following dependencies will be required by `jq-front`
-
-* `bash`
-* `jq`
-* `npm`
-** `ajv-cli`
-* `yq`
-
-=== With Docker (recommended)
-
-If you are already using `docker` and `bash`, this is the easiest way to use `jq-front`.
-To install docker, visit
-
-* https://docs.docker.com/docker-for-windows/[windows]
-* https://docs.docker.com/docker-for-mac/install/[mac]
-* https://docs.docker.com/install/linux/docker-ce/ubuntu/[ubuntu]
-* https://docs.docker.com/install/linux/docker-ce/centos/[centos]
-
-Add a following entry to your `.bashrc` or a file sourced through it (such as `.profile` on Mac OSX).
-
-[source,shell script]
-include::../jq-front_aliases[]
-
-To install `bash` on windows, https://itsfoss.com/install-bash-on-windows/[install-bash-on-windows] will be helpful.
-
 == Usage
 
 === Command Line Interface

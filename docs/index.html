@@ -435,6 +435,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
+
 // For tabs
 body {font-family: Arial;}
 
@@ -482,6 +483,7 @@ body {font-family: Arial;}
 <button class="tablinks" onclick="openTab(event, 'design')">design</button>
 <button class="tablinks" onclick="openTab(event, 'faq')">faq</button>
 <button class="tablinks" onclick="openTab(event, 'features')">features</button>
+<button class="tablinks" onclick="openTab(event, 'installation')">installation</button>
 <button class="tablinks" onclick="openTab(event, 'limitationsAndFutureWork')">limitationsAndFutureWork</button>
 <button class="tablinks" onclick="openTab(event, 'manual')">manual</button>
 <button class="tablinks" onclick="openTab(event, 'syntax')">syntax</button>
@@ -573,7 +575,8 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="faq" class="tabcontent">
 <div id="faq_content">
 <div class="sect1">
@@ -607,41 +610,10 @@ However, due to the specification of <code>bash</code>, if you use command subst
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_why_objects_inside_an_array_are_rendered_differently_on_inheritance_from_ones_outside">Why objects inside an array are rendered differently on inheritance from ones outside?</h3>
-<div class="paragraph">
-<p>It is because of the behaviour of <code>*</code> operator of <code>jq</code>, which treats them differently(<a href="https://github.com/dakusui/jq-front/issues/60">issue-60</a>).
-<code>jq-front</code> relies on the operator for implementing its inheritance feature.</p>
-</div>
-<div class="paragraph">
-<p>Maybe we should implement our own operator for inheritance in future.</p>
-</div>
-<div class="paragraph">
-<p>The workaround for this is to have an intermediate node like following.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-json" data-lang="json">{
-    "$local": {
-      "nodeX": {
-        "x":"X"
-      }
-    },
-    "work": {
-      "nodeA": {
-         "$extends": ["nodeX"]
-      }
-    },
-    "P":[
-       "eval:object:$(ref .work.nodeA)"
-    ]
-}</code></pre>
 </div>
 </div>
 </div>
 </div>
-</div>
-</div></div>
 <div id="features" class="tabcontent">
 <div id="features_content">
 <div class="sect1">
@@ -1075,24 +1047,10 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div></div>
-<div id="limitationsAndFutureWork" class="tabcontent">
-<div id="limitationsAndFutureWork_content">
-<div class="sect1">
-<h2 id="_limitations_and_future_work">Limitations and Future Work</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p><a href="https://github.com/dakusui/jq-front/issues">Issues</a></p>
-</li>
-</ul>
 </div>
 </div>
-</div>
-</div></div>
-<div id="manual" class="tabcontent">
-<div id="manual_content">
+<div id="installation" class="tabcontent">
+<div id="installation_content">
 <div class="sect1">
 <h2 id="_installation">Installation</h2>
 <div class="sectionbody">
@@ -1160,7 +1118,7 @@ To install docker, visit</p>
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.16}" "${@}"
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.17}" "${@}"
 }</code></pre>
 </div>
 </div>
@@ -1170,6 +1128,26 @@ To install docker, visit</p>
 </div>
 </div>
 </div>
+</div>
+</div>
+<div id="limitationsAndFutureWork" class="tabcontent">
+<div id="limitationsAndFutureWork_content">
+<div class="sect1">
+<h2 id="_limitations_and_future_work">Limitations and Future Work</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/dakusui/jq-front/issues">Issues</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="manual" class="tabcontent">
+<div id="manual_content">
 <div class="sect1">
 <h2 id="_usage">Usage</h2>
 <div class="sectionbody">
@@ -1251,7 +1229,8 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="syntax" class="tabcontent">
 <div id="syntax_content">
 <div class="sect1">
@@ -1278,6 +1257,32 @@ Each element in the array must be a text node.</p>
 <p>A script invocation directive.</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>To create a JSON file from an existing one <code>A.json</code>, you can do following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json" ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you see in the example, the name of the file is placed inside an array and it means you can do so called "multiple-inheritance".</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json", "B.json" ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you do a multiple inheritance, an element appeared in the array earlier is more prioritized(similar to the multiple inheritance in python).</p>
+</div>
+<div class="paragraph">
+<p>In case you have nodes at the same path in <code>A.json</code> and <code>B.json</code>, value from the <code>A.json</code> wins.</p>
 </div>
 <div class="sect3">
 <h4 id="_file_in_jf_path">File in <code>JF_PATH</code></h4>
@@ -1994,7 +1999,8 @@ And as you see, you are now able to call the function you defined, <code>hello_w
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <div id="top" class="tabcontent">
 <div id="top_content">
 <div class="sect1">
@@ -2234,7 +2240,8 @@ foo_database:
 </div>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 <script>
 function openTab(evt, cityName) {
   var i, tabcontent, tablinks;
