@@ -11,6 +11,29 @@ The string can be one of
 * When it is placed NOT at the top level of an object node file, a name of a "local node".
 * A script invocation directive.
 
+To create a JSON file from an existing one `A.json`, you can do following.
+
+[source, json]
+----
+{
+  "$extends": [ "A.json" ]
+}
+----
+
+As you see in the example, the name of the file is placed inside an array and it means you can do so called "multiple-inheritance".
+
+[source, json]
+----
+{
+  "$extends": [ "A.json", "B.json" ]
+}
+----
+
+If you do a multiple inheritance, an element appeared in the array earlier is more prioritized(similar to the multiple inheritance in python).
+
+In case you have nodes at the same path in `A.json` and `B.json`, value from the `A.json` wins.
+
+
 ==== File in `JF_PATH`
 
 As long as your file is under a directory specified by an element in `JF_PATH`, you can use it.
