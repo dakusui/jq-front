@@ -6,11 +6,11 @@
   "version": {
     "latestReleased": {
       "major": 0,
-      "minor": 17
+      "minor": 18
     },
     "target": {
       "major": 0,
-      "minor": 18
+      "minor": 19
     }
   }
 }
