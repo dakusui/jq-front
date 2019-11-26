@@ -1,6 +1,7 @@
 {
   "$local": {
     "nodeA": {
+      "a": "A",
        "aa": "aa"
     },
     "nodeB": {

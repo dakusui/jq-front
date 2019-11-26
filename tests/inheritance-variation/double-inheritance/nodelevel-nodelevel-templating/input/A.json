@@ -1,5 +1,5 @@
 {
-  "a": "template:string:$(echo 'A')",
-  "b": "template:string:$(echo 'B')",
-  "o": "template:string:$(ref $(cur).a)-$(ref $(cur).b)"
+  "a": "eval:string:$(echo 'A')",
+  "b": "eval:string:$(echo 'B')",
+  "o": "eval:string:$(ref $(cur).a)-$(ref $(cur).b)"
 }

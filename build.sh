@@ -10,11 +10,11 @@ function _test_package() {
   # shellcheck disable=SC1090
   # source=jf_aliases
   source "$(pwd)/${APP_NAME}_aliases"
-  export -f docker-jq-front
+  export -f jq-front
   export JF_DOCKER_TAG="${_version}"
   message "Testing package:'${JF_DOCKER_TAG}'"
   bash -eu "tests/tests.sh" "docker-${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
-  unset -f docker-jq-front
+  unset -f jq-front
   unset JF_DOCKER_TAG
 }
 
