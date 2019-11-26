@@ -435,7 +435,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
-
 // For tabs
 body {font-family: Arial;}
 
@@ -575,8 +574,7 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="faq" class="tabcontent">
 <div id="faq_content">
 <div class="sect1">
@@ -612,8 +610,7 @@ However, due to the specification of <code>bash</code>, if you use command subst
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="features" class="tabcontent">
 <div id="features_content">
 <div class="sect1">
@@ -1047,8 +1044,7 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="installation" class="tabcontent">
 <div id="installation_content">
 <div class="sect1">
@@ -1057,7 +1053,8 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 <div class="sect2">
 <h3 id="_ubuntu">Ubuntu</h3>
 <div class="paragraph">
-<p>Place the file <code>jq-front</code>, <code>lib</code>, and <code>schema</code> somewhere on your <code>PATH</code>.
+<p>Download an <a href="https://github.com/dakusui/jq-front/releases">archive</a> or clone the <a href="https://github.com/dakusui/jq-front.git">repository</a>.
+And place the file <code>jq-front</code>, <code>lib</code>, and <code>schema</code> in a directory which is on your <code>PATH</code>.
 Following dependencies will be required by <code>jq-front</code></p>
 </div>
 <div class="ulist">
@@ -1069,19 +1066,54 @@ Following dependencies will be required by <code>jq-front</code></p>
 <p><code>jq</code></p>
 </li>
 <li>
-<p><code>npm</code></p>
+<p><code>ajv-cli</code></p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>ajv-cli</code></p>
+<p><code>npm</code></p>
 </li>
 </ul>
 </div>
 </li>
 <li>
 <p><code>yq</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>python-pip</p>
+</li>
+<li>
+<p>python</p>
 </li>
 </ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+The version of <code>yq</code> installed through, <code>snap install yq</code> doesn’t work for <code>jq-front</code>.
+Visit <a href="https://yq.readthedocs.io/en/latest/">yq</a> site to know it more.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+All the direct and indirect dependencies are found in the <code>Dockerfile</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -1128,8 +1160,7 @@ To install docker, visit</p>
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="limitationsAndFutureWork" class="tabcontent">
 <div id="limitationsAndFutureWork_content">
 <div class="sect1">
@@ -1144,8 +1175,7 @@ To install docker, visit</p>
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="manual" class="tabcontent">
 <div id="manual_content">
 <div class="sect1">
@@ -1229,8 +1259,7 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="syntax" class="tabcontent">
 <div id="syntax_content">
 <div class="sect1">
@@ -1999,8 +2028,7 @@ And as you see, you are now able to call the function you defined, <code>hello_w
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <div id="top" class="tabcontent">
 <div id="top_content">
 <div class="sect1">
@@ -2240,8 +2268,7 @@ foo_database:
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
 <script>
 function openTab(evt, cityName) {
   var i, tabcontent, tablinks;

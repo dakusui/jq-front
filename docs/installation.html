@@ -457,7 +457,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="sect2">
 <h3 id="_ubuntu">Ubuntu</h3>
 <div class="paragraph">
-<p>Place the file <code>jq-front</code>, <code>lib</code>, and <code>schema</code> somewhere on your <code>PATH</code>.
+<p>Download an <a href="https://github.com/dakusui/jq-front/releases">archive</a> or clone the <a href="https://github.com/dakusui/jq-front.git">repository</a>.
+And place the file <code>jq-front</code>, <code>lib</code>, and <code>schema</code> in a directory which is on your <code>PATH</code>.
 Following dependencies will be required by <code>jq-front</code></p>
 </div>
 <div class="ulist">
@@ -469,19 +470,54 @@ Following dependencies will be required by <code>jq-front</code></p>
 <p><code>jq</code></p>
 </li>
 <li>
-<p><code>npm</code></p>
+<p><code>ajv-cli</code></p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>ajv-cli</code></p>
+<p><code>npm</code></p>
 </li>
 </ul>
 </div>
 </li>
 <li>
 <p><code>yq</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>python-pip</p>
+</li>
+<li>
+<p>python</p>
 </li>
 </ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+The version of <code>yq</code> installed through, <code>snap install yq</code> doesn&#8217;t work for <code>jq-front</code>.
+Visit <a href="https://yq.readthedocs.io/en/latest/">yq</a> site to know it more.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+All the direct and indirect dependencies are found in the <code>Dockerfile</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -518,7 +554,7 @@ To install docker, visit</p>
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.17}" "${@}"
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.18}" "${@}"
 }</code></pre>
 </div>
 </div>
@@ -531,7 +567,7 @@ To install docker, visit</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-26 00:02:51 UTC
+Last updated 2019-11-26 20:44:34 UTC
 </div>
 </div>
 </body>

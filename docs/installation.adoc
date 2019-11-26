@@ -2,14 +2,22 @@
 
 === Ubuntu
 
-Place the file `jq-front`, `lib`, and `schema` somewhere on your `PATH`.
+Download an https://github.com/dakusui/jq-front/releases[archive] or clone the https://github.com/dakusui/jq-front.git[repository].
+And place the file `jq-front`, `lib`, and `schema` in a directory which is on your `PATH`.
 Following dependencies will be required by `jq-front`
 
 * `bash`
 * `jq`
-* `npm`
-** `ajv-cli`
+* `ajv-cli`
+  ** `npm`
 * `yq`
+  ** python-pip
+  ** python
+
+WARNING: The version of `yq` installed through, `snap install yq` doesn't work for `jq-front`.
+Visit https://yq.readthedocs.io/en/latest/[yq] site to know it more.
+
+NOTE: All the direct and indirect dependencies are found in the ``Dockerfile``.
 
 === With Docker (recommended)
 
