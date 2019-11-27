@@ -137,6 +137,8 @@ function execute_post_release() {
   jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json >"${tmp}" || abort "Failed to bump up the version."
   cp "${tmp}" build_info.json
   message "Updated build_info.json"
+  source build_info.sh
+  message "Reloaded build_info.sh"
   message "Synchronize documentation"
   execute_prepare
   execute_doc

@@ -205,7 +205,7 @@ function _define_builtin_functions() {
     type="$(type_of "${value}")"
     message "value:'${value}'"
     message "type:'${type}'"
-    if [[ "${type}" == string && "${value}" == eval:* ]]; then
+    if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
       local ret
       _check_cyclic_dependency "${_path}" reference
       ret="$(_render_text_node "${value}" "${_path}" "${_self}")"
