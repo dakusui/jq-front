@@ -100,17 +100,6 @@ def merge_objects($a; $b):
   }
 }
 
-# Latter overrides former
-function _merge_object_node_files() {
-  local _a="${1}"
-  local _b="${2}"
-  local _error
-  _error=$(mktemp)
-  jq -s '.[0] * .[1]' "${_a}" "${_b}" 2>"${_error}" || {
-    abort "Failed to merge object node files:'${_a}' and '${_b}': error: ${_error}"
-  }
-}
-
 function _expand_nodelevel_inheritances() {
   local i
   local _content="${1}"

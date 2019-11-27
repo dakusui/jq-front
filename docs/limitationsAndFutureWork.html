@@ -441,7 +441,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_limitations_and_future_work">Limitations and Future Work</a></li>
+<li><a href="#_limitations_and_future_work">Limitations and Future Work</a>
+<ul class="sectlevel2">
+<li><a href="#_make_it_faster">Make it faster</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -456,12 +460,74 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 </ul>
 </div>
+<div class="sect2">
+<h3 id="_make_it_faster">Make it faster</h3>
+<div class="paragraph">
+<p>The largest weakpoint of <code>jq-front</code> is its performance.
+It takes seconds to process even a relatively simple and small file.</p>
+</div>
+<div class="paragraph">
+<p>However, trying to make <code>jq-front</code> faster sacrificing the readability of it doesn&#8217;t seem to me a good idea, especially in case it is written in a language which is generally considered "hard to read and debug".</p>
+</div>
+<div class="paragraph">
+<p>Instead, we should think of implement it in another language, which is performance-wise more powerful and optimized, such as Java, C#, or whatsoever.</p>
+</div>
+<div class="sect3">
+<h4 id="_design_consideration">Design consideration</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Path in JSON</p>
+</li>
+<li>
+<p>Implementing the 'templating' feature.</p>
+</li>
+</ul>
+</div>
+<div class="sect4">
+<h5 id="_path_in_json">Path in JSON</h5>
+<div class="paragraph">
+<p>To implement a processor like <code>jq-front</code> requires a notation to specify a certain point in a JSON node as a string.</p>
+</div>
+<div class="paragraph">
+<p><code>jq</code> has such as feature out-of-box.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+    "a": {
+       "b": 123,
+       "c": ["HELLO"]
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The string <code>HELLO</code> in the array in the example above can be specified by a string <code>.a.c[0]</code>.</p>
+</div>
+<div class="paragraph">
+<p>We need to choose a library that can do this sort of work or implement such a functionality by ourselves.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_implementing_the_templating_feature">Implementing the 'templating' feature</h5>
+<div class="paragraph">
+<p>In order to implement the 'templating' feature, we need to be able to handle a string like following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>    "eval:object:{"hello":"$(ref .root.greeting[0].english)"}</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-08 21:38:08 UTC
+Last updated 2019-11-27 15:53:44 UTC
 </div>
 </div>
 </body>

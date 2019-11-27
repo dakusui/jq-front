@@ -7,15 +7,18 @@ source build_info.sh
 function _test_package() {
   local _version="${1}"
   local _target_tests="${2}"
+  local _ret
   # shellcheck disable=SC1090
   # source=jf_aliases
   source "$(pwd)/${APP_NAME}_aliases"
   export -f jq-front
   export JF_DOCKER_TAG="${_version}"
   message "Testing package:'${JF_DOCKER_TAG}'"
-  bash -eu "tests/tests.sh" "docker-${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
+  bash -eu "tests/tests.sh" "${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
+  _ret=$?
   unset -f jq-front
   unset JF_DOCKER_TAG
+  return "${_ret}"
 }
 
 function _build() {
@@ -75,11 +78,13 @@ function execute_package() {
 function execute_test() {
   local _target_tests="${1:-*}"
   bash -eu "tests/tests.sh" "$(pwd)/${APP_NAME}" "$(pwd)/tests" "${_target_tests}"
+  return $?
 }
 
 function execute_test_package() {
   local _target_tests="${1:-*}"
   _test_package "${TARGET_VERSION}-snapshot" "${_target_tests}"
+  return $?
 }
 
 function execute_check_release() {
