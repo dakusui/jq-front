@@ -67,7 +67,6 @@ function _remove_meta_nodes() {
 
 # Latter overrides former
 function _merge_object_nodes() {
-
   local _a="${1}"
   local _b="${2}"
   local _error
@@ -78,25 +77,34 @@ function _merge_object_nodes() {
 def value_at($n; $p):
   $n | getpath($p);
 
-def type_of($v):
-  $v | type;
+def path2pexp(v):
+  reduce .[] as $segment (""; . + ($segment | if type == "string" then ".\"" + . + "\"" else "[\(.)]" end));
 
 def setvalue_at($n; $p; $v):
+  def type_of($v):
+    $v | type;
+  def _setvalue_at($n; $p; $v):
+    $n | try setpath($p; $v)
+         catch error("Failed to process node at path:<\($p|path2pexp(.[]))>; the value:<\($v)>).");
   $n | if type_of($v)=="object" or type_of($v)=="array" then
          if type_of(value_at($n; $p))!="object" and type_of(value_at($n; $p)!="array") then
-           setpath($p; $v)
+           _setvalue_at(.;$p; $v)
          else
            .
          end
        else
-         setpath($p; $v)
+         _setvalue_at(.; $p; $v)
        end;
 
 def merge_objects($a; $b):
   $b | [paths(scalars_or_empty)]
      | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
-     merge_objects($a; $b)' || {
-    abort "Failed to merge object nodes:'${_a}' and '${_b}': error: ${_error}"
+
+merge_objects($a; $b)' 2> "${_error}" || {
+    abort "$(printf "ERROR: jq-front: Failed to merge object nodes:\n    a=<%s>\n    b=<%s>\nERROR: %s)" \
+                 "$(jq -r -c -n "${_a}|.")" \
+                 "$(jq -r -c -n "${_b}|.")" \
+                 "$(cat "${_error}")")"
   }
 }
 
