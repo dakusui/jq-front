@@ -100,11 +100,11 @@ def merge_objects($a; $b):
   $b | [paths(scalars_or_empty)]
      | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
 
-merge_objects($a; $b)' 2> "${_error}" || {
-    abort "$(printf "ERROR: jq-front: Failed to merge object nodes:\n    a=<%s>\n    b=<%s>\nERROR: %s)" \
-                 "$(jq -r -c -n "${_a}|.")" \
-                 "$(jq -r -c -n "${_b}|.")" \
-                 "$(cat "${_error}")")"
+merge_objects($a; $b)' 2>"${_error}" || {
+    abort "$(printf "jq-front: Failed to merge object nodes:\n    a=<%s>\n    b=<%s>\nERROR: %s)" \
+      "$(jq -r -c -n "${_a}|." || echo "MALFORMED: ${_a}")" \
+      "$(jq -r -c -n "${_b}|." || echo "MALFORMED: ${_b}")" \
+      "$(cat "${_error}" || echo "UNAVAILABLE")")"
   }
 }
 
@@ -121,6 +121,7 @@ function _expand_nodelevel_inheritances() {
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
+  [[ $? == 0 ]] || abort "Node-level expansion was failed for node:'${_content}'"
   for i in "${_keys[@]}"; do
     local j
     local -a _extendeds
@@ -139,14 +140,15 @@ function _expand_nodelevel_inheritances() {
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
       if has_value_at "${_p}" "${_cur_content}"; then
-        local _cur_piece
-        local _next_piece
+        local _cur_piece _next_piece _merged_piece_content
         debug "** _expand_nodelevel_inheritances: value found at _p:'${_p}' in '${_cur_content}'"
         debug "** _expand_nodelevel_inheritances: _p='${_p}'"
         debug "** _expand_nodelevel_inheritances: _cur_content='${_cur_content}'"
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")"
-        _merged_piece="$(mktemp_with_content "$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")")"
+        _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
+        [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with file:'${_jj}'"
+        _merged_piece="$(mktemp_with_content "${_merged_piece_content}")"
       else
         debug "_expand_nodelevel_inheritances: value NOT found at _p:'${_p}' in '${_cur_content}'"
         local _expanded_tmp
@@ -471,8 +473,8 @@ function _unmark_as_in_progress() {
 
 function _is_in_progress() {
   local _filename="${1}"
-  local _encoded_filename
   local _dependency_space="${2}"
+  local _encoded_filename
   _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
   if [[ -e "${_encoded_filename}" ]]; then
     return 0
@@ -518,6 +520,9 @@ function expand_filelevel_inheritances() {
         local _parent
         _parent="$(run_jqfront "${i}" "${_validation_mode}" "${_path}")"
         _c="$(_merge_object_nodes "${_parent}" "$(cat "${_cur}")")"
+        # Cannot check the exit code directly because of command substitution
+        # shellcheck disable=SC2181
+        [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with file:'${_cur}'"
         _next=$(mktemp_with_content "${_c}")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
@@ -553,10 +558,7 @@ function expand_nodelevel_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
-  local _expanded
-  local _expanded_clean
-  local _clean
-  local _content
+  local _expanded _expanded_clean _clean _content _ret
   debug "begin:expand_nodelevel_inheritances:_target=${_target}"
   _content="$(cat "${_target}")"
   _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")"

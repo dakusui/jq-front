@@ -87,7 +87,7 @@ function run_negative_test() {
     _error="$(cat "${_dirname}/test-error.txt")"
     IFS=$'\n' read -d '' -a _expected <"${_dirname}/expected.txt"
     for i in "${_expected[@]}"; do
-      if [[ ${_error} == *${i}* ]]; then
+      if [[ ${_error} =~ ${i} ]]; then
         continue
       else
         echo "${i}" >>"${_missings}"

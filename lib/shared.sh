@@ -2,6 +2,10 @@
 set -eu
 
 function mktemp_with_content() {
+  ####
+  # This is a logic to check preceding procedure was successful.
+  # shellcheck disable=SC2181
+  [[ $? == 0 ]] || abort "Preceding command is suspected to be failed already."
   local _content="${1:?No content was given}"
   local _ret
   _ret="$(mktemp)"
