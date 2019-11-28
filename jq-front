@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -E -eu +o posix -o pipefail
+set -E -o nounset -o errexit +o posix -o pipefail
 shopt -s inherit_errexit
 
 JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
@@ -67,7 +67,6 @@ function _remove_meta_nodes() {
 
 # Latter overrides former
 function _merge_object_nodes() {
-
   local _a="${1}"
   local _b="${2}"
   local _error
@@ -78,25 +77,34 @@ function _merge_object_nodes() {
 def value_at($n; $p):
   $n | getpath($p);
 
-def type_of($v):
-  $v | type;
+def path2pexp(v):
+  reduce .[] as $segment (""; . + ($segment | if type == "string" then ".\"" + . + "\"" else "[\(.)]" end));
 
 def setvalue_at($n; $p; $v):
+  def type_of($v):
+    $v | type;
+  def _setvalue_at($n; $p; $v):
+    $n | try setpath($p; $v)
+         catch error("Failed to process node at path:<\($p|path2pexp(.[]))>; the value:<\($v)>).");
   $n | if type_of($v)=="object" or type_of($v)=="array" then
          if type_of(value_at($n; $p))!="object" and type_of(value_at($n; $p)!="array") then
-           setpath($p; $v)
+           _setvalue_at(.;$p; $v)
          else
            .
          end
        else
-         setpath($p; $v)
+         _setvalue_at(.; $p; $v)
        end;
 
 def merge_objects($a; $b):
   $b | [paths(scalars_or_empty)]
      | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
-     merge_objects($a; $b)' || {
-    abort "Failed to merge object nodes:'${_a}' and '${_b}': error: ${_error}"
+
+merge_objects($a; $b)' 2>"${_error}" || {
+    abort "$(printf "jq-front: Failed to merge object nodes:\n    a=<%s>\n    b=<%s>\nERROR: %s)" \
+      "$(jq -r -c -n "${_a}|." || echo "MALFORMED: ${_a}")" \
+      "$(jq -r -c -n "${_b}|." || echo "MALFORMED: ${_b}")" \
+      "$(cat "${_error}" || echo "UNAVAILABLE")")"
   }
 }
 
@@ -113,6 +121,7 @@ function _expand_nodelevel_inheritances() {
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
+  [[ $? == 0 ]] || abort "Node-level expansion was failed for node:'${_content}'"
   for i in "${_keys[@]}"; do
     local j
     local -a _extendeds
@@ -131,14 +140,15 @@ function _expand_nodelevel_inheritances() {
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
       if has_value_at "${_p}" "${_cur_content}"; then
-        local _cur_piece
-        local _next_piece
+        local _cur_piece _next_piece _merged_piece_content
         debug "** _expand_nodelevel_inheritances: value found at _p:'${_p}' in '${_cur_content}'"
         debug "** _expand_nodelevel_inheritances: _p='${_p}'"
         debug "** _expand_nodelevel_inheritances: _cur_content='${_cur_content}'"
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")"
-        _merged_piece="$(mktemp_with_content "$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")")"
+        _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
+        [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with file:'${_jj}'"
+        _merged_piece="$(mktemp_with_content "${_merged_piece_content}")"
       else
         debug "_expand_nodelevel_inheritances: value NOT found at _p:'${_p}' in '${_cur_content}'"
         local _expanded_tmp
@@ -463,8 +473,8 @@ function _unmark_as_in_progress() {
 
 function _is_in_progress() {
   local _filename="${1}"
-  local _encoded_filename
   local _dependency_space="${2}"
+  local _encoded_filename
   _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
   if [[ -e "${_encoded_filename}" ]]; then
     return 0
@@ -510,6 +520,9 @@ function expand_filelevel_inheritances() {
         local _parent
         _parent="$(run_jqfront "${i}" "${_validation_mode}" "${_path}")"
         _c="$(_merge_object_nodes "${_parent}" "$(cat "${_cur}")")"
+        # Cannot check the exit code directly because of command substitution
+        # shellcheck disable=SC2181
+        [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with file:'${_cur}'"
         _next=$(mktemp_with_content "${_c}")
         _cur="${_next}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
@@ -545,16 +558,15 @@ function expand_nodelevel_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
-  local _expanded
-  local _expanded_clean
-  local _clean
-  local _content
+  local _expanded _expanded_clean _clean _content _ret
   debug "begin:expand_nodelevel_inheritances:_target=${_target}"
   _content="$(cat "${_target}")"
   _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")"
+  [[ $? == 0 ]] || abort "Failed to expand node level inheritance for file:'${_target}'(1)"
   _clean="$(_remove_meta_nodes "${_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
-  _merge_object_nodes "${_expanded_clean}" "${_clean}"
+  _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") || abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
+  echo "${_ret}"
   debug "end:expand_nodelevel_inheritances"
 }
 
@@ -604,9 +616,7 @@ function run_jqfront() {
     abort "Malformed JSON was given:'${_target}'='${_content}'"
   fi
   if is_object "${_content}"; then
-    local _tmp
-    local _private_nodes_dir
-    local _c
+    local _tmp _private_nodes_dir _c _expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
@@ -618,7 +628,8 @@ function run_jqfront() {
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
       "${_templating}" \
       "${_private_nodes_dir}:${_jf_path}"
-    _out=$(mktemp_with_content "$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")")
+    _expanded="$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")" || abort "Failed to expand node level inheritance for file:'${_target}'(3)"
+    _out=$(mktemp_with_content "${_expanded}")
   else
     debug "non object file:${_target}"
     _out="$(mktemp_with_content "${_content}")"

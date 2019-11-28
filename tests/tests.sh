@@ -77,7 +77,8 @@ function run_negative_test() {
   local _ret=1
   _dirname="$(dirname ${_testfile})"
   ${_JF} "${_dirname}/input.json" >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" && {
-    abort "ABNORMAL EXIT WAS EXPECTED BUT IT WAS NORMAL:<${_JF}>:<$?>"
+    message "ABNORMAL EXIT WAS EXPECTED BUT IT WAS NORMAL:<${_JF}>:<$?>"
+    return 1
   }
   local _missings="${_dirname}/test-output.diff"
   {
@@ -87,7 +88,7 @@ function run_negative_test() {
     _error="$(cat "${_dirname}/test-error.txt")"
     IFS=$'\n' read -d '' -a _expected <"${_dirname}/expected.txt"
     for i in "${_expected[@]}"; do
-      if [[ ${_error} == *${i}* ]]; then
+      if [[ ${_error} =~ ${i} ]]; then
         continue
       else
         echo "${i}" >>"${_missings}"
