@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -E -eu +o posix -o pipefail
+set -E -o nounset -o errexit +o posix -o pipefail
 shopt -s inherit_errexit
 
 JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
@@ -562,9 +562,11 @@ function expand_nodelevel_inheritances() {
   debug "begin:expand_nodelevel_inheritances:_target=${_target}"
   _content="$(cat "${_target}")"
   _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")"
+  [[ $? == 0 ]] || abort "Failed to expand node level inheritance for file:'${_target}'(1)"
   _clean="$(_remove_meta_nodes "${_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
-  _merge_object_nodes "${_expanded_clean}" "${_clean}"
+  _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") || abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
+  echo "${_ret}"
   debug "end:expand_nodelevel_inheritances"
 }
 
@@ -614,9 +616,7 @@ function run_jqfront() {
     abort "Malformed JSON was given:'${_target}'='${_content}'"
   fi
   if is_object "${_content}"; then
-    local _tmp
-    local _private_nodes_dir
-    local _c
+    local _tmp _private_nodes_dir _c _expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
@@ -628,7 +628,8 @@ function run_jqfront() {
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
       "${_templating}" \
       "${_private_nodes_dir}:${_jf_path}"
-    _out=$(mktemp_with_content "$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")")
+    _expanded="$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")" || abort "Failed to expand node level inheritance for file:'${_target}'(3)"
+    _out=$(mktemp_with_content "${_expanded}")
   else
     debug "non object file:${_target}"
     _out="$(mktemp_with_content "${_content}")"

@@ -489,6 +489,32 @@ Each element in the array must be a text node.</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>To create a JSON file from an existing one <code>A.json</code>, you can do following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json" ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you see in the example, the name of the file is placed inside an array and it means you can do so called "multiple-inheritance".</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json", "B.json" ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you do a multiple inheritance, an element appeared in the array earlier is more prioritized(similar to the multiple inheritance in python).</p>
+</div>
+<div class="paragraph">
+<p>In case you have nodes at the same path in <code>A.json</code> and <code>B.json</code>, value from the <code>A.json</code> wins.</p>
+</div>
 <div class="sect3">
 <h4 id="_file_in_jf_path">File in <code>JF_PATH</code></h4>
 <div class="paragraph">
@@ -1207,7 +1233,7 @@ And as you see, you are now able to call the function you defined, <code>hello_w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-27 15:53:44 UTC
+Last updated 2019-11-27 15:57:48 UTC
 </div>
 </div>
 </body>

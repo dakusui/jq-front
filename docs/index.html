@@ -482,6 +482,7 @@ body {font-family: Arial;}
 <button class="tablinks" onclick="openTab(event, 'design')">design</button>
 <button class="tablinks" onclick="openTab(event, 'faq')">faq</button>
 <button class="tablinks" onclick="openTab(event, 'features')">features</button>
+<button class="tablinks" onclick="openTab(event, 'installation')">installation</button>
 <button class="tablinks" onclick="openTab(event, 'limitationsAndFutureWork')">limitationsAndFutureWork</button>
 <button class="tablinks" onclick="openTab(event, 'manual')">manual</button>
 <button class="tablinks" onclick="openTab(event, 'syntax')">syntax</button>
@@ -604,38 +605,6 @@ However, due to the specification of <code>bash</code>, if you use command subst
   at 36 abort /home/hiroshi/Documents/jq-front/lib/shared.sh
   at 559 run_jqfront /home/hiroshi/Documents/jq-front/jq-front
   at 472 expand_filelevel_inheritances /home/hiroshi/Documents/jq-front/jq-front</pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_why_objects_inside_an_array_are_rendered_differently_on_inheritance_from_ones_outside">Why objects inside an array are rendered differently on inheritance from ones outside?</h3>
-<div class="paragraph">
-<p>It is because of the behaviour of <code>*</code> operator of <code>jq</code>, which treats them differently(<a href="https://github.com/dakusui/jq-front/issues/60">issue-60</a>).
-<code>jq-front</code> relies on the operator for implementing its inheritance feature.</p>
-</div>
-<div class="paragraph">
-<p>Maybe we should implement our own operator for inheritance in future.</p>
-</div>
-<div class="paragraph">
-<p>The workaround for this is to have an intermediate node like following.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-json" data-lang="json">{
-    "$local": {
-      "nodeX": {
-        "x":"X"
-      }
-    },
-    "work": {
-      "nodeA": {
-         "$extends": ["nodeX"]
-      }
-    },
-    "P":[
-       "eval:object:$(ref .work.nodeA)"
-    ]
-}</code></pre>
 </div>
 </div>
 </div>
@@ -1076,6 +1045,122 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div></div>
+<div id="installation" class="tabcontent">
+<div id="installation_content">
+<div class="sect1">
+<h2 id="_installation">Installation</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_ubuntu">Ubuntu</h3>
+<div class="paragraph">
+<p>Download an <a href="https://github.com/dakusui/jq-front/releases">archive</a> or clone the <a href="https://github.com/dakusui/jq-front.git">repository</a>.
+And place the file <code>jq-front</code>, <code>lib</code>, and <code>schema</code> in a directory which is on your <code>PATH</code>.
+Following dependencies will be required by <code>jq-front</code></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>bash</code></p>
+</li>
+<li>
+<p><code>jq</code></p>
+</li>
+<li>
+<p><code>ajv-cli</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>npm</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>yq</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>python-pip</p>
+</li>
+<li>
+<p>python</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+The version of <code>yq</code> installed through, <code>snap install yq</code> doesn’t work for <code>jq-front</code>.
+Visit <a href="https://yq.readthedocs.io/en/latest/">yq</a> site to know it more.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+All the direct and indirect dependencies are found in the <code>Dockerfile</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_with_docker_recommended">With Docker (recommended)</h3>
+<div class="paragraph">
+<p>If you are already using <code>docker</code> and <code>bash</code>, this is the easiest way to use <code>jq-front</code>.
+To install docker, visit</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.docker.com/docker-for-windows/">windows</a></p>
+</li>
+<li>
+<p><a href="https://docs.docker.com/docker-for-mac/install/">mac</a></p>
+</li>
+<li>
+<p><a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/">ubuntu</a></p>
+</li>
+<li>
+<p><a href="https://docs.docker.com/install/linux/docker-ce/centos/">centos</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Add a following entry to your <code>.bashrc</code> or a file sourced through it (such as <code>.profile</code> on Mac OSX).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-shell script" data-lang="shell script">function jq-front() {
+  docker run --rm -i \
+    -v /:/var/lib/jf \
+    -e JF_PATH_BASE="/var/lib/jf" \
+    -e JF_PATH="${JF_PATH}" \
+    -e JF_DEBUG=${JF_DEBUG:-disabled} \
+    -e JF_CWD="$(pwd)" \
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.18}" "${@}"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To install <code>bash</code> on windows, <a href="https://itsfoss.com/install-bash-on-windows/">install-bash-on-windows</a> will be helpful.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
 <div id="limitationsAndFutureWork" class="tabcontent">
 <div id="limitationsAndFutureWork_content">
 <div class="sect1">
@@ -1155,83 +1240,6 @@ It takes seconds to process even a relatively simple and small file.</p>
 </div></div>
 <div id="manual" class="tabcontent">
 <div id="manual_content">
-<div class="sect1">
-<h2 id="_installation">Installation</h2>
-<div class="sectionbody">
-<div class="sect2">
-<h3 id="_ubuntu">Ubuntu</h3>
-<div class="paragraph">
-<p>Place the file <code>jq-front</code>, <code>lib</code>, and <code>schema</code> somewhere on your <code>PATH</code>.
-Following dependencies will be required by <code>jq-front</code></p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>bash</code></p>
-</li>
-<li>
-<p><code>jq</code></p>
-</li>
-<li>
-<p><code>npm</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p><code>ajv-cli</code></p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p><code>yq</code></p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_with_docker_recommended">With Docker (recommended)</h3>
-<div class="paragraph">
-<p>If you are already using <code>docker</code> and <code>bash</code>, this is the easiest way to use <code>jq-front</code>.
-To install docker, visit</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="https://docs.docker.com/docker-for-windows/">windows</a></p>
-</li>
-<li>
-<p><a href="https://docs.docker.com/docker-for-mac/install/">mac</a></p>
-</li>
-<li>
-<p><a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/">ubuntu</a></p>
-</li>
-<li>
-<p><a href="https://docs.docker.com/install/linux/docker-ce/centos/">centos</a></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Add a following entry to your <code>.bashrc</code> or a file sourced through it (such as <code>.profile</code> on Mac OSX).</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-shell script" data-lang="shell script">function jq-front() {
-  docker run --rm -i \
-    -v /:/var/lib/jf \
-    -e JF_PATH_BASE="/var/lib/jf" \
-    -e JF_PATH="${JF_PATH}" \
-    -e JF_DEBUG=${JF_DEBUG:-disabled} \
-    -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.17}" "${@}"
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>To install <code>bash</code> on windows, <a href="https://itsfoss.com/install-bash-on-windows/">install-bash-on-windows</a> will be helpful.</p>
-</div>
-</div>
-</div>
-</div>
 <div class="sect1">
 <h2 id="_usage">Usage</h2>
 <div class="sectionbody">
@@ -1340,6 +1348,32 @@ Each element in the array must be a text node.</p>
 <p>A script invocation directive.</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>To create a JSON file from an existing one <code>A.json</code>, you can do following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json" ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you see in the example, the name of the file is placed inside an array and it means you can do so called "multiple-inheritance".</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$extends": [ "A.json", "B.json" ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you do a multiple inheritance, an element appeared in the array earlier is more prioritized(similar to the multiple inheritance in python).</p>
+</div>
+<div class="paragraph">
+<p>In case you have nodes at the same path in <code>A.json</code> and <code>B.json</code>, value from the <code>A.json</code> wins.</p>
 </div>
 <div class="sect3">
 <h4 id="_file_in_jf_path">File in <code>JF_PATH</code></h4>
