@@ -66,12 +66,21 @@ function render_button() {
   echo '<button class="tablinks" onclick="openTab(event, '"'${_filestem}'"')">'"${_filestem}"'</button>'
 }
 
+function render_github_button() {
+  cat <<ELEM
+<button class="tablinks" onclick="location.href='https://github.com/dakusui/jq-front';">
+  <img src="images/github.png" width="60px;20px" onclick="location.href = 'https://github.com/dakusui/jq-front';" align="middle"/>
+</button>
+ELEM
+}
+
 function render_all_buttons() {
   local _top_filestem="${1}"
   shift
   local _filestems=("$@")
   echo '<div class="tab">'
   local i
+  render_github_button
   render_default_button "${_top_filestem}"
   for i in "${_filestems[@]}"; do
     if [[ "${i}" == "${_top_filestem}" ]]; then
