@@ -56,15 +56,12 @@ function print_stacktrace() {
 function all_paths() {
   local _json="${1}"
   jq -e . >/dev/null 2>&1 <<<"${_json}" || abort "Malformed JSON string was given.: '${_json}'"
-  echo "${_json}" | jq -r -c '#---
-              def path2pexp(v):
-                reduce .[] as $segment (""; . + ($segment | if type == "string" then ".\"" + . + "\"" else "[\(.)]" end));
-
-              [paths(..)]
-                |sort
-                |sort_by(length)
-                |.[]
-                |path2pexp(.)'
+  echo "${_json}" | jq -r -c -L "${JF_BASEDIR}/lib" \
+    'import "shared" as shared;
+    [paths(..)]   |sort
+                  |sort_by(length)
+                  |.[]
+                  |shared::path2pexp(.)'
 }
 
 function is_json() {

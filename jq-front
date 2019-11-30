@@ -73,34 +73,32 @@ function _merge_object_nodes() {
   _error=$(mktemp)
   debug "merging _a:'${_a}' and _b:'${_b}'"
   # shellcheck disable=SC2016
-  jq -r -c -n --argjson a "${_a}" --argjson b "${_b}" '#----
-def value_at($n; $p):
-  $n | getpath($p);
+  jq -r -c -n --argjson a "${_a}" --argjson b "${_b}" -L "${JF_BASEDIR}/lib" \
+    'import "shared" as shared;
+    def value_at($n; $p):
+      $n | getpath($p);
 
-def path2pexp(v):
-  reduce .[] as $segment (""; . + ($segment | if type == "string" then ".\"" + . + "\"" else "[\(.)]" end));
+    def setvalue_at($n; $p; $v):
+      def type_of($v):
+        $v | type;
+      def _setvalue_at($n; $p; $v):
+        $n | try setpath($p; $v)
+             catch error("Failed to process node at path:<\($p|shared::path2pexp(.[]))>; the value:<\($v)>).");
+      $n | if type_of($v)=="object" or type_of($v)=="array" then
+             if type_of(value_at($n; $p))!="object" and type_of(value_at($n; $p)!="array") then
+               _setvalue_at(.;$p; $v)
+             else
+               .
+             end
+           else
+             _setvalue_at(.; $p; $v)
+           end;
 
-def setvalue_at($n; $p; $v):
-  def type_of($v):
-    $v | type;
-  def _setvalue_at($n; $p; $v):
-    $n | try setpath($p; $v)
-         catch error("Failed to process node at path:<\($p|path2pexp(.[]))>; the value:<\($v)>).");
-  $n | if type_of($v)=="object" or type_of($v)=="array" then
-         if type_of(value_at($n; $p))!="object" and type_of(value_at($n; $p)!="array") then
-           _setvalue_at(.;$p; $v)
-         else
-           .
-         end
-       else
-         _setvalue_at(.; $p; $v)
-       end;
+    def merge_objects($a; $b):
+      $b | [paths(scalars_or_empty)]
+         | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
 
-def merge_objects($a; $b):
-  $b | [paths(scalars_or_empty)]
-     | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
-
-merge_objects($a; $b)' 2>"${_error}" || {
+    merge_objects($a; $b)' 2>"${_error}" || {
     abort "$(printf "jq-front: Failed to merge object nodes:\n    a=<%s>\n    b=<%s>\nERROR: %s)" \
       "$(jq -r -c -n "${_a}|." || echo "MALFORMED: ${_a}")" \
       "$(jq -r -c -n "${_b}|." || echo "MALFORMED: ${_b}")" \
@@ -213,8 +211,7 @@ function _define_builtin_functions() {
     local value type
     value=$(value_at "${_path}" "$(cat "$(self)")")
     type="$(type_of "${value}")"
-    message "value:'${value}'"
-    message "type:'${type}'"
+    debug "value:'${value}'(type:'${type}')"
     if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
       local ret
       _check_cyclic_dependency "${_path}" reference
@@ -251,17 +248,19 @@ function _define_builtin_functions() {
   function parent() {
     # shellcheck disable=SC2181
     [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
-    local _p="${1?Path was not given}"
-    local _ret="${_p}"
-    if [[ ! "${_ret}" == .* ]]; then
-      abort "Path was not valid:(${_ret}), it must start with a '.'"
+    local _path="${1}"
+    local _level="${2:-1}"
+    if [[ ! "${_path}" == .* ]]; then
+      abort "Path was not valid:(${_path}), it must start with a '.'"
     fi
-    if [[ "${_ret}" == "." ]]; then
-      abort "Root does not have a parent.:(${_ret})"
+    if [[ "${_path}" == "." ]]; then
+      abort "Root does not have a parent.:(${_path})"
     fi
-    _ret="${_ret%.*}"
-    echo "${_ret}"
+    jq -r -c -n -L "${JF_BASEDIR}/lib" \
+      'import "shared" as shared;
+      .|path('"${_path}"')|.[0:-'"${_level}"']|shared::path2pexp(.)'
   }
+
   function error() {
     abort "${@}"
   }
