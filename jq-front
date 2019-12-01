@@ -325,10 +325,9 @@ function _render_text_node() {
   return "${_ret_code}"
 }
 
-
 function _paths_of_string_type() {
   local _content="${1}"
-  echo "${_content}" | jq -r -c -L ~/Documents/jq-front/lib '#---
+  echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
 import "shared" as shared;
 
 [paths(scalars_or_empty|select(type=="string"))]
