@@ -339,7 +339,7 @@ import "shared" as shared;
 
 function _paths_of_extends() {
   local _content="${1}"
-  echo "${_content}" | jq -r -c -L ~/Documents/jq-front/lib '#---
+  echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
 import "shared" as shared;
 
 [paths(..)|. as $p|.[-1]|select(tostring=="$extends")|$p]
