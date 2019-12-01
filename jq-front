@@ -237,6 +237,7 @@ function _define_builtin_functions() {
   function cur() {
     # shellcheck disable=SC2181
     [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    debug "cur:_path='${_path}'"
     echo "${_path%.*}"
   }
   ####
@@ -301,7 +302,7 @@ function _render_text_node() {
     # shellcheck disable=SC2002
     _error_out="$(cat "${_error}")"
     [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "Error was detected during templating: $(cat "${_error}")"
-    debug "err during eval:'${_error_out}'"
+    debug "stderr during eval:'${_error_out}'"
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
   fi
