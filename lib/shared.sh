@@ -53,17 +53,6 @@ function print_stacktrace() {
   done
 }
 
-function all_paths() {
-  local _json="${1}"
-  jq -e . >/dev/null 2>&1 <<<"${_json}" || abort "Malformed JSON string was given.: '${_json}'"
-  echo "${_json}" | jq -r -c -L "${JF_BASEDIR}/lib" \
-    'import "shared" as shared;
-    [paths(..)]   |sort
-                  |sort_by(length)
-                  |.[]
-                  |shared::path2pexp(.)'
-}
-
 function is_json() {
   local _content="${1}"
   local _exitcode
