@@ -233,12 +233,14 @@ function _define_builtin_functions() {
     echo "${_self}"
   }
   ####
-  # A function that prints a node path to an element that encloses the attribute.
+  # A function that prints a node path to a container element, which is an array or an object, that encloses the entry
+  # belongs to.
+  # An entry here means a pair of key and value or an element in an array.
   function cur() {
     # shellcheck disable=SC2181
     [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
     debug "cur:_path='${_path}'"
-    echo "${_path%.*}"
+    parent "${_path}"
   }
   ####
   # Prints a path to a parent node of a given path.

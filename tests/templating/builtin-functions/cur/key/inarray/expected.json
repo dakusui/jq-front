@@ -1,7 +1,7 @@
 {
   "key": {
     "cur_result": [
-      ".\"key\"[0]"
+      ".\"key\".\"cur_result\""
     ]
   }
 }

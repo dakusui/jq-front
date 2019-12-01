@@ -13,7 +13,7 @@ The string can be one of
 
 To create a JSON file from an existing one `A.json`, you can do following.
 
-[source, json]
+[source,json]
 ----
 {
   "$extends": [ "A.json" ]
@@ -22,7 +22,7 @@ To create a JSON file from an existing one `A.json`, you can do following.
 
 As you see in the example, the name of the file is placed inside an array and it means you can do so called "multiple-inheritance".
 
-[source, json]
+[source,json]
 ----
 {
   "$extends": [ "A.json", "B.json" ]
@@ -32,7 +32,6 @@ As you see in the example, the name of the file is placed inside an array and it
 If you do a multiple inheritance, an element appeared in the array earlier is more prioritized(similar to the multiple inheritance in python).
 
 In case you have nodes at the same path in `A.json` and `B.json`, value from the `A.json` wins.
-
 
 ==== File in `JF_PATH`
 
@@ -199,7 +198,6 @@ Deprecated.
 A keyword that has similar effects to `eval:` keyword.
 This is kept only for compatibility.
 
-
 [#builtin-functions]
 == Built-in `jq-front` functions
 
@@ -304,10 +302,10 @@ This function is intended for internal use.
 - returned value (stdout):
 * Content of the processed file before any templating happens.
 
-
 === `cur` function
 
-A function that returns a path to a node a current node.
+A function that returns a path to a container node to which the current "entry" belongs.
+An "entry" means a string element in an array or a pair of key and value in an object.
 
 - parameter: (none)
 - returned value (stdout):
@@ -318,6 +316,29 @@ A function that returns a path to a node a current node.
 [cols="1a,1a"]
 |===
 |Input |Output
+
+|
+[source,json]
+.A.json
+----
+{
+  "a": {
+    "b": [
+       "eval:$(cur)"
+    ]
+  }
+}
+----
+|[source,json]
+----
+{
+  "a": {
+    "b": [
+       ".a.b"
+    ]
+  }
+}
+----
 
 |
 [source,json]
@@ -336,7 +357,7 @@ A function that returns a path to a node a current node.
 {
   "a": {
     "b": {
-       "c": ".a.b.c"
+       "c": ".a.b"
     }
   }
 }
@@ -358,7 +379,7 @@ A function that returns a path to a node a current node.
   "x": {
     "a": {
       "b": {
-         "c": ".x.a.b.c"
+         "c": ".x.a.b"
       }
     }
   }
@@ -452,7 +473,7 @@ ERROR: hello
 You can define your own function for the templating stage by following syntax.
 First, you can create a file that contains definitions of your functions.
 
-[source, bash]
+[source,bash]
 .SS.sh
 ----
 function hello_world() {
@@ -462,7 +483,7 @@ function hello_world() {
 
 Next you reference the file inside the `$extends` syntax.
 
-[source, json]
+[source,json]
 ----
 {
   "$extends": [
@@ -475,7 +496,7 @@ Next you reference the file inside the `$extends` syntax.
 The string `SOURCE` is the keyword that tells `jq-front` to import the file.
 And as you see, you are now able to call the function you defined, `hello_world`.
 
-[source, json]
+[source,json]
 ----
 {
   "key": "hello_world=Hello, world. My Function!,HELLO"
