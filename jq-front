@@ -504,6 +504,7 @@ function expand_filelevel_inheritances() {
   local _validation_mode="${2}"
   local _path="${3}"
   local _in
+  perf "begin"
   debug "begin:expand_filelevel_inheritances:_target=${_target}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
@@ -540,6 +541,7 @@ function expand_filelevel_inheritances() {
   fi
   _unmark_as_in_progress "${_in}" inheritance
   debug "end:expand_filelevel_inheritances"
+  perf "end"
 }
 
 function materialize_private_nodes() {
@@ -566,6 +568,7 @@ function expand_nodelevel_inheritances() {
   local _validation_mode="${2}"
   local _path="${3}"
   local _expanded _expanded_clean _clean _content _ret
+  perf "begin"
   debug "begin:expand_nodelevel_inheritances:_target=${_target}"
   _content="$(cat "${_target}")"
   _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")"
@@ -575,6 +578,7 @@ function expand_nodelevel_inheritances() {
   _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") || abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
   echo "${_ret}"
   debug "end:expand_nodelevel_inheritances"
+  perf "end"
 }
 
 function expand_inheritances_of_private_nodes() {
@@ -594,6 +598,7 @@ function expand_inheritances_of_private_nodes() {
 }
 
 function perform_templating() {
+  perf "begin"
   debug "begin:perform_templating"
   local _src_file="${1}"
   local _content
@@ -604,6 +609,7 @@ function perform_templating() {
   _source_files
   _perform_templating "$(cat "${_src_file}")"
   debug "end:perform_templating"
+  perf "end"
 }
 
 function run_jqfront() {
@@ -612,6 +618,7 @@ function run_jqfront() {
   local _jf_path="${3}"
   local _content
   local _out
+  perf "begin"
   debug "begin:run_jqfront:_target=${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
   # Fail on command substitution cannot be checked directly
@@ -643,6 +650,7 @@ function run_jqfront() {
   fi
   cat "${_out}"
   debug "end:run_jqfront"
+  perf "end"
 }
 
 function perform_jqfront() {
@@ -651,6 +659,7 @@ function perform_jqfront() {
   local _validation_mode="${3}"
   local _jf_path="${4}"
   local _content
+  perf "begin"
   mkdir -p "$(_sourced_files_dir)"
   _content="$(run_jqfront "${_target}" "${_validation_mode}" "${_jf_path}")"
   _content=$(echo "${_content}" | jq '.|del(."$local")')
@@ -660,6 +669,7 @@ function perform_jqfront() {
     _content=$(perform_templating "${_out}")
   fi
   echo "${_content}"
+  perf "end"
 }
 
 function usage() {
@@ -719,6 +729,7 @@ _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 _JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
 _JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
+_JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
 _JF_SESSION_ID="$(date +%s.%N)"
 _JF_SESSION_DIR="/tmp/jq-front-${_JF_SESSION_ID}"
 
@@ -731,6 +742,7 @@ debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
+debug "_JF_PERF=${_JF_PERF}"
 
 if [[ ${_JF_DEBUG} == enabled ]]; then
   trap _debug_abort ERR
