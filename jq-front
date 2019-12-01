@@ -53,7 +53,7 @@ function _remove_meta_nodes() {
     _cur="$(mktemp_with_content "${_content}")"
     # Intentional single quote to find a keyword that starts with '$'
     # shellcheck disable=SC2016
-    mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
+    mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
     for i in "${_keys[@]}"; do
       local _next
       _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
@@ -118,7 +118,7 @@ function _expand_nodelevel_inheritances() {
   _cur=$(mktemp_with_content '{}')
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
-  mapfile -t _keys < <(all_paths "${_content}" | grep '"$extends"$') || _keys=()
+  mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
   [[ $? == 0 ]] || abort "Node-level expansion was failed for node:'${_content}'"
   for i in "${_keys[@]}"; do
     local j
@@ -325,30 +325,29 @@ function _render_text_node() {
   return "${_ret_code}"
 }
 
-#" double quotetion is placed here to resest broken syntax hilighting of IntelliJ 'shell-support' plugin
 
-function _type_of() {
-  local _path="${1}"
-  local _content="${2}"
-  echo "${_content}" | jq -r -c "${_path}|type"
+function _paths_of_string_type() {
+  local _content="${1}"
+  echo "${_content}" | jq -r -c -L ~/Documents/jq-front/lib '#---
+import "shared" as shared;
+
+[paths(scalars_or_empty|select(type=="string"))]
+              |sort
+              |sort_by(length)
+              |.[]
+              |shared::path2pexp(.)'
 }
 
-function _paths_type_of() {
-  local _type="${1}"
-  local _content="${2}"
-  local i
-  local -a _paths
-  debug "scanning _type=${_type},_content=${_content}"
-  mapfile -t _paths < <(all_paths "${_content}")
-  for i in "${_paths[@]}"; do
-    local _t
-    _t="$(_type_of "${i}" "${_content}")"
-    if [[ "${_t}" == "${_type}" ]]; then
-      debug "    read:'${i}'"
-      echo "${i}"
-    fi
-  done
-  debug "scanned"
+function _paths_of_extends() {
+  local _content="${1}"
+  echo "${_content}" | jq -r -c -L ~/Documents/jq-front/lib '#---
+import "shared" as shared;
+
+[paths(..)|. as $p|.[-1]|select(tostring=="$extends")|$p]
+              |sort
+              |sort_by(length)
+              |.[]
+              |shared::path2pexp(.)'
 }
 
 function _perform_templating() {
@@ -358,7 +357,7 @@ function _perform_templating() {
   local -a _keys
   debug "_perform_templating: templating"
   # Short path comes faster than longer.
-  mapfile -t _keys < <(_paths_type_of "string" "${_content}")
+  mapfile -t _keys < <(_paths_of_string_type "${_content}")
   debug "_perform_templating: splitted"
   for i in "${_keys[@]}"; do
     local _node_value
