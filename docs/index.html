@@ -1765,9 +1765,9 @@ This function is intended for internal use.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_cur_function"><code>cur</code> function</h3>
+<h3 id="_curn_function"><code>curn</code> function</h3>
 <div class="paragraph">
-<p>A function that returns a path to a node a current node.</p>
+<p>A function that returns a path to the node that makes a call to this function.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -1779,7 +1779,7 @@ This function is intended for internal use.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>A path to "Work(2)" file.</p>
+<p>A path to the string node that makes the call to this function.</p>
 </li>
 </ul>
 </div>
@@ -1806,6 +1806,31 @@ This function is intended for internal use.</p>
 <div class="content">
 <pre class="highlight"><code class="language-json" data-lang="json">{
   "a": {
+    "b": [
+       "eval:$(curn)"
+    ]
+  }
+}</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": [
+       ".a.b[0]"
+    ]
+  }
+}</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">A.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
     "b": {
        "c": "eval:$(cur)"
     }
@@ -1819,6 +1844,109 @@ This function is intended for internal use.</p>
   "a": {
     "b": {
        "c": ".a.b.c"
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The actual outputs of this function are escaped.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cur_function"><code>cur</code> function</h3>
+<div class="paragraph">
+<p>A function that returns a path to a container node to which the current "entry" belongs.
+An "entry" means a string element in an array or a pair of key and value in an object.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>parameter: (none)</p>
+</li>
+<li>
+<p>returned value (stdout):</p>
+<div class="ulist">
+<ul>
+<li>
+<p>A path to the container the node belongs to</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_examples_3">Examples</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Input</th>
+<th class="tableblock halign-left valign-top">Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">A.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": [
+       "eval:$(cur)"
+    ]
+  }
+}</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": [
+       ".a.b"
+    ]
+  }
+}</code></pre>
+</div>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="title">A.json</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": {
+       "c": "eval:$(cur)"
+    }
+  }
+}</code></pre>
+</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "a": {
+    "b": {
+       "c": ".a.b"
     }
   }
 }</code></pre>
@@ -1842,7 +1970,7 @@ This function is intended for internal use.</p>
   "x": {
     "a": {
       "b": {
-         "c": ".x.a.b.c"
+         "c": ".x.a.b"
       }
     }
   }
@@ -1897,7 +2025,7 @@ Thus, <code>cur</code> function calls in inherited files are evaluated based on 
 </ul>
 </div>
 <div class="sect3">
-<h4 id="_examples_3">Examples</h4>
+<h4 id="_examples_4">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 50%;">
@@ -2014,7 +2142,7 @@ In this case, the evaluation will not stop at the point and <code>jq-front</code
 </table>
 </div>
 <div class="sect3">
-<h4 id="_examples_4">Examples</h4>
+<h4 id="_examples_5">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 50%;">
