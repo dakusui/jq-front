@@ -339,10 +339,8 @@ function _perform_templating() {
   local _ret="${_content}"
   local i
   local -a _keys
-  debug "_perform_templating: templating"
-  # Short path comes faster than longer.
+  # Shorter path comes earlier than longer.
   mapfile -t _keys < <(_paths_of_string_type "${_content}")
-  debug "_perform_templating: splitted"
   for i in "${_keys[@]}"; do
     local _node_value _templated_node_value _ret_file
     _node_value="$(value_at "${i}" "${_ret}")"
@@ -354,7 +352,6 @@ function _perform_templating() {
     fi
     _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
   done
-  debug "_perform_templating: templated:'${_ret}'"
   echo "${_ret}"
 }
 
@@ -602,7 +599,6 @@ function run_jqfront() {
   local _jf_path="${3}"
   local _content _out
   perf "begin"
-  debug "begin:run_jqfront:_target=${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
@@ -628,11 +624,9 @@ function run_jqfront() {
     _expanded="$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")" || abort "Failed to expand node level inheritance for file:'${_target}'(3)"
     _out=$(mktemp_with_content "${_expanded}")
   else
-    debug "non object file:${_target}"
     _out="$(mktemp_with_content "${_content}")"
   fi
   cat "${_out}"
-  debug "end:run_jqfront"
   perf "end"
 }
 
