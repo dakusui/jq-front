@@ -504,7 +504,7 @@ function expand_filelevel_inheritances() {
   debug "...validated"
   _check_cyclic_dependency "${_in}" inheritance
   _content="$(cat "${_in}")"
-  _cur="$(mktemp_with_content "${_content}")"
+  _cur="${_content}"
   if is_object "${_content}"; then
     # shellcheck disable=SC2016
     # this is intentionally suppressing expansion to pass the value to jq.
@@ -513,15 +513,16 @@ function expand_filelevel_inheritances() {
       while IFS= read -r i; do
         local _next _c _parent
         _parent="$(run_jqfront "${i}" "${_validation_mode}" "${_path}")"
-        _c="$(_merge_object_nodes "${_parent}" "$(cat "${_cur}")")"
+        _c="$(_merge_object_nodes "${_parent}" "${_cur}")"
         # Cannot check the exit code directly because of command substitution
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with file:'${_cur}'"
-        _next=$(mktemp_with_content "${_c}")
-        _cur="${_next}"
+        [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
+        _cur="${_c}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
-    jq -r -c '.|del(.["$extends"])' "$(find_file_in_path "${_cur}" "${_path}")"
+    local _cur_tmpfile
+    _cur_tmpfile="$(mktemp_with_content "${_cur}")"
+    jq -r -c '.|del(.["$extends"])' "${_cur_tmpfile}"
   else
     cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
@@ -611,9 +612,8 @@ function run_jqfront() {
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
-    if ! _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"; then
+    _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")" ||
       abort "File-level expansion failed for '${_target}'"
-    fi
     _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
@@ -622,6 +622,7 @@ function run_jqfront() {
     _expanded="$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")" || abort "Failed to expand node level inheritance for file:'${_target}'(3)"
     _out=$(mktemp_with_content "${_expanded}")
   else
+    : # Clear $?
     _out="$(mktemp_with_content "${_content}")"
   fi
   cat "${_out}"
