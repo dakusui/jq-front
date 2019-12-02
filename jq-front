@@ -71,6 +71,7 @@ function _merge_object_nodes() {
   local _b="${2}"
   local _error
   _error=$(mktemp)
+  perf "begin"
   debug "merging _a:'${_a}' and _b:'${_b}'"
   # shellcheck disable=SC2016
   jq -r -c -n --argjson a "${_a}" --argjson b "${_b}" -L "${JF_BASEDIR}/lib" \
@@ -104,6 +105,7 @@ function _merge_object_nodes() {
       "$(jq -r -c -n "${_b}|." || echo "MALFORMED: ${_b}")" \
       "$(cat "${_error}" || echo "UNAVAILABLE")")"
   }
+  perf "end"
 }
 
 function _expand_nodelevel_inheritances() {
@@ -114,6 +116,7 @@ function _expand_nodelevel_inheritances() {
   local _cur
   local _in
   local -a _keys
+  perf "target='${_content}'"
   debug "** _expand_nodelevel_inheritances:begin:_content:'${_content}'"
   _cur=$(mktemp_with_content '{}')
   # Intentional single quote to find a keyword that starts with '$'
