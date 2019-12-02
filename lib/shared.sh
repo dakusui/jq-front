@@ -35,7 +35,7 @@ function is_perf_enabled() {
 
 function perf() {
   if is_perf_enabled; then
-    message "PERF: $(date '+%Y-%m-%d %H:%M:%S.%3N'): ${FUNCNAME[1]}: " "${@}"
+    message "PERF: $(date '+%Y-%m-%d %H:%M:%S.%3N'): ${FUNCNAME[1]}:" "${@}"
   fi
 }
 
