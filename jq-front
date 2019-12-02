@@ -109,15 +109,12 @@ function _merge_object_nodes() {
 }
 
 function _expand_nodelevel_inheritances() {
-  local i
   local _content="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
-  local _cur
-  local _in
+  local _cur _in i
   local -a _keys
   perf "target='${_content}'"
-  debug "** _expand_nodelevel_inheritances:begin:_content:'${_content}'"
   _cur=$(mktemp_with_content '{}')
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
@@ -127,7 +124,6 @@ function _expand_nodelevel_inheritances() {
     local j
     local -a _extendeds
     local _p="${i%.\"\$extends\"}"
-    debug "** _expand_nodelevel_inheritances:processing: i='${i}'"
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for j in "${_extendeds[@]}"; do
       local _jj _merged_piece _cur_content _tmp_content
@@ -135,34 +131,27 @@ function _expand_nodelevel_inheritances() {
         abort "Failed to locate file '${j}'"
       fi
       _check_cyclic_dependency "${j}" inheritance
-      debug "** _expand_nodelevel_inheritances: _jj='${_jj}'"
       local _next_content
       _next_content="$(cat "${_jj}")"
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
       if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece _next_piece _merged_piece_content
-        debug "** _expand_nodelevel_inheritances: value found at _p:'${_p}' in '${_cur_content}'"
-        debug "** _expand_nodelevel_inheritances: _p='${_p}'"
-        debug "** _expand_nodelevel_inheritances: _cur_content='${_cur_content}'"
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with file:'${_jj}'"
         _merged_piece="$(mktemp_with_content "${_merged_piece_content}")"
       else
-        debug "_expand_nodelevel_inheritances: value NOT found at _p:'${_p}' in '${_cur_content}'"
         local _expanded_tmp
         _expanded_tmp="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece="$(mktemp_with_content "${_expanded_tmp}")"
       fi
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")"
-      debug "** _expand_nodelevel_inheritances: _tmp_content: '${_tmp_content}'"
       _cur=$(mktemp_with_content "${_tmp_content}")
       _unmark_as_in_progress "${j}" inheritance
     done
   done
-  debug "** _expand_nodelevel_inheritances:end:_cur='$(cat "${_cur}")'"
   jq -r -c . "${_cur}"
 }
 
@@ -283,24 +272,19 @@ function _render_text_node() {
   local _node_value="${1}"
   local _path="${2}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
   local _self="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _mode="raw"
-  local _quote="yes"
-  local _body
-  local _ret
-  local _ret_code=0
-  debug "rendering"
-  if [[ "${_node_value}" == template:* || "${_node_value}" == eval:* || "${_node_value}" == raw:* ]]; then
-    _mode="${_node_value%%:*}"
-    _body="${_node_value#*:}"
-    if [[ "${_body}" == object:* || "${_body}" == array:* || "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
-      ; then
-      if [[ "${_body}" != string:* ]]; then
-        _quote="no"
-      fi
-      _body="${_body#*:}"
+  local _mode="raw" _quote="yes" _ret_code=0
+  local _body _ret
+  if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
+    abort "Non-templating text node"
+  fi
+  _mode="${_node_value%%:*}"
+  _body="${_node_value#*:}"
+  if [[ "${_body}" == object:* || "${_body}" == array:* || "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
+    ; then
+    if [[ "${_body}" != string:* ]]; then
+      _quote="no"
     fi
-  else
-    _body="${_node_value}"
+    _body="${_body#*:}"
   fi
 
   if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
@@ -318,7 +302,6 @@ function _render_text_node() {
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
   fi
-  debug "rendered:_mode='${_mode}'"
   if [[ "${_quote}" == yes ]]; then
     _ret="${_ret//\\/\\\\}"
     echo "\"${_ret//\"/\\\"}\""
@@ -362,19 +345,26 @@ function _perform_templating() {
   mapfile -t _keys < <(_paths_of_string_type "${_content}")
   debug "_perform_templating: splitted"
   for i in "${_keys[@]}"; do
-    local _node_value
-    local _templated_node_value
-    local _ret_file
-    debug "processing:${i}"
+    local _node_value _templated_node_value _ret_file
     _node_value="$(value_at "${i}" "${_ret}")"
-    _ret_file=$(mktemp_with_content "${_ret}")
-    _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
-    debug "node:'${_ret}':'${i}':'${_templated_node_value}'"
+    if _starts_with_templating_keyword "${_node_value}"; then
+      _ret_file=$(mktemp_with_content "${_ret}")
+      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
+    else
+      continue
+    fi
     _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
-    debug "processed:${i}:_ret='${_ret}'"
   done
   debug "_perform_templating: templated:'${_ret}'"
   echo "${_ret}"
+}
+
+function _starts_with_templating_keyword() {
+  local _node_value="${1}"
+  if [[ "${_node_value}" == template:* || "${_node_value}" == eval:* || "${_node_value}" == raw:* ]]; then
+    return 0
+  fi
+  return 1
 }
 
 function find_file_in_path() {
@@ -571,8 +561,7 @@ function expand_nodelevel_inheritances() {
   local _validation_mode="${2}"
   local _path="${3}"
   local _expanded _expanded_clean _clean _content _ret
-  perf "begin"
-  debug "begin:expand_nodelevel_inheritances:_target=${_target}"
+  perf "begin:_target=${_target}"
   _content="$(cat "${_target}")"
   _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")"
   [[ $? == 0 ]] || abort "Failed to expand node level inheritance for file:'${_target}'(1)"
@@ -580,7 +569,6 @@ function expand_nodelevel_inheritances() {
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
   _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") || abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
   echo "${_ret}"
-  debug "end:expand_nodelevel_inheritances"
   perf "end"
 }
 
