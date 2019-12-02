@@ -125,7 +125,7 @@ function _expand_nodelevel_inheritances() {
     local _p="${i%.\"\$extends\"}"
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for j in "${_extendeds[@]}"; do
-      local _jj _merged_piece _cur_content _tmp_content
+      local _jj _cur_content _tmp_content
       if ! _jj="$(locate_file_in_path "${j}" "${_validation_mode}" "${_path}")"; then
         abort "Failed to locate file '${j}'"
       fi
@@ -134,20 +134,21 @@ function _expand_nodelevel_inheritances() {
       _next_content="$(cat "${_jj}")"
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
+      local _merged_piece_content
       if has_value_at "${_p}" "${_cur_content}"; then
-        local _cur_piece _next_piece _merged_piece_content
+        local _cur_piece _next_piece
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with file:'${_jj}'"
-        _merged_piece="$(mktemp_with_content "${_merged_piece_content}")"
       else
         local _expanded_tmp
-        _expanded_tmp="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")"
-        _merged_piece="$(mktemp_with_content "${_expanded_tmp}")"
+        _expanded_tmp="$(run_jqfront "${_jj}" "${_validation_mode}" "${_path}")" || abort "TODO(0)"
+        _merged_piece_content="${_expanded_tmp}"
       fi
-      _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" "${_merged_piece}")"
-      _cur=$(mktemp_with_content "${_tmp_content}")
+      _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
+      message "_tmp_content=${_tmp_content}"
+      _cur=$(mktemp_with_content "${_tmp_content}") || abort "TODO(2)"
       _unmark_as_in_progress "${j}" inheritance
     done
   done
@@ -555,8 +556,8 @@ function expand_nodelevel_inheritances() {
   local _expanded _expanded_clean _clean _content _ret
   perf "begin:_target=${_target}"
   _content="$(cat "${_target}")"
-  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")"
-  [[ $? == 0 ]] || abort "Failed to expand node level inheritance for file:'${_target}'(1)"
+  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
+    abort "Failed to expand node level inheritance for file:'${_target}'(1)"
   _clean="$(_remove_meta_nodes "${_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
   _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") || abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
@@ -625,6 +626,7 @@ function run_jqfront() {
     : # Clear $?
     _out="$(mktemp_with_content "${_content}")"
   fi
+  debug "_out=${_out}:<$(cat "${_out}")>"
   cat "${_out}"
   perf "end"
 }
