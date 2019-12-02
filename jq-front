@@ -48,8 +48,7 @@ function _remove_meta_nodes() {
   local _content="${1}"
   local _cur
   if is_object "${_content}"; then
-    local _keys
-    local i
+    local _keys i
     _cur="$(mktemp_with_content "${_content}")"
     # Intentional single quote to find a keyword that starts with '$'
     # shellcheck disable=SC2016
@@ -516,9 +515,7 @@ function expand_filelevel_inheritances() {
     if has_value_at '."$extends"' "${_content}"; then
       local i
       while IFS= read -r i; do
-        local _next
-        local _c
-        local _parent
+        local _next _c _parent
         _parent="$(run_jqfront "${i}" "${_validation_mode}" "${_path}")"
         _c="$(_merge_object_nodes "${_parent}" "$(cat "${_cur}")")"
         # Cannot check the exit code directly because of command substitution
@@ -539,8 +536,7 @@ function expand_filelevel_inheritances() {
 
 function materialize_private_nodes() {
   local _target="${1}"
-  local _content
-  local _ret
+  local _content _ret
   debug "begin:materialize_private_nodes"
   _content="$(cat "${_target}")"
   _ret="$(mktemp -d)"
@@ -590,16 +586,13 @@ function expand_inheritances_of_private_nodes() {
 
 function perform_templating() {
   perf "begin"
-  debug "begin:perform_templating"
   local _src_file="${1}"
-  local _content
-  local _ret
+  local _content _ret
   # define builtin functions such as "ref", "self"
   _define_builtin_functions
   # source files, for which SOURCE directive is specified
   _source_files
   _perform_templating "$(cat "${_src_file}")"
-  debug "end:perform_templating"
   perf "end"
 }
 
@@ -607,8 +600,7 @@ function run_jqfront() {
   local _target="${1}"
   local _validation_mode="${2}"
   local _jf_path="${3}"
-  local _content
-  local _out
+  local _content _out
   perf "begin"
   debug "begin:run_jqfront:_target=${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
