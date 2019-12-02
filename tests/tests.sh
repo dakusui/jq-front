@@ -18,7 +18,7 @@ function run_normal_test() {
   local _diff
   local _ret=1
   _dirname="$(dirname ${_testfile})"
-  ${_JF} "${_dirname}/input.json" >"${_dirname}/test-output".json || return 1
+  ${_JF} "${_dirname}/input.json" >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" || return 1
   {
     diff <(jq -S . "${_dirname}/expected.json") <(jq -S . "${_dirname}/test-output.json") >"${_dirname}/test-output.diff"
   }

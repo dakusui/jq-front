@@ -1,0 +1,16 @@
+{
+  "$extends": [
+    "P1.json",
+    "Q1.json"
+  ],
+  "k0": "value0",
+  "k1": "value1",
+  "k2": "value2",
+  "k3": "value3",
+  "k4": "value4",
+  "k5": "value5",
+  "k6": "value6",
+  "k7": "value7",
+  "k8": "value8",
+  "k9": "value9"
+}
