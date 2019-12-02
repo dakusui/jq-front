@@ -494,7 +494,6 @@ function expand_filelevel_inheritances() {
   local _path="${3}"
   local _in
   perf "begin"
-  debug "begin:expand_filelevel_inheritances:_target=${_target}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
@@ -527,7 +526,6 @@ function expand_filelevel_inheritances() {
     cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
   _unmark_as_in_progress "${_in}" inheritance
-  debug "end:expand_filelevel_inheritances"
   perf "end"
 }
 
