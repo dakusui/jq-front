@@ -138,7 +138,7 @@ declare -A _FILE_CACHE=()
 function read_file() {
   local _filename="${1}"
   [[ "${_FILE_CACHE["${_filename}"]+_}" ]] || {
-    echo "not found!" >&2
+    perf "Reading: '${_filename}'"
     _FILE_CACHE["${_filename}"]="$(cat "${_filename}")"
   }
   echo -n "${_FILE_CACHE[${_filename}]}"
