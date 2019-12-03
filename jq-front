@@ -131,7 +131,7 @@ function _expand_nodelevel_inheritances() {
       fi
       _check_cyclic_dependency "${j}" inheritance
       local _next_content
-      _next_content="$(cat "${_jj}")"
+      _next_content="$(read_file "${_jj}")"
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
       local _merged_piece_content
@@ -147,7 +147,6 @@ function _expand_nodelevel_inheritances() {
         _merged_piece_content="${_expanded_tmp}"
       fi
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
-      message "_tmp_content=${_tmp_content}"
       _cur=$(mktemp_with_content "${_tmp_content}") || abort "TODO(2)"
       _unmark_as_in_progress "${j}" inheritance
     done
@@ -201,7 +200,7 @@ function _define_builtin_functions() {
     [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
     local _path="${1}"
     local value type
-    value=$(value_at "${_path}" "$(cat "$(self)")")
+    value=$(value_at "${_path}" "$(read_file "$(self)")")
     type="$(type_of "${value}")"
     debug "value:'${value}'(type:'${type}')"
     if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
@@ -385,7 +384,7 @@ function find_file_in_path() {
       # shellcheck disable=SC1090
       #  We know that there are no non-alphanumerically named files.
       # shellcheck disable=SC2012
-      cat "${_f}" >"$(_sourced_files_dir)/$(ls "$(_sourced_files_dir)" | wc -l)"
+      read_file "${_f}" >"$(_sourced_files_dir)/$(ls "$(_sourced_files_dir)" | wc -l)"
       mktemp_with_content "{}"
     else
       ####
@@ -504,7 +503,7 @@ function expand_filelevel_inheritances() {
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "...validated"
   _check_cyclic_dependency "${_in}" inheritance
-  _content="$(cat "${_in}")"
+  _content="$(read_file "${_in}")"
   _cur="${_content}"
   if is_object "${_content}"; then
     # shellcheck disable=SC2016
@@ -525,7 +524,7 @@ function expand_filelevel_inheritances() {
     _cur_tmpfile="$(mktemp_with_content "${_cur}")"
     jq -r -c '.|del(.["$extends"])' "${_cur_tmpfile}"
   else
-    cat "$(find_file_in_path "${_cur}" "${_path}")"
+    read_file "$(find_file_in_path "${_cur}" "${_path}")"
   fi
   _unmark_as_in_progress "${_in}" inheritance
   perf "end"
@@ -535,7 +534,7 @@ function materialize_private_nodes() {
   local _target="${1}"
   local _content _ret
   debug "begin:materialize_private_nodes"
-  _content="$(cat "${_target}")"
+  _content="$(read_file "${_target}")"
   _ret="$(mktemp -d)"
   # Intentional single quotes for jq.
   # shellcheck disable=SC2016
@@ -555,7 +554,7 @@ function expand_nodelevel_inheritances() {
   local _path="${3}"
   local _expanded _expanded_clean _clean _content _ret
   perf "begin:_target=${_target}"
-  _content="$(cat "${_target}")"
+  _content="$(read_file "${_target}")"
   _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
     abort "Failed to expand node level inheritance for file:'${_target}'(1)"
   _clean="$(_remove_meta_nodes "${_content}")"
@@ -604,7 +603,7 @@ function run_jqfront() {
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
   _jf_path="$(dirof "${_target}"):${_jf_path}"
-  _content="$(cat "${_target}")"
+  _content="$(read_file "${_target}")"
   if ! is_json "${_content}"; then
     abort "Malformed JSON was given:'${_target}'='${_content}'"
   fi
@@ -626,7 +625,6 @@ function run_jqfront() {
     : # Clear $?
     _out="$(mktemp_with_content "${_content}")"
   fi
-  debug "_out=${_out}:<$(cat "${_out}")>"
   cat "${_out}"
   perf "end"
 }
