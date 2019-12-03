@@ -133,3 +133,13 @@ function search_file_in() {
   done
   abort "File '${_target}' was not found in '${_path}'"
 }
+
+declare -A _FILE_CACHE=()
+function read_file() {
+  local _filename="${1}"
+  [[ "${_FILE_CACHE["${_filename}"]+_}" ]] || {
+    echo "not found!" >&2
+    _FILE_CACHE["${_filename}"]="$(cat "${_filename}")"
+  }
+  echo -n "${_FILE_CACHE[${_filename}]}"
+}
