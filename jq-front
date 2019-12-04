@@ -8,6 +8,9 @@ export JF_BASEDIR
 # shellcheck disable=SC1090
 # source = lib/shared.sh
 source "${JF_BASEDIR}/lib/shared.sh"
+# shellcheck disable=SC1090
+# source = lib/nodepool.sh
+source "${JF_BASEDIR}/lib/nodepool.sh"
 
 function _debug_abort() {
   print_stacktrace "DEBUG: error trapped"
@@ -164,17 +167,6 @@ function validate_file_in_path() {
   debug "${FUNCNAME[0]}: validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "${FUNCNAME[0]}: ...validated"
-}
-
-function _validate_jf_json_with() {
-  local _in="${1}"
-  local _mode="${2}"
-  local _out=
-  {
-    _out=$(ajv validate -s "${_JF_SCHEMA_DIR}/${_mode}.json" -d "${_in}" 2>&1)
-  } || {
-    abort "Validation by ajv for '${_in}' was failed:\n${_out}"
-  }
 }
 
 function _source_files() {
@@ -580,10 +572,6 @@ function expand_inheritances_of_private_nodes() {
   debug "end:   expand_inheritances_of_private_nodes"
 }
 
-function prepare_pooldir() {
-  mktemp -d
-}
-
 function expand_inheritances() {
   local _filename="${1}"
   local _validation_mode="${2}"
@@ -750,6 +738,6 @@ if [[ -n "${_JF_PATH_BASE}" ]]; then
 fi
 export_names_for_script_inheritance
 export _JF_POOL_DIR
-_JF_POOL_DIR="$(prepare_pooldir)"
+_JF_POOL_DIR="$(nodepool_prepare)"
 
 main "${@}"
