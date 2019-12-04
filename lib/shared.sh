@@ -122,13 +122,17 @@ function search_file_in() {
   local _target="${1}"
   local _path="${2}"
   if [[ "${_target}" == "${_JF_PATH_BASE}/"* ]]; then
-    echo "${_target}"
+    local _ret="${_target}"
+    [[ "${_JF_PATH_BASE}" != "" ]] && _ret="${_JF_PATH_BASE}/${_target}"
+    debug "${_target} was found as '${_ret}' under JF_PATH_BASE: '${_JF_PATH_BASE}'"
+    echo "${_ret}"
     return 0
   fi
   IFS=':' read -r -a _arr <<<"${_path}"
   for i in "${_arr[@]}"; do
     local _ret="${i}/${_target}"
     if [[ -e "${_ret}" ]]; then
+      debug "${_target} was found as '${_ret}' under '${i}'"
       echo "${_ret}"
       return 0
     fi

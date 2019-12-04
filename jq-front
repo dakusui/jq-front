@@ -126,11 +126,12 @@ function _expand_nodelevel_inheritances() {
     local _p="${i%.\"\$extends\"}"
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for j in "${_extendeds[@]}"; do
-      local _jj _cur_content _tmp_content
-      if ! _jj="$(locate_file_in_path "${j}" "${_validation_mode}" "${_path}")"; then
+      local _jj _cur_content _tmp_content _original_filename
+      _original_filename="$(search_file_in "${j}" "${_path}")"
+      if ! _jj="$(validate_file_in_path "${_original_filename}" "${_validation_mode}" "${_path}")"; then
         abort "Failed to locate file '${j}'"
       fi
-      _check_cyclic_dependency "${j}" inheritance
+      _check_cyclic_dependency "${_original_filename}" inheritance
       local _next_content
       _next_content="$(cat "${_jj}")"
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
@@ -150,24 +151,19 @@ function _expand_nodelevel_inheritances() {
       fi
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
       _cur=$(mktemp_with_content "${_tmp_content}") || abort "TODO(2)"
-      _unmark_as_in_progress "${j}" inheritance
+      _unmark_as_in_progress "${_original_filename}" inheritance
     done
   done
   jq -r -c . "${_cur}"
 }
 
-function locate_file_in_path() {
+function validate_file_in_path() {
   local _in="${1}"
   local _mode="${2}"
   local _path="${3}"
-  local _ret
-  if ! _ret="$(find_file_in_path "${j}" "${_path}")"; then
-    abort "Failed to find file '${_in}'"
-  fi
-  debug "validating ${_in}"
+  debug "${FUNCNAME[0]}: validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
-  debug "...validated"
-  echo "${_ret}"
+  debug "${FUNCNAME[0]}: ...validated"
 }
 
 function _validate_jf_json_with() {
@@ -375,6 +371,7 @@ function find_file_in_path() {
       _content="$(yq . "${_file}")"
       mktemp_with_content "${_content}"
     else
+      debug "${FUNCNAME[0]}: '${_file}'"
       echo "${_file}"
     fi
   elif [[ ${#_arr[@]} -gt 1 ]]; then
@@ -472,7 +469,7 @@ function _is_in_progress() {
   local _dependency_space="${2}"
   local _encoded_filename
   _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
-  if [[ -e "${_filename}" ]]; then
+  if [[ -e "${_encoded_filename}" ]]; then
     debug "'${_filename}'(${_encoded_filename}) is in progress"
     return 0
   fi
@@ -499,12 +496,13 @@ function expand_filelevel_inheritances() {
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
-  local _cur _content
+  local _cur _content _original_filename
+  _original_filename="$(search_file_in "${_target}" "${_path}")"
   _in="$(find_file_in_path "${_target}" "${_path}")"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "...validated"
-  _check_cyclic_dependency "${_in}" inheritance
+  _check_cyclic_dependency "${_original_filename}" inheritance
   _content="$(cat "${_in}")"
   _cur="${_content}"
   if is_object "${_content}"; then
@@ -528,7 +526,7 @@ function expand_filelevel_inheritances() {
   else
     cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
-  _unmark_as_in_progress "${_in}" inheritance
+  _unmark_as_in_progress "${_original_filename}" inheritance
   perf "end"
 }
 
