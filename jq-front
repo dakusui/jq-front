@@ -472,9 +472,11 @@ function _is_in_progress() {
   local _dependency_space="${2}"
   local _encoded_filename
   _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
-  if [[ -e "${_encoded_filename}" ]]; then
+  if [[ -e "${_filename}" ]]; then
+    debug "'${_filename}'(${_encoded_filename}) is in progress"
     return 0
   fi
+  debug "'${_filename}'(${_encoded_filename}) is NOT in progress"
   return 1
 }
 
