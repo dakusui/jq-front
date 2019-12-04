@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -eu
+[[ "${_SHARED_SH:-""}" == "yes" ]] && return 0
+_SHARED_SH=yes
 
 function mktemp_with_content() {
   ####
@@ -132,14 +134,4 @@ function search_file_in() {
     fi
   done
   abort "File '${_target}' was not found in '${_path}'"
-}
-
-declare -A _FILE_CACHE=()
-function read_file() {
-  local _filename="${1}"
-  [[ "${_FILE_CACHE["${_filename}"]+_}" ]] || {
-    perf "Reading a file: '${_filename}'"
-    _FILE_CACHE["${_filename}"]="$(cat "${_filename}")"
-  }
-  echo -n "${_FILE_CACHE[${_filename}]}"
 }
