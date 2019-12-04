@@ -316,7 +316,9 @@ function _paths_of_string_type() {
   echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
 import "shared" as shared;
 
-[paths(scalars_or_empty|select(type=="string"))]
+[paths(scalars_or_empty
+      |select(type=="string" and (startswith("eval:") or
+                                  startswith("template:"))))]
               |sort
               |sort_by(length)
               |.[]
@@ -345,12 +347,8 @@ function _perform_templating() {
   for i in "${_keys[@]}"; do
     local _node_value _templated_node_value _ret_file
     _node_value="$(value_at "${i}" "${_ret}")"
-    if _starts_with_templating_keyword "${_node_value}"; then
-      _ret_file=$(mktemp_with_content "${_ret}")
-      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
-    else
-      continue
-    fi
+    _ret_file=$(mktemp_with_content "${_ret}")
+    _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
     _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
   done
   echo "${_ret}"
