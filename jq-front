@@ -72,6 +72,7 @@ function _merge_object_nodes() {
   _error=$(mktemp)
   perf "begin"
   debug "merging _a:'${_a}' and _b:'${_b}'"
+  [[ "${_a}" != '' ]] || abort "An empty string was given as _a"
   # shellcheck disable=SC2016
   jq -r -c -n --argjson a "${_a}" --argjson b "${_b}" -L "${JF_BASEDIR}/lib" \
     'import "shared" as shared;
