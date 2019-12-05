@@ -3,6 +3,11 @@ set -eu
 [[ "${_SHARED_SH:-""}" == "yes" ]] && return 0
 _SHARED_SH=yes
 
+function hashcode() {
+  local _nodeentry="${1}"
+  echo -n "${_nodeentry}" | md5sum | cut -f 1 -d ' '
+}
+
 function mktemp_with_content() {
   ####
   # This is a logic to check preceding procedure was successful.
@@ -79,6 +84,16 @@ function is_object() {
   local _ret
   _ret="$(echo "${_json_content}" | jq '.|if type=="object" then 0 else 1 end' 2>/dev/null)"
   return "${_ret}"
+}
+
+function _validate_json() {
+  local _in="${1}" _schema_file="${2}"
+  local _out=
+  {
+    _out=$(ajv validate -s "${_schema_file}" -d "${_in}" 2>&1)
+  } || {
+    abort "Validation by ajv for '${_in}' was failed:\n${_out}"
+  }
 }
 
 function type_of() {
