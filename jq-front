@@ -17,10 +17,6 @@ function _debug_abort() {
   exit 1
 }
 
-function _sourced_files_dir() {
-  echo "${_JF_SESSION_DIR}/source_files"
-}
-
 function _mangle_path() {
   local _path="${1}"
   local _path_base="${2}"
