@@ -31,7 +31,7 @@ function is_debug_enabled() {
 
 function debug() {
   if is_debug_enabled; then
-    message "DEBUG" "$@"
+    message "DEBUG: $(date '+%Y-%m-%d %H:%M:%S.%3N'): ${FUNCNAME[1]}:" "${@}"
   fi
 }
 

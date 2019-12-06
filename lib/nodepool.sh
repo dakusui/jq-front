@@ -12,6 +12,7 @@ function nodepool_prepare() {
   local _pooldir
   _pooldir="$(mktemp -d --suffix=jq-front-nodepool)"
   _define_nodeentry_reader "${_driver_funcname}" "${_pooldir}"
+  echo "${_pooldir}"
 }
 
 function nodepool_read_nodeentry() {
