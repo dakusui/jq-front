@@ -113,7 +113,8 @@ function _expand_nodelevel_inheritances() {
   local _path="${3}"
   local _cur _in i
   local -a _keys
-  perf "target='${_content}'"
+  perf "begin"
+  debug "target='${_content}'"
   _cur=$(mktemp_with_content '{}')
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
@@ -127,32 +128,42 @@ function _expand_nodelevel_inheritances() {
     for j in "${_extendeds[@]}"; do
       local _jj _cur_content _tmp_content _original_filename
       _original_filename="$(search_file_in "${j}" "${_path}")"
-      if ! _jj="$(validate_file_in_path "${_original_filename}" "${_validation_mode}" "${_path}")"; then
+      _jj="$(validate_file_in_path "${_original_filename}" "${_validation_mode}" "${_path}")" ||
         abort "Failed to locate file '${j}'"
-      fi
       _check_cyclic_dependency "${_original_filename}" inheritance
+      debug "check - 1"
       local _next_content
       _next_content="$(cat "${_jj}")"
+      debug "check - 2"
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
+      debug "check - 3"
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece _next_piece
+        debug "check - 4a"
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with file:'${_jj}'"
+        debug "check - 4b"
       else
         local _expanded_tmp
-        _expanded_tmp="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")" ||
-          abort "Failed to expand inheritances for '${_jj}'"
+        debug "check - 5a: '${_jj}'"
+        _expanded_tmp="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")"
+        [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'"
+        debug "check - 5b"
         _merged_piece_content="${_expanded_tmp}"
+        debug "check - 5c"
       fi
+      debug "check - 6"
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
       _cur=$(mktemp_with_content "${_tmp_content}") || abort "TODO(2)"
       _unmark_as_in_progress "${_original_filename}" inheritance
+      debug "check - 7"
     done
   done
+  perf "end"
   jq -r -c . "${_cur}"
 }
 
@@ -480,23 +491,26 @@ function expand_filelevel_inheritances() {
   local _target="${1}"
   local _validation_mode="${2}"
   local _path="${3}"
-  local _in
-  perf "begin"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
-  local _cur _content _original_filename
+  local _in _cur _content _original_filename
+  perf "begin"
   _original_filename="$(search_file_in "${_target}" "${_path}")"
   _in="$(find_file_in_path "${_target}" "${_path}")"
+  debug "check - 1"
   debug "validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "...validated"
+  debug "check - 2"
   _check_cyclic_dependency "${_original_filename}" inheritance
+  debug "check - 3"
   _content="$(cat "${_in}")"
   _cur="${_content}"
   if is_object "${_content}"; then
     # shellcheck disable=SC2016
     # this is intentionally suppressing expansion to pass the value to jq.
+    debug "check - 4.a"
     if has_value_at '."$extends"' "${_content}"; then
       local i
       while IFS= read -r i; do
@@ -510,12 +524,18 @@ function expand_filelevel_inheritances() {
       done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
     local _cur_tmpfile
+    debug "check - 4.b"
     _cur_tmpfile="$(mktemp_with_content "${_cur}")"
     jq -r -c '.|del(.["$extends"])' "${_cur_tmpfile}"
+    debug "check - 4.c"
   else
+    debug "check - 5.a"
     cat "$(find_file_in_path "${_cur}" "${_path}")"
+    debug "check - 5.b"
   fi
+  debug "check - 6"
   _unmark_as_in_progress "${_original_filename}" inheritance
+  debug "check - 7"
   perf "end"
 }
 
@@ -657,7 +677,7 @@ function expand_inheritances() {
   local _jf_path="${3}"
   local _caching_filename
   _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_filename}")"
-  perf "begin: ${_filename}"
+  perf "begin: ${_filename}(cache:'${_caching_filename}' in ${_JF_POOL_DIR}; )"
   [[ -e "${_caching_filename}" ]] || {
     perf "expanding inheritances for file: '${_filename}'"
     _expand_inheritances "${_filename}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
@@ -678,28 +698,38 @@ function _expand_inheritances() {
   [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
   _jf_path="$(dirof "${_target}"):${_jf_path}"
   _content="$(cat "${_target}")"
+  debug "check - 1"
   if ! is_json "${_content}"; then
     abort "Malformed JSON was given:'${_target}'='${_content}'"
   fi
+  debug "check - 2"
   if is_object "${_content}"; then
     local _tmp _private_nodes_dir _c _expanded
+    debug "check - 3a"
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
     _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")" ||
       abort "File-level expansion failed for '${_target}'"
+    debug "check - 3b"
     _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
+    debug "check - 3c"
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
       "${_templating}" \
       "${_private_nodes_dir}:${_jf_path}"
     _expanded="$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")" || abort "Failed to expand node level inheritance for file:'${_target}'(3)"
     _out=$(mktemp_with_content "${_expanded}")
+    debug "check - 3d"
   else
     : # Clear $?
+    debug "check - 4a"
     _out="$(mktemp_with_content "${_content}")"
+    debug "check - 4b"
   fi
+  debug "check - 5a"
   cat "${_out}"
+  debug "check - 6a"
   perf "end: ${_target}"
 }
 
