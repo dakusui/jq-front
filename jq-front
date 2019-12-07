@@ -458,6 +458,7 @@ function _unmark_as_in_progress() {
   local _filename="${1}"
   local _dependency_space="${2}"
   local _encoded_filename
+  debug "check: unmark: '${_filename}'"
   _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
   rm "${_encoded_filename}" || {
     message "WARN: ${_filename} was not found."
@@ -483,6 +484,7 @@ function _check_cyclic_dependency() {
   if _is_in_progress "${_in}" inheritance; then
     abort "Cyclic ${_dependency_space} was detected on:'${_in}'"
   else
+    debug "check: mark as in progress: '${_in}'"
     _mark_as_in_progress "${_in}" inheritance
   fi
 }
