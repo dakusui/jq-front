@@ -130,7 +130,6 @@ function _expand_nodelevel_inheritances() {
       _original_filename="$(search_file_in "${j}" "${_path}")"
       _jj="$(validate_file_in_path "${_original_filename}" "${_validation_mode}" "${_path}")" ||
         abort "Failed to locate file '${j}'"
-      _check_cyclic_dependency "${_original_filename}" inheritance
       debug "check - 1"
       local _next_content
       _next_content="$(cat "${_jj}")"
@@ -159,7 +158,6 @@ function _expand_nodelevel_inheritances() {
       debug "check - 6"
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
       _cur=$(mktemp_with_content "${_tmp_content}") || abort "TODO(2)"
-      _unmark_as_in_progress "${_original_filename}" inheritance
       debug "check - 7"
     done
   done
@@ -505,8 +503,6 @@ function expand_filelevel_inheritances() {
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "...validated"
   debug "check - 2"
-  _check_cyclic_dependency "${_original_filename}" inheritance
-  debug "check - 3"
   _content="$(cat "${_in}")"
   _cur="${_content}"
   if is_object "${_content}"; then
@@ -536,8 +532,6 @@ function expand_filelevel_inheritances() {
     debug "check - 5.b"
   fi
   debug "check - 6"
-  _unmark_as_in_progress "${_original_filename}" inheritance
-  debug "check - 7"
   perf "end"
 }
 
@@ -678,11 +672,13 @@ function expand_inheritances() {
   local _validation_mode="${2}"
   local _jf_path="${3}"
   local _caching_filename
+  perf "begin: ${_filename}"
   _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_filename}")"
-  perf "begin: ${_filename}(cache:'${_caching_filename}' in ${_JF_POOL_DIR}; )"
   [[ -e "${_caching_filename}" ]] || {
-    perf "expanding inheritances for file: '${_filename}'"
+    perf "cache miss: expanding inheritances for file: '${_filename}'"
+    _check_cyclic_dependency "${_filename}" inheritance
     _expand_inheritances "${_filename}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
+    _unmark_as_in_progress "${_filename}" inheritance
   }
   cat "${_caching_filename}"
   perf "end: ${_filename} (cached in ${_caching_filename})"
