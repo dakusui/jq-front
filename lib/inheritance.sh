@@ -63,9 +63,7 @@ function expand_filelevel_inheritances() {
         _cur="${_c}"
       done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
-    local _cur_tmpfile
-    _cur_tmpfile="$(mktemp_with_content "${_cur}")"
-    jq -r -c '.|del(.["$extends"])' "${_cur_tmpfile}"
+    echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
   else
     message "WARN: array expansion is not yet implemented."
     echo "${_content}"
