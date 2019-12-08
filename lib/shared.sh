@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 set -eu
+[[ "${_SHARED_SH:-""}" == "yes" ]] && return 0
+_SHARED_SH=yes
+
+function dirof() {
+  local _target="${1}"
+  local _ret
+  _ret=$(dirname "$(readlink --canonicalize-missing "${_target}")")
+  echo "${_ret}"
+}
+
+function hashcode() {
+  local _nodeentry="${1}"
+  echo -n "${_nodeentry}" | md5sum | cut -f 1 -d ' '
+}
 
 function mktemp_with_content() {
   ####
@@ -13,6 +27,30 @@ function mktemp_with_content() {
   echo "${_ret}"
 }
 
+function search_file_in() {
+  local _target="${1}" _path="${2}" _path_base="${3:-${_JF_PATH_BASE}}"
+  local i
+  debug "begin: _target='${_target}', _path='${_path}', _path_base='${_path_base}'"
+  IFS=':' read -r -a _arr <<<":${_path}"
+  for i in "${_arr[@]}"; do
+    local _ret
+    _ret="$(echo "${i}/${_target}" | sed -E 's!/+!/!g')"
+    if [[ -e "${_ret}" ]]; then
+      debug "${_target} was found as '${_ret}' under '${i}'"
+      echo "${_ret}"
+      debug "end: _ret='${_ret}'"
+      return 0
+    fi
+  done
+  abort "File '${_target}' was not found in '${_path}'(cwd:'$(pwd)')"
+}
+
+function join_by() {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
+
 function mktempdir() {
   mktemp -d
 }
@@ -24,7 +62,7 @@ function is_debug_enabled() {
 
 function debug() {
   if is_debug_enabled; then
-    message "DEBUG" "$@"
+    message "DEBUG: $(date '+%Y-%m-%d %H:%M:%S.%3N'): ${FUNCNAME[1]}:" "${@}"
   fi
 }
 
@@ -79,6 +117,21 @@ function is_object() {
   return "${_ret}"
 }
 
+function validate_json() {
+  local _in="${1}" _schema_file="${2}"
+  local _out=
+  {
+    local _ret
+    debug "validating: '${_in}'"
+    _out=$(ajv validate -s "${_schema_file}" -d "${_in}" 2>&1)
+    _ret=$?
+    debug "...validated: '${_out}'"
+    return "${_ret}"
+  } || {
+    abort "Validation by ajv for '${_in}' was failed:\n${_out}"
+  }
+}
+
 function type_of() {
   local _json_content="${1}"
   jq -r -c '.|type' <(echo "${_json_content}") || echo "string"
@@ -116,30 +169,45 @@ function keys_of() {
   echo "${_json}" | jq -r -c "${_path} | keys[]" || abort "Failed to access keys of '${_path}' in '${_json}'"
 }
 
-function search_file_in() {
-  local _target="${1}"
-  local _path="${2}"
-  if [[ "${_target}" == "${_JF_PATH_BASE}/"* ]]; then
-    echo "${_target}"
-    return 0
-  fi
-  IFS=':' read -r -a _arr <<<"${_path}"
-  for i in "${_arr[@]}"; do
-    local _ret="${i}/${_target}"
-    if [[ -e "${_ret}" ]]; then
-      echo "${_ret}"
-      return 0
-    fi
-  done
-  abort "File '${_target}' was not found in '${_path}'"
-}
+# Latter overrides former
+function _merge_object_nodes() {
+  local _a="${1}" _b="${2}"
+  local _error
+  _error=$(mktemp)
+  perf "begin"
+  debug "merging _a:'${_a}' and _b:'${_b}'"
+  [[ "${_a}" != '' ]] || abort "An empty string was given as _a"
+  # shellcheck disable=SC2016
+  jq -r -c -n --argjson a "${_a}" --argjson b "${_b}" -L "${JF_BASEDIR}/lib" \
+    'import "shared" as shared;
+    def value_at($n; $p):
+      $n | getpath($p);
 
-declare -A _FILE_CACHE=()
-function read_file() {
-  local _filename="${1}"
-  [[ "${_FILE_CACHE["${_filename}"]+_}" ]] || {
-    perf "Reading a file: '${_filename}'"
-    _FILE_CACHE["${_filename}"]="$(cat "${_filename}")"
+    def setvalue_at($n; $p; $v):
+      def type_of($v):
+        $v | type;
+      def _setvalue_at($n; $p; $v):
+        $n | try setpath($p; $v)
+             catch error("Failed to process node at path:<\($p|shared::path2pexp(.[]))>; the value:<\($v)>).");
+      $n | if type_of($v)=="object" or type_of($v)=="array" then
+             if type_of(value_at($n; $p))!="object" and type_of(value_at($n; $p)!="array") then
+               _setvalue_at(.;$p; $v)
+             else
+               .
+             end
+           else
+             _setvalue_at(.; $p; $v)
+           end;
+
+    def merge_objects($a; $b):
+      $b | [paths(scalars_or_empty)]
+         | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
+
+    merge_objects($a; $b)' 2>"${_error}" || {
+    abort "$(printf "jq-front: Failed to merge object nodes:\n    a=<%s>\n    b=<%s>\nERROR: %s)" \
+      "$(jq -r -c -n "${_a}|." || echo "MALFORMED: ${_a}")" \
+      "$(jq -r -c -n "${_b}|." || echo "MALFORMED: ${_b}")" \
+      "$(cat "${_error}" || echo "UNAVAILABLE")")"
   }
-  echo -n "${_FILE_CACHE[${_filename}]}"
+  perf "end"
 }
