@@ -4,7 +4,7 @@ _INHERITANCE_SH=yes
 
 function expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
-  local _materialized_file _content _jsonized_content _out _absfile
+  local _jsonized_content _out _absfile
   local -a _specifier
   perf "begin: ${_nodeentry}"
 
@@ -14,11 +14,10 @@ function expand_inheritances() {
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
-  _materialized_file="$(mktemp_with_content "${_jsonized_content}")"
-  validate_jf_json "${_materialized_file}" "${_validation_mode}"
-  _content="${_jsonized_content}"
-  if is_object "${_content}"; then
-    local _tmp _local_nodes_dir _c _expanded
+  validate_jf_json "${_jsonized_content}" "${_validation_mode}"
+  if is_object "${_jsonized_content}"; then
+    local _tmp _local_nodes_dir _c _expanded _materialized_file
+    _materialized_file="$(mktemp_with_content "${_jsonized_content}")"
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
@@ -34,7 +33,7 @@ function expand_inheritances() {
     _out=$(mktemp_with_content "${_expanded}")
   else
     : # Clear $?
-    _out="$(mktemp_with_content "${_content}")"
+    _out="$(mktemp_with_content "${_jsonized_content}")"
   fi
   cat "${_out}"
   perf "end: ${_nodeentry}"
