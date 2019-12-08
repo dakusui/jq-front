@@ -48,7 +48,7 @@ function _normalize_nodeentry() {
   local _specifier _absfile
   mapfile -t -d ';' _specifier <<<"${_nodeentry};;"
   _absfile="$(search_file_in "${_specifier[0]}" "${_path}")"
-  echo "${_absfile};${_specifier[1]};$(join_by ';' "${_specifier[@]:2}")"
+  echo "${_absfile};${_specifier[1]};$(join_by ';' "${_specifier[@]:2}")" | sed -E 's/\;*$/;;/g'
 }
 
 function _locate_file() {
