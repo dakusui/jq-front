@@ -292,14 +292,13 @@ function _starts_with_templating_keyword() {
 function find_file_in_path() {
   local _specstring="${1}" _path="${2}"
   IFS=';' read -r -a _arr <<<"${_specstring}"
+  local _file
   if [[ ${#_arr[@]} -le 1 ]]; then
-    local _file
     _file="$(search_file_in "${_specstring}" "${_path}")"
-    echo "${_file}"
   elif [[ ${#_arr[@]} -gt 1 ]]; then
-    _f="$(search_file_in "${_arr[0]}" "${_path}")" || abort "Script file ${_arr[1]} was not found in '${_path}'"
-    echo "${_f}"
+    _file="$(search_file_in "${_arr[0]}" "${_path}")" || abort "Script file ${_arr[1]} was not found in '${_path}'"
   fi
+  echo "${_file}"
 }
 
 ####
