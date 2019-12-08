@@ -3,13 +3,6 @@ set -eu
 _INHERITANCE_SH=yes
 
 function expand_inheritances() {
-  local _norm_nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
-  perf "begin: ${_norm_nodeentry}"
-  _expand_inheritances "${_norm_nodeentry}" "${_validation_mode}" "${_jf_path}"
-  perf "end: ${_norm_nodeentry}"
-}
-
-function _expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
   local _materialized_file _content _jsonized_content _out _absfile
   local -a _specifier
@@ -54,8 +47,7 @@ function expand_filelevel_inheritances() {
   # shellcheck disable=SC2016
   local _in _cur _content
   perf "begin:${_materialized_file}"
-  _in="${_materialized_file}"
-  _content="$(cat "${_in}")"
+  _content="$(cat "${_materialized_file}")"
   _cur="${_content}"
   if is_object "${_content}"; then
     # shellcheck disable=SC2016
@@ -64,7 +56,7 @@ function expand_filelevel_inheritances() {
       local i
       while IFS= read -r i; do
         local _c _parent
-        _parent="$(nodepool_read_nodeentry "$(_normalize_nodeentry "${i}" "${_path}")" "${_validation_mode}" "${_path}")"
+        _parent="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
         _c="$(_merge_object_nodes "${_parent}" "${_cur}")"
         # Cannot check the exit code directly because of command substitution
         # shellcheck disable=SC2181
@@ -123,18 +115,17 @@ function _expand_nodelevel_inheritances() {
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Node-level expansion was failed for node:'${_content}'"
   for i in "${_keys[@]}"; do
-    local j _p="${i%.\"\$extends\"}"
+    local _jj _p="${i%.\"\$extends\"}"
     local -a _extendeds
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
-    for j in "${_extendeds[@]}"; do
-      local _jj _cur_content _tmp_content
-      debug "processing nodeentry: '${j}'"
-      _jj="$(_normalize_nodeentry "${j}" "${_path}")" || abort "Failed to locate file '${j}'"
+    for _jj in "${_extendeds[@]}"; do
+      local _cur_content _tmp_content
+      debug "processing nodeentry: '${_jj}'"
       _cur_content="$(cat "${_cur}")"
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece _next_piece
-        _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
+        _cur_piece="$(jq "${_p}" "${_cur}")"
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         # shellcheck disable=SC2181
