@@ -21,6 +21,144 @@ source "${JF_BASEDIR}/lib/dependency.sh"
 # source = lib/helpers.sh
 source "${JF_BASEDIR}/lib/helpers.sh"
 
+function perform_jqfront() {
+  local _target="${1}" _templating="${2}" _validation_mode="${3}" _jf_path="${4}"
+  local _content
+  perf "begin"
+  mkdir -p "$(_sourced_files_dir)"
+  _content="$(expand_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
+  _content=$(echo "${_content}" | jq '.|del(."$local")')
+  if [[ "${_templating}" == "yes" ]]; then
+    local _out
+    _out=$(mktemp_with_content "${_content}")
+    _content=$(perform_templating "${_out}")
+  fi
+  echo "${_content}"
+  perf "end"
+}
+
+function expand_inheritances() {
+  local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
+  local _caching_filename _norm_nodeentry
+  perf "begin: ${_nodeentry}"
+  _norm_nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
+  _check_cyclic_dependency "${_norm_nodeentry}" inheritance
+  _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_norm_nodeentry}")"
+  [[ -e "${_caching_filename}" ]] || {
+    perf "cache miss: expanding inheritances for nodeentry: '${_norm_nodeentry}'"
+    _expand_inheritances "${_norm_nodeentry}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
+  }
+  cat "${_caching_filename}"
+  _unmark_as_in_progress "${_norm_nodeentry}" inheritance
+  perf "end: ${_nodeentry} (cached in ${_caching_filename})"
+}
+
+function _expand_inheritances() {
+  local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
+  local _materialized_file _content _jsonized_content _out _absfile
+  local -a _specifier
+  perf "begin: ${_nodeentry}"
+
+  mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
+  _absfile="$(search_file_in "${_specifier[0]}" "${_jf_path}")"
+  _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
+  # Fail on command substitution cannot be checked directly
+  # shellcheck disable=SC2181
+  [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
+  _materialized_file="$(mktemp_with_content "${_jsonized_content}")"
+  validate_jf_json "${_materialized_file}" "${_validation_mode}"
+  _content="${_jsonized_content}"
+  #----
+  if ! is_json "${_content}"; then
+    abort "Malformed JSON was given:'${_nodeentry}': _materialized_file='${_materialized_file}', _content='${_content}'"
+  fi
+  if is_object "${_content}"; then
+    local _tmp _local_nodes_dir _c _expanded
+    ####
+    # Strangely the line above does not causes a quit on a failure.
+    # Explitly check and abotrt this functino.
+    _c="$(expand_filelevel_inheritances "${_materialized_file}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
+      abort "File-level expansion failed for '${_nodeentry}'"
+    _tmp="$(mktemp_with_content "${_c}")"
+    _local_nodes_dir=$(materialize_local_nodes "${_tmp}")
+    expand_inheritances_of_local_nodes "${_local_nodes_dir}" \
+      "${_local_nodes_dir}:${_jf_path}"
+    _expanded="$(expand_nodelevel_inheritances "${_tmp}" \
+      "${_validation_mode}" \
+      "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
+      abort "Failed to expand node level inheritance for '${_nodeentry}'(3)"
+    _out=$(mktemp_with_content "${_expanded}")
+  else
+    : # Clear $?
+    _out="$(mktemp_with_content "${_content}")"
+  fi
+  cat "${_out}"
+  perf "end: ${_nodeentry}"
+}
+
+function expand_filelevel_inheritances() {
+  local _materialized_file="${1}" _validation_mode="${2}" _path="${3}"
+  ####
+  # This is intentionally using single quotes to pass quoted path expression to jq.
+  # shellcheck disable=SC2016
+  local _in _cur _content
+  perf "begin:${_materialized_file}"
+  _in="${_materialized_file}"
+  _content="$(cat "${_in}")"
+  _cur="${_content}"
+  if is_object "${_content}"; then
+    # shellcheck disable=SC2016
+    # this is intentionally suppressing expansion to pass the value to jq.
+    if has_value_at '."$extends"' "${_content}"; then
+      local i
+      while IFS= read -r i; do
+        local _c _parent
+        _parent="$(expand_inheritances "$(_normalize_nodeentry "${i}" "${_path}")" "${_validation_mode}" "${_path}")"
+        _c="$(_merge_object_nodes "${_parent}" "${_cur}")"
+        # Cannot check the exit code directly because of command substitution
+        # shellcheck disable=SC2181
+        [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
+        _cur="${_c}"
+      done <<<"$(value_at '."$extends"[]' "${_content}")"
+    fi
+    local _cur_tmpfile
+    _cur_tmpfile="$(mktemp_with_content "${_cur}")"
+    jq -r -c '.|del(.["$extends"])' "${_cur_tmpfile}"
+  else
+    message "WARN: array expansion is not yet implemented."
+    echo "${_content}"
+  fi
+  perf "end:${_materialized_file}"
+}
+
+function expand_inheritances_of_local_nodes() {
+  local _path="${1}" _jf_path="${2}"
+  debug "begin: _path=${_path}"
+  while IFS= read -r -d '' i; do
+    local _tmp
+    local _f="${i}"
+    debug "expanding inheritance of a local node:'${i}'"
+    _tmp="$(mktemp_with_content "$(expand_inheritances "${_f}" "no" "${_path}:${_jf_path}")")"
+    cp "${_tmp}" "${_f}"
+    debug "...expanded"
+  done < <(find "${_path}" -maxdepth 1 -type f -print0)
+  debug "end"
+}
+
+function expand_nodelevel_inheritances() {
+  local _target="${1}" _validation_mode="${2}" _path="${3}"
+  local _expanded _expanded_clean _clean _content _ret
+  perf "begin:_target=${_target}"
+  _content="$(cat "${_target}")"
+  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
+    abort "Failed to expand node level inheritance for file:'${_target}'(1)"
+  _clean="$(_remove_meta_nodes "${_content}")"
+  _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
+  _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") || abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
+  echo "${_ret}"
+  perf "end"
+}
+
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
   local _cur _in i
@@ -69,47 +207,76 @@ function _expand_nodelevel_inheritances() {
   jq -r -c . "${_cur}"
 }
 
-function _expand_inheritances() {
-  local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
-  local _materialized_file _content _jsonized_content _out _absfile
-  local -a _specifier
-  perf "begin: ${_nodeentry}"
+function perform_templating() {
+  local _src_file="${1}"
+  local _content _ret
+  perf "begin"
+  # define builtin functions such as "ref", "self"
+  _define_builtin_functions
+  # source files, for which SOURCE directive is specified
+  _source_files
+  _perform_templating "$(cat "${_src_file}")"
+  perf "end"
+}
 
-  mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
-  _absfile="$(search_file_in "${_specifier[0]}" "${_jf_path}")"
-  _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
-  # Fail on command substitution cannot be checked directly
-  # shellcheck disable=SC2181
-  [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
-  _materialized_file="$(mktemp_with_content "${_jsonized_content}")"
-  validate_jf_json "${_materialized_file}" "${_validation_mode}"
-  _content="${_jsonized_content}"
-  #----
-  if ! is_json "${_content}"; then
-    abort "Malformed JSON was given:'${_nodeentry}': _materialized_file='${_materialized_file}', _content='${_content}'"
+function _perform_templating() {
+  local _content="${1}"
+  local _ret="${_content}"
+  local i
+  local -a _keys
+  # Shorter path comes earlier than longer.
+  mapfile -t _keys < <(_paths_of_string_type "${_content}")
+  for i in "${_keys[@]}"; do
+    local _node_value _templated_node_value _ret_file
+    _node_value="$(value_at "${i}" "${_ret}")"
+    _ret_file=$(mktemp_with_content "${_ret}")
+    _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
+    _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
+  done
+  echo "${_ret}"
+}
+
+function _render_text_node() {
+  local _node_value="${1}"
+  local _path="${2}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _self="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _mode="raw" _quote="yes" _ret_code=0
+  local _body _ret
+  if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
+    abort "Non-templating text node"
   fi
-  if is_object "${_content}"; then
-    local _tmp _local_nodes_dir _c _expanded
-    ####
-    # Strangely the line above does not causes a quit on a failure.
-    # Explitly check and abotrt this functino.
-    _c="$(expand_filelevel_inheritances "${_materialized_file}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
-      abort "File-level expansion failed for '${_nodeentry}'"
-    _tmp="$(mktemp_with_content "${_c}")"
-    _local_nodes_dir=$(materialize_local_nodes "${_tmp}")
-    expand_inheritances_of_local_nodes "${_local_nodes_dir}" \
-      "${_local_nodes_dir}:${_jf_path}"
-    _expanded="$(expand_nodelevel_inheritances "${_tmp}" \
-      "${_validation_mode}" \
-      "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
-      abort "Failed to expand node level inheritance for '${_nodeentry}'(3)"
-    _out=$(mktemp_with_content "${_expanded}")
+  _mode="${_node_value%%:*}"
+  _body="${_node_value#*:}"
+  if [[ "${_body}" == object:* || "${_body}" == array:* || "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
+    ; then
+    if [[ "${_body}" != string:* ]]; then
+      _quote="no"
+    fi
+    _body="${_body#*:}"
+  fi
+
+  if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
+    local _error_prefix="ERROR: "
+    local _error _error_out
+    export _path
+    _error="$(mktemp)"
+    # Perform the 'templating'
+    _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
+    unset _path
+    # shellcheck disable=SC2002
+    _error_out="$(cat "${_error}")"
+    [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "Error was detected during templating: $(cat "${_error}")"
+    debug "stderr during eval:'${_error_out}'"
+  elif [[ "${_mode}" == "raw" ]]; then
+    _ret="${_body}"
+  fi
+  if [[ "${_quote}" == yes ]]; then
+    _ret="${_ret//\\/\\\\}"
+    echo "\"${_ret//\"/\\\"}\""
   else
-    : # Clear $?
-    _out="$(mktemp_with_content "${_content}")"
+    echo "${_ret}"
   fi
-  cat "${_out}"
-  perf "end: ${_nodeentry}"
+  return "${_ret_code}"
 }
 
 ####
@@ -222,74 +389,6 @@ function export_names_for_script_inheritance() {
   export _JF_PATH_BASE
 }
 
-function _render_text_node() {
-  local _node_value="${1}"
-  local _path="${2}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _self="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _mode="raw" _quote="yes" _ret_code=0
-  local _body _ret
-  if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
-    abort "Non-templating text node"
-  fi
-  _mode="${_node_value%%:*}"
-  _body="${_node_value#*:}"
-  if [[ "${_body}" == object:* || "${_body}" == array:* || "${_body}" == string:* || "${_body}" == number:* || "${_body}" == boolean:* ]] \
-    ; then
-    if [[ "${_body}" != string:* ]]; then
-      _quote="no"
-    fi
-    _body="${_body#*:}"
-  fi
-
-  if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
-    local _error_prefix="ERROR: "
-    local _error _error_out
-    export _path
-    _error="$(mktemp)"
-    # Perform the 'templating'
-    _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
-    unset _path
-    # shellcheck disable=SC2002
-    _error_out="$(cat "${_error}")"
-    [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "Error was detected during templating: $(cat "${_error}")"
-    debug "stderr during eval:'${_error_out}'"
-  elif [[ "${_mode}" == "raw" ]]; then
-    _ret="${_body}"
-  fi
-  if [[ "${_quote}" == yes ]]; then
-    _ret="${_ret//\\/\\\\}"
-    echo "\"${_ret//\"/\\\"}\""
-  else
-    echo "${_ret}"
-  fi
-  return "${_ret_code}"
-}
-
-function _perform_templating() {
-  local _content="${1}"
-  local _ret="${_content}"
-  local i
-  local -a _keys
-  # Shorter path comes earlier than longer.
-  mapfile -t _keys < <(_paths_of_string_type "${_content}")
-  for i in "${_keys[@]}"; do
-    local _node_value _templated_node_value _ret_file
-    _node_value="$(value_at "${i}" "${_ret}")"
-    _ret_file=$(mktemp_with_content "${_ret}")
-    _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
-    _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
-  done
-  echo "${_ret}"
-}
-
-function _starts_with_templating_keyword() {
-  local _node_value="${1}"
-  if [[ "${_node_value}" == template:* || "${_node_value}" == eval:* || "${_node_value}" == raw:* ]]; then
-    return 0
-  fi
-  return 1
-}
-
 function materialize_local_nodes() {
   local _target="${1}"
   local _content _ret
@@ -308,115 +407,9 @@ function materialize_local_nodes() {
   debug "end"
 }
 
-function expand_nodelevel_inheritances() {
-  local _target="${1}" _validation_mode="${2}" _path="${3}"
-  local _expanded _expanded_clean _clean _content _ret
-  perf "begin:_target=${_target}"
-  _content="$(cat "${_target}")"
-  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
-    abort "Failed to expand node level inheritance for file:'${_target}'(1)"
-  _clean="$(_remove_meta_nodes "${_content}")"
-  _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
-  _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") || abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
-  echo "${_ret}"
-  perf "end"
-}
-
-function expand_inheritances_of_local_nodes() {
-  local _path="${1}" _jf_path="${2}"
-  debug "begin: _path=${_path}"
-  while IFS= read -r -d '' i; do
-    local _tmp
-    local _f="${i}"
-    debug "expanding inheritance of a local node:'${i}'"
-    _tmp="$(mktemp_with_content "$(expand_inheritances "${_f}" "no" "${_path}:${_jf_path}")")"
-    cp "${_tmp}" "${_f}"
-    debug "...expanded"
-  done < <(find "${_path}" -maxdepth 1 -type f -print0)
-  debug "end"
-}
 
 function _sourced_files_dir() {
   echo "${_JF_SESSION_DIR}/source_files"
-}
-
-function expand_filelevel_inheritances() {
-  local _materialized_file="${1}" _validation_mode="${2}" _path="${3}"
-  ####
-  # This is intentionally using single quotes to pass quoted path expression to jq.
-  # shellcheck disable=SC2016
-  local _in _cur _content
-  perf "begin:${_materialized_file}"
-  _in="${_materialized_file}"
-  _content="$(cat "${_in}")"
-  _cur="${_content}"
-  if is_object "${_content}"; then
-    # shellcheck disable=SC2016
-    # this is intentionally suppressing expansion to pass the value to jq.
-    if has_value_at '."$extends"' "${_content}"; then
-      local i
-      while IFS= read -r i; do
-        local _c _parent
-        _parent="$(expand_inheritances "$(_normalize_nodeentry "${i}" "${_path}")" "${_validation_mode}" "${_path}")"
-        _c="$(_merge_object_nodes "${_parent}" "${_cur}")"
-        # Cannot check the exit code directly because of command substitution
-        # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
-        _cur="${_c}"
-      done <<<"$(value_at '."$extends"[]' "${_content}")"
-    fi
-    local _cur_tmpfile
-    _cur_tmpfile="$(mktemp_with_content "${_cur}")"
-    jq -r -c '.|del(.["$extends"])' "${_cur_tmpfile}"
-  else
-    message "WARN: array expansion is not yet implemented."
-    echo "${_content}"
-  fi
-  perf "end:${_materialized_file}"
-}
-
-function expand_inheritances() {
-  local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
-  local _caching_filename _norm_nodeentry
-  perf "begin: ${_nodeentry}"
-  _norm_nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
-  _check_cyclic_dependency "${_norm_nodeentry}" inheritance
-  _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_norm_nodeentry}")"
-  [[ -e "${_caching_filename}" ]] || {
-    perf "cache miss: expanding inheritances for nodeentry: '${_norm_nodeentry}'"
-    _expand_inheritances "${_norm_nodeentry}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
-  }
-  cat "${_caching_filename}"
-  _unmark_as_in_progress "${_norm_nodeentry}" inheritance
-  perf "end: ${_nodeentry} (cached in ${_caching_filename})"
-}
-
-function perform_templating() {
-  local _src_file="${1}"
-  local _content _ret
-  perf "begin"
-  # define builtin functions such as "ref", "self"
-  _define_builtin_functions
-  # source files, for which SOURCE directive is specified
-  _source_files
-  _perform_templating "$(cat "${_src_file}")"
-  perf "end"
-}
-
-function perform_jqfront() {
-  local _target="${1}" _templating="${2}" _validation_mode="${3}" _jf_path="${4}"
-  local _content
-  perf "begin"
-  mkdir -p "$(_sourced_files_dir)"
-  _content="$(expand_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
-  _content=$(echo "${_content}" | jq '.|del(."$local")')
-  if [[ "${_templating}" == "yes" ]]; then
-    local _out
-    _out=$(mktemp_with_content "${_content}")
-    _content=$(perform_templating "${_out}")
-  fi
-  echo "${_content}"
-  perf "end"
 }
 
 function usage() {

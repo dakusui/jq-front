@@ -31,3 +31,11 @@ function _mangle_path() {
   done
   echo "${_path_base}:${_ret}"
 }
+
+function _starts_with_templating_keyword() {
+  local _node_value="${1}"
+  if [[ "${_node_value}" == template:* || "${_node_value}" == eval:* || "${_node_value}" == raw:* ]]; then
+    return 0
+  fi
+  return 1
+}
