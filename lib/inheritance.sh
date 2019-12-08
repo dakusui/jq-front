@@ -30,12 +30,12 @@ function expand_inheritances() {
       "${_validation_mode}" \
       "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "Failed to expand node level inheritance for '${_nodeentry}'(3)"
-    _out=$(mktemp_with_content "${_expanded}")
+    _out="${_expanded}"
   else
     : # Clear $?
-    _out="$(mktemp_with_content "${_jsonized_content}")"
+    _out="${_jsonized_content}"
   fi
-  cat "${_out}"
+  echo "${_out}"
   perf "end: ${_nodeentry}"
 }
 
