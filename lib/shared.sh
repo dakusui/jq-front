@@ -21,22 +21,17 @@ function mktemp_with_content() {
 }
 
 function search_file_in() {
-  local _target="${1}"
-  local _path="${2}"
-  local _path_base="${3:-${_JF_PATH_BASE}}"
-  if [[ "${_target}" == "${_path_base}/"* ]]; then
-    local _ret="${_target}"
-    [[ "${_JF_PATH_BASE}" != "" ]] && _ret="${_path_base}/${_target}"
-    debug "${_target} was found as '${_ret}' under path-base: '${_path_base}'"
-    echo "${_ret}"
-    return 0
-  fi
-  IFS=':' read -r -a _arr <<<"${_path}"
+  local _target="${1}" _path="${2}" _path_base="${3:-${_JF_PATH_BASE}}"
+  local i
+  debug "begin: _target='${_target}', _path='${_path}', _path_base='${_path_base}'"
+  IFS=':' read -r -a _arr <<<":${_path}"
   for i in "${_arr[@]}"; do
-    local _ret="${i}/${_target}"
+    local _ret
+    _ret="$(echo "${i}/${_target}" | sed -E 's!/+!/!g')"
     if [[ -e "${_ret}" ]]; then
       debug "${_target} was found as '${_ret}' under '${i}'"
       echo "${_ret}"
+      debug "end: _ret='${_ret}'"
       return 0
     fi
   done
