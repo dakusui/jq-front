@@ -152,5 +152,5 @@ function search_file_in() {
       return 0
     fi
   done
-  abort "File '${_target}' was not found in '${_path}'"
+  abort "File '${_target}' was not found in '${_path}'(cwd:'$(pwd)')"
 }

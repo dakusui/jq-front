@@ -89,9 +89,10 @@ function _nodepool_expand_inheritances() {
   #----------------------
 }
 
-function _jsonize_file() {
+function jsonize() {
   local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
   local _ret
+  debug "in: '${_absfile}' '${_processor}' '${_args}'"
   if [[ ${_processor} == "" ]]; then
     local _cmd="jq"
     if [[ "${_absfile}" == *.yaml || "${_absfile}" == *.yml ]]; then
@@ -112,5 +113,6 @@ function _jsonize_file() {
       unset _path
     fi
   fi
+  debug "output: '${_ret}'"
   echo "${_ret}"
 }

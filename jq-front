@@ -343,36 +343,15 @@ function _starts_with_templating_keyword() {
 }
 
 function find_file_in_path() {
-  local _target="${1}" _path="${2}"
-  IFS=';' read -r -a _arr <<<"${_target}"
+  local _specstring="${1}" _path="${2}"
+  IFS=';' read -r -a _arr <<<"${_specstring}"
   if [[ ${#_arr[@]} -le 1 ]]; then
     local _file
-    _file="$(search_file_in "${_target}" "${_path}")"
-    if [[ "${_target}" == *.yaml || "${_target}" == *.yml ]]; then
-      local _content
-      _content="$(yq . "${_file}")"
-      mktemp_with_content "${_content}"
-    else
-      debug "${FUNCNAME[0]}: '${_file}'"
-      echo "${_file}"
-    fi
+    _file="$(search_file_in "${_specstring}" "${_path}")"
+    echo "${_file}"
   elif [[ ${#_arr[@]} -gt 1 ]]; then
-    local _f
     _f="$(search_file_in "${_arr[0]}" "${_path}")" || abort "Script file ${_arr[1]} was not found in '${_path}'"
-    if [[ ${_arr[1]} == SOURCE ]]; then
-      # shellcheck disable=SC1090
-      #  We know that there are no non-alphanumerically named files.
-      # shellcheck disable=SC2012
-      cat "${_f}" >"$(_sourced_files_dir)/$(ls "$(_sourced_files_dir)" | wc -l)"
-      mktemp_with_content "{}"
-    else
-      ####
-      # In case the file name contains one or more semi-colons(';'), the name will be splitted by it.
-      # And a command line is constructed from them and executed.
-      export _path
-      mktemp_with_content "$(${_arr[1]} "${_f}" "${_arr[@]:2}")"
-      unset _path
-    fi
+    echo "${_f}"
   fi
 }
 
@@ -471,7 +450,7 @@ function expand_filelevel_inheritances() {
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
   local _in _cur _content _original_filename
-  perf "begin"
+  perf "begin:${_target}"
   _original_filename="$(search_file_in "${_target}" "${_path}")"
   _in="$(find_file_in_path "${_target}" "${_path}")"
   debug "validating ${_in}"
@@ -486,7 +465,7 @@ function expand_filelevel_inheritances() {
       local i
       while IFS= read -r i; do
         local _next _c _parent
-        _parent="$(expand_inheritances "${i}" "${_validation_mode}" "${_path}")"
+        _parent="$(expand_inheritances "$(_normalize_nodeentry "${i}" "${_path}")" "${_validation_mode}" "${_path}")"
         _c="$(_merge_object_nodes "${_parent}" "${_cur}")"
         # Cannot check the exit code directly because of command substitution
         # shellcheck disable=SC2181
@@ -500,7 +479,7 @@ function expand_filelevel_inheritances() {
   else
     cat "$(find_file_in_path "${_cur}" "${_path}")"
   fi
-  perf "end"
+  perf "end:${_target}"
 }
 
 function materialize_private_nodes() {
@@ -557,31 +536,47 @@ function _validate_jf_json_with() {
   _validate_json "${1}" "${_JF_SCHEMA_DIR}/${2}.json"
 }
 
+function _normalize_nodeentry() {
+  local _nodeentry="${1}"
+  local _path="${2}"
+  local _specifier _absfile
+  mapfile -t -d ';' _specifier <<<"${_nodeentry};;"
+  _absfile="$(find_file_in_path "${_specifier[0]}" "${_path}")"
+  echo "${_absfile};${_specifier[1]};${_specifier[2]}"
+}
+
+
 function expand_inheritances() {
-  local _filename="${1}" _validation_mode="${2}" _jf_path="${3}"
-  local _caching_filename
-  perf "begin: ${_filename}"
-  _check_cyclic_dependency "${_filename}" inheritance
-  _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_filename}")"
+  local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
+  local _caching_filename _norm_nodeentry
+  perf "begin: ${_nodeentry}"
+  _norm_nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
+  _check_cyclic_dependency "${_norm_nodeentry}" inheritance
+  _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_norm_nodeentry}")"
   [[ -e "${_caching_filename}" ]] || {
-    perf "cache miss: expanding inheritances for file: '${_filename}'"
-    _expand_inheritances "${_filename}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
+    perf "cache miss: expanding inheritances for file: '${_norm_nodeentry}'"
+    _expand_inheritances "${_norm_nodeentry}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
   }
   cat "${_caching_filename}"
-  _unmark_as_in_progress "${_filename}" inheritance
-  perf "end: ${_filename} (cached in ${_caching_filename})"
+  _unmark_as_in_progress "${_norm_nodeentry}" inheritance
+  perf "end: ${_nodeentry} (cached in ${_caching_filename})"
 }
 
 function _expand_inheritances() {
-  local _target="${1}" _validation_mode="${2}" _jf_path="${3}"
-  local _content _out
-  perf "begin: ${_target}"
-  _target="$(find_file_in_path "${_target}" "${_jf_path}")"
+  local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
+  local _target _content _jsonized_content _out _absfile
+  local -a _specifier
+  perf "begin: ${_nodeentry}"
+
+  mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
+  _absfile="$(find_file_in_path "${_specifier[0]}" "${_jf_path}")"
+  _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "${_specifier[2]}")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
-  _jf_path="$(dirof "${_target}"):${_jf_path}"
-  _content="$(cat "${_target}")"
+  _target="$(mktemp_with_content "${_jsonized_content}")"
+  _content="${_jsonized_content}"
+  #----
   if ! is_json "${_content}"; then
     abort "Malformed JSON was given:'${_target}'='${_content}'"
   fi
@@ -590,21 +585,21 @@ function _expand_inheritances() {
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
-    _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")" ||
+    _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_target}'"
     _tmp="$(mktemp_with_content "${_c}")"
     _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
       "${_templating}" \
       "${_private_nodes_dir}:${_jf_path}"
-    _expanded="$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:${_jf_path}")" || abort "Failed to expand node level inheritance for file:'${_target}'(3)"
+    _expanded="$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" || abort "Failed to expand node level inheritance for file:'${_target}'(3)"
     _out=$(mktemp_with_content "${_expanded}")
   else
     : # Clear $?
     _out="$(mktemp_with_content "${_content}")"
   fi
   cat "${_out}"
-  perf "end: ${_target}"
+  perf "end: ${_nodeentry}"
 }
 
 function perform_templating() {
