@@ -23,10 +23,11 @@ function mktemp_with_content() {
 function search_file_in() {
   local _target="${1}"
   local _path="${2}"
-  if [[ "${_target}" == "${_JF_PATH_BASE}/"* ]]; then
+  local _path_base="${3:-${_JF_PATH_BASE}}"
+  if [[ "${_target}" == "${_path_base}/"* ]]; then
     local _ret="${_target}"
-    [[ "${_JF_PATH_BASE}" != "" ]] && _ret="${_JF_PATH_BASE}/${_target}"
-    debug "${_target} was found as '${_ret}' under JF_PATH_BASE: '${_JF_PATH_BASE}'"
+    [[ "${_JF_PATH_BASE}" != "" ]] && _ret="${_path_base}/${_target}"
+    debug "${_target} was found as '${_ret}' under path-base: '${_path_base}'"
     echo "${_ret}"
     return 0
   fi
@@ -114,11 +115,16 @@ function is_object() {
   return "${_ret}"
 }
 
-function _validate_json() {
+function validate_json() {
   local _in="${1}" _schema_file="${2}"
   local _out=
   {
+    local _ret
+    debug "validating: '${_in}'"
     _out=$(ajv validate -s "${_schema_file}" -d "${_in}" 2>&1)
+    _ret=$?
+    debug "...validated: '${_out}'"
+    return "${_ret}"
   } || {
     abort "Validation by ajv for '${_in}' was failed:\n${_out}"
   }

@@ -72,6 +72,7 @@ function _expand_nodelevel_inheritances() {
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
+  # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Node-level expansion was failed for node:'${_content}'"
   for i in "${_keys[@]}"; do
     local j _p="${i%.\"\$extends\"}"
@@ -91,10 +92,12 @@ function _expand_nodelevel_inheritances() {
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
+        # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with _nodeentry:'${_jj}'"
       else
         local _expanded_tmp
         _expanded_tmp="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")"
+        # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'"
         _merged_piece_content="${_expanded_tmp}"
       fi
@@ -314,6 +317,7 @@ function export_names_for_script_inheritance() {
 function validate_jf_json() {
   local _in="${1}" _mode="${2}"
   if [[ "${_mode}" == "no" ]]; then
+    debug "validation skipped"
     return 0
   elif [[ "${_mode}" == "strict" ]]; then
     _validate_jf_json_with "${_in}" "strict"
@@ -464,7 +468,7 @@ function _sourced_files_dir() {
 }
 
 function _validate_jf_json_with() {
-  _validate_json "${1}" "${_JF_SCHEMA_DIR}/${2}.json"
+  validate_json "${1}" "${_JF_SCHEMA_DIR}/${2}.json"
 }
 
 function expand_inheritances() {
@@ -496,9 +500,7 @@ function _expand_inheritances() {
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
   _materialized_file="$(mktemp_with_content "${_jsonized_content}")"
-  debug "validating ${_materialized_file}"
   validate_jf_json "${_materialized_file}" "${_validation_mode}"
-  debug "...validated"
   _content="${_jsonized_content}"
   #----
   if ! is_json "${_content}"; then
