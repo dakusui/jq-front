@@ -3,6 +3,13 @@ set -eu
 [[ "${_SHARED_SH:-""}" == "yes" ]] && return 0
 _SHARED_SH=yes
 
+function dirof() {
+  local _target="${1}"
+  local _ret
+  _ret=$(dirname "$(readlink --canonicalize-missing "${_target}")")
+  echo "${_ret}"
+}
+
 function hashcode() {
   local _nodeentry="${1}"
   echo -n "${_nodeentry}" | md5sum | cut -f 1 -d ' '
