@@ -29,6 +29,7 @@ function define_nodeentry_reader() {
 function nodepool_read_nodeentry() {
   local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4:-${_JF_POOL_DIR}}"
   local _cache
+  _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
   _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
   perf "begin: '${_nodeentry}' (cached:'${_cache}')"
   [[ -e "${_cache}" ]] || {
@@ -83,8 +84,8 @@ function _jsonize() {
     # Let the args split. Since it is args.
     # shellcheck disable=SC2086
     debug "argslength=${#_args_array[@]}"
-    _ret="$(${_cmd} . "${_args_array[@]}" "${_absfile}")" \
-          || abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(1)"
+    _ret="$(${_cmd} . "${_args_array[@]}" "${_absfile}")" ||
+      abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(1)"
   else
     if [[ "${_processor}" == SOURCE ]]; then
       # Only number of files matters and it is safe to use ls here.
@@ -94,8 +95,8 @@ function _jsonize() {
     else
       debug "_processor='${_processor}', _absfile='${_absfile}',_args=${_args}"
       export _path
-      _ret="$(${_processor} "${_absfile}" "${_args_array[@]}" | jq .)" \
-            || abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(2)"
+      _ret="$(${_processor} "${_absfile}" "${_args_array[@]}" | jq .)" ||
+        abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(2)"
       unset _path
     fi
   fi
