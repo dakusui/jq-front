@@ -139,7 +139,8 @@ fi
 export_names_for_script_inheritance
 export _JF_POOL_DIR
 export _JF_SCHEMA_DIR
-_JF_POOL_DIR="$(nodepool_prepare _nodepool_expand_inheritances)"
+_JF_POOL_DIR="$(nodepool_prepare)"
 _JF_SCHEMA_DIR="${_JF_BASEDIR}/schema"
+define_nodeentry_reader "expand_inheritances" "${_JF_POOL_DIR}"
 
 main "${@}"
