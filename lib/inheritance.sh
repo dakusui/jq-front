@@ -119,11 +119,11 @@ function _expand_nodelevel_inheritances() {
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece _next_piece
-        _cur_piece="$(jq "${_p}" "${_cur}")"
+        _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with _nodeentry:'${_jj}'"
+        [[ $? == 0 ]] || abort "Failed to merge node:'${_cur_content}' with _nodeentry:'${_jj}'"
       else
         local _expanded_tmp
         _expanded_tmp="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
@@ -133,7 +133,7 @@ function _expand_nodelevel_inheritances() {
       fi
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
       _cur=$(mktemp_with_content "${_tmp_content}") ||
-        abort "Failure detected during creation of a temporary file for file:'${_cur}'"
+        abort "Failure detected during creation of a temporary file for node:'${_tmp_content}'"
     done
   done
   perf "end"
