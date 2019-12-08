@@ -16,12 +16,11 @@ function expand_inheritances() {
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
   validate_jf_json "${_jsonized_content}" "${_validation_mode}"
   if is_object "${_jsonized_content}"; then
-    local _tmp _local_nodes_dir _c _expanded _materialized_file
-    _materialized_file="$(mktemp_with_content "${_jsonized_content}")"
+    local _tmp _local_nodes_dir _c _expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
-    _c="$(expand_filelevel_inheritances "${_materialized_file}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
+    _c="$(expand_filelevel_inheritances "${_jsonized_content}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_nodeentry}'"
     _tmp="$(mktemp_with_content "${_c}")"
     _local_nodes_dir=$(materialize_local_nodes "${_tmp}")
@@ -40,18 +39,18 @@ function expand_inheritances() {
 }
 
 function expand_filelevel_inheritances() {
-  local _materialized_file="${1}" _validation_mode="${2}" _path="${3}"
+  local _materialized_content="${1}" _validation_mode="${2}" _path="${3}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
-  local _in _cur _content
-  perf "begin:${_materialized_file}"
-  _content="$(cat "${_materialized_file}")"
-  _cur="${_content}"
-  if is_object "${_content}"; then
+  local _in _cur
+  perf "begin"
+  debug "content='${_materialized_content}'"
+  _cur="${_materialized_content}"
+  if is_object "${_materialized_content}"; then
     # shellcheck disable=SC2016
     # this is intentionally suppressing expansion to pass the value to jq.
-    if has_value_at '."$extends"' "${_content}"; then
+    if has_value_at '."$extends"' "${_materialized_content}"; then
       local i
       while IFS= read -r i; do
         local _c _parent
@@ -61,22 +60,21 @@ function expand_filelevel_inheritances() {
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
         _cur="${_c}"
-      done <<<"$(value_at '."$extends"[]' "${_content}")"
+      done <<<"$(value_at '."$extends"[]' "${_materialized_content}")"
     fi
     echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
   else
     message "WARN: array expansion is not yet implemented."
-    echo "${_content}"
+    echo "${_materialized_content}"
   fi
-  perf "end:${_materialized_file}"
+  perf "end"
 }
 
 function expand_inheritances_for_local_nodes() {
   local _local_nodes_dir="${1}" _jf_path="${2}"
   debug "begin: _local_nodes_dir=${_local_nodes_dir}"
   while IFS= read -r -d '' i; do
-    local _tmp
-    local _f="${i}"
+    local _tmp _f="${i}"
     debug "expanding inheritance of a local node:'${i}'"
     _tmp="$(mktemp_with_content "$(nodepool_read_nodeentry "${_f}" "no" "${_local_nodes_dir}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
@@ -94,7 +92,8 @@ function expand_nodelevel_inheritances() {
     abort "Failed to expand node level inheritance for file:'${_target}'(1)"
   _clean="$(_remove_meta_nodes "${_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
-  _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") || abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
+  _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") ||
+    abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
   echo "${_ret}"
   perf "end"
 }
