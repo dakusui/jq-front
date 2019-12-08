@@ -18,8 +18,7 @@ function _debug_abort() {
 }
 
 function _mangle_path() {
-  local _path="${1}"
-  local _path_base="${2}"
+  local _path="${1}" _path_base="${2}"
   local _ret=""
   if [[ -z "${_path_base}" ]]; then
     echo "${_path}"
@@ -65,8 +64,7 @@ function _remove_meta_nodes() {
 
 # Latter overrides former
 function _merge_object_nodes() {
-  local _a="${1}"
-  local _b="${2}"
+  local _a="${1}" _b="${2}"
   local _error
   _error=$(mktemp)
   perf "begin"
@@ -108,9 +106,7 @@ function _merge_object_nodes() {
 }
 
 function _expand_nodelevel_inheritances() {
-  local _content="${1}"
-  local _validation_mode="${2}"
-  local _path="${3}"
+  local _content="${1}" _validation_mode="${2}" _path="${3}"
   local _cur _in i
   local -a _keys
   perf "begin"
@@ -157,9 +153,7 @@ function _expand_nodelevel_inheritances() {
 }
 
 function validate_file_in_path() {
-  local _in="${1}"
-  local _mode="${2}"
-  local _path="${3}"
+  local _in="${1}" _mode="${2}" _path="${3}"
   debug "${FUNCNAME[0]}: validating ${_in}"
   validate_jf_json "${_in}" "${_validation_mode}"
   debug "${FUNCNAME[0]}: ...validated"
@@ -349,8 +343,7 @@ function _starts_with_templating_keyword() {
 }
 
 function find_file_in_path() {
-  local _target="${1}"
-  local _path="${2}"
+  local _target="${1}" _path="${2}"
   IFS=';' read -r -a _arr <<<"${_target}"
   if [[ ${#_arr[@]} -le 1 ]]; then
     local _file
@@ -406,8 +399,7 @@ function export_names_for_script_inheritance() {
 }
 
 function validate_jf_json() {
-  local _in="${1}"
-  local _mode="${2}"
+  local _in="${1}" _mode="${2}"
   if [[ "${_mode}" == "no" ]]; then
     return 0
   elif [[ "${_mode}" == "strict" ]]; then
@@ -428,24 +420,21 @@ function dirof() {
 }
 
 function _encode_filename() {
-  local _filename="${1}"
-  local _dependency_space="${2}"
+  local _filename="${1}" _dependency_space="${2}"
   local _ret
   _ret="${_JF_SESSION_DIR}/${_dependency_space}-$(hashcode "${_filename}").txt"
   echo "${_ret}"
 }
 
 function _mark_as_in_progress() {
-  local _filename="${1}"
-  local _dependency_space="${2}"
+  local _filename="${1}" _dependency_space="${2}"
   local _encoded_filename
   _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
   touch "${_encoded_filename}"
 }
 
 function _unmark_as_in_progress() {
-  local _filename="${1}"
-  local _dependency_space="${2}"
+  local _filename="${1}" _dependency_space="${2}"
   local _encoded_filename
   debug "check: unmark: '${_filename}'"
   _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
@@ -455,8 +444,7 @@ function _unmark_as_in_progress() {
 }
 
 function _is_in_progress() {
-  local _filename="${1}"
-  local _dependency_space="${2}"
+  local _filename="${1}" _dependency_space="${2}"
   local _encoded_filename
   _encoded_filename="$(_encode_filename "${_filename}" "${_dependency_space}")"
   if [[ -e "${_encoded_filename}" ]]; then
@@ -468,8 +456,7 @@ function _is_in_progress() {
 }
 
 function _check_cyclic_dependency() {
-  local _in="${1}"
-  local _dependency_space="${2}"
+  local _in="${1}" _dependency_space="${2}"
   if _is_in_progress "${_in}" inheritance; then
     abort "Cyclic ${_dependency_space} was detected on:'${_in}'"
   else
@@ -479,9 +466,7 @@ function _check_cyclic_dependency() {
 }
 
 function expand_filelevel_inheritances() {
-  local _target="${1}"
-  local _validation_mode="${2}"
-  local _path="${3}"
+  local _target="${1}" _validation_mode="${2}" _path="${3}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
@@ -537,9 +522,7 @@ function materialize_private_nodes() {
 }
 
 function expand_nodelevel_inheritances() {
-  local _target="${1}"
-  local _validation_mode="${2}"
-  local _path="${3}"
+  local _target="${1}" _validation_mode="${2}" _path="${3}"
   local _expanded _expanded_clean _clean _content _ret
   perf "begin:_target=${_target}"
   _content="$(cat "${_target}")"
@@ -553,9 +536,7 @@ function expand_nodelevel_inheritances() {
 }
 
 function expand_inheritances_of_private_nodes() {
-  local _path="${1}"
-  local _templating="${2}"
-  local _jf_path="${3}"
+  local _path="${1}" _templating="${2}" _jf_path="${3}"
   debug "begin: expand_inheritances_of_private_nodes in ${_path}"
   while IFS= read -r -d '' i; do
     local _tmp
@@ -577,9 +558,7 @@ function _validate_jf_json_with() {
 }
 
 function expand_inheritances() {
-  local _filename="${1}"
-  local _validation_mode="${2}"
-  local _jf_path="${3}"
+  local _filename="${1}" _validation_mode="${2}" _jf_path="${3}"
   local _caching_filename
   perf "begin: ${_filename}"
   _check_cyclic_dependency "${_filename}" inheritance
@@ -594,9 +573,7 @@ function expand_inheritances() {
 }
 
 function _expand_inheritances() {
-  local _target="${1}"
-  local _validation_mode="${2}"
-  local _jf_path="${3}"
+  local _target="${1}" _validation_mode="${2}" _jf_path="${3}"
   local _content _out
   perf "begin: ${_target}"
   _target="$(find_file_in_path "${_target}" "${_jf_path}")"
@@ -631,9 +608,9 @@ function _expand_inheritances() {
 }
 
 function perform_templating() {
-  perf "begin"
   local _src_file="${1}"
   local _content _ret
+  perf "begin"
   # define builtin functions such as "ref", "self"
   _define_builtin_functions
   # source files, for which SOURCE directive is specified
@@ -643,10 +620,7 @@ function perform_templating() {
 }
 
 function perform_jqfront() {
-  local _target="${1}"
-  local _templating="${2}"
-  local _validation_mode="${3}"
-  local _jf_path="${4}"
+  local _target="${1}" _templating="${2}" _validation_mode="${3}" _jf_path="${4}"
   local _content
   perf "begin"
   mkdir -p "$(_sourced_files_dir)"
