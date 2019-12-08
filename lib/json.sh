@@ -49,14 +49,14 @@ import "shared" as shared;
 }
 
 function validate_jf_json() {
-  local _in="${1}" _mode="${2}"
+  local _content="${1}" _mode="${2}"
   if [[ "${_mode}" == "no" ]]; then
     debug "validation skipped"
     return 0
   elif [[ "${_mode}" == "strict" ]]; then
-    _validate_jf_json_with "${_in}" "strict"
+    _validate_jf_json_with "$(mktemp_with_content "${_content}")" "strict"
   elif [[ "${_mode}" == "lenient" ]]; then
-    _validate_jf_json_with "${_in}" "lenient"
+    _validate_jf_json_with "$(mktemp_with_content "${_content}")" "lenient"
   else
     abort "Unknown validation mode:'${_mode}' was set."
   fi
