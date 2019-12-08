@@ -4,18 +4,13 @@ _INHERITANCE_SH=yes
 
 function expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
-  local _caching_filename _norm_nodeentry
+  local _norm_nodeentry
   perf "begin: ${_nodeentry}"
   _norm_nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
   _check_cyclic_dependency "${_norm_nodeentry}" inheritance
-  _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_norm_nodeentry}")"
-  [[ -e "${_caching_filename}" ]] || {
-    perf "cache miss: expanding inheritances for nodeentry: '${_norm_nodeentry}'"
-    _expand_inheritances "${_norm_nodeentry}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
-  }
-  cat "${_caching_filename}"
+  _expand_inheritances "${_norm_nodeentry}" "${_validation_mode}" "${_jf_path}"
   _unmark_as_in_progress "${_norm_nodeentry}" inheritance
-  perf "end: ${_nodeentry} (cached in ${_caching_filename})"
+  perf "end: ${_nodeentry}"
 }
 
 function _expand_inheritances() {
@@ -73,7 +68,7 @@ function expand_filelevel_inheritances() {
       local i
       while IFS= read -r i; do
         local _c _parent
-        _parent="$(expand_inheritances "$(_normalize_nodeentry "${i}" "${_path}")" "${_validation_mode}" "${_path}")"
+        _parent="$(nodepool_read_nodeentry "$(_normalize_nodeentry "${i}" "${_path}")" "${_validation_mode}" "${_path}")"
         _c="$(_merge_object_nodes "${_parent}" "${_cur}")"
         # Cannot check the exit code directly because of command substitution
         # shellcheck disable=SC2181
@@ -144,13 +139,13 @@ function _expand_nodelevel_inheritances() {
       if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece _next_piece
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
-        _next_piece="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")"
+        _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with _nodeentry:'${_jj}'"
       else
         local _expanded_tmp
-        _expanded_tmp="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")"
+        _expanded_tmp="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'"
         _merged_piece_content="${_expanded_tmp}"
