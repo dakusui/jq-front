@@ -425,10 +425,10 @@ function expand_filelevel_inheritances() {
   perf "end:${_target}"
 }
 
-function materialize_private_nodes() {
+function materialize_local_nodes() {
   local _target="${1}"
   local _content _ret
-  debug "begin:materialize_private_nodes"
+  debug "begin"
   _content="$(cat "${_target}")"
   _ret="$(mktemp -d)"
   # Intentional single quotes for jq.
@@ -440,7 +440,7 @@ function materialize_private_nodes() {
     done
   fi
   echo "${_ret}"
-  debug "end:materialize_private_nodes"
+  debug "end"
 }
 
 function expand_nodelevel_inheritances() {
@@ -457,18 +457,18 @@ function expand_nodelevel_inheritances() {
   perf "end"
 }
 
-function expand_inheritances_of_private_nodes() {
+function expand_inheritances_of_local_nodes() {
   local _path="${1}" _templating="${2}" _jf_path="${3}"
-  debug "begin: expand_inheritances_of_private_nodes in ${_path}"
+  debug "begin: _path=${_path}"
   while IFS= read -r -d '' i; do
     local _tmp
     local _f="${i}"
-    debug "expanding inheritance of private node:${i}"
+    debug "expanding inheritance of a local node:'${i}'"
     _tmp="$(mktemp_with_content "$(expand_inheritances "${_f}" "no" "${_path}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
   done < <(find "${_path}" -maxdepth 1 -type f -print0)
-  debug "end:   expand_inheritances_of_private_nodes"
+  debug "end"
 }
 
 function _sourced_files_dir() {
@@ -517,20 +517,20 @@ function _expand_inheritances() {
     abort "Malformed JSON was given:'${_target}'='${_content}'"
   fi
   if is_object "${_content}"; then
-    local _tmp _private_nodes_dir _c _expanded
+    local _tmp _local_nodes_dir _c _expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
     _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_nodeentry}'"
     _tmp="$(mktemp_with_content "${_c}")"
-    _private_nodes_dir=$(materialize_private_nodes "${_tmp}")
-    expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
+    _local_nodes_dir=$(materialize_local_nodes "${_tmp}")
+    expand_inheritances_of_local_nodes "${_local_nodes_dir}" \
       "${_templating}" \
-      "${_private_nodes_dir}:${_jf_path}"
+      "${_local_nodes_dir}:${_jf_path}"
     _expanded="$(expand_nodelevel_inheritances "${_tmp}" \
       "${_validation_mode}" \
-      "${_private_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
+      "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "Failed to expand node level inheritance for '${_nodeentry}'(3)"
     _out=$(mktemp_with_content "${_expanded}")
   else
