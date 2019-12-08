@@ -289,25 +289,13 @@ function _starts_with_templating_keyword() {
   return 1
 }
 
-function find_file_in_path_for_nodeentry() {
-  local _specstring="${1}" _path="${2}"
-  IFS=';' read -r -a _arr <<<"${_specstring}"
-  local _file
-  if [[ ${#_arr[@]} -le 1 ]]; then
-    _file="$(search_file_in "${_specstring}" "${_path}")"
-  else
-    _file="$(search_file_in "${_arr[0]}" "${_path}")" || abort "Script file ${_arr[1]} was not found in '${_path}'"
-  fi
-  echo "${_file}"
-}
-
 ####
 #
 # Function intended to be used on 'script inheritance'.
 # Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
 # In case it is not found, 1 will be returned.
 #
-# This function is indirectly called by 'find_file_in_path_for_nodeentry' through a command line it constructs
+# This function is indirectly called by 'jsonize' function through a command line it constructs
 #
 function find_file() {
   local _target="${1}"
@@ -391,13 +379,13 @@ function _check_cyclic_dependency() {
 }
 
 function expand_filelevel_inheritances() {
-  local _target="${1}" _validation_mode="${2}" _path="${3}"
+  local _materialized_file="${1}" _validation_mode="${2}" _path="${3}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
   local _in _cur _content
-  perf "begin:${_target}"
-  _in="$(find_file_in_path_for_nodeentry "${_target}" "${_path}")"
+  perf "begin:${_materialized_file}"
+  _in="${_materialized_file}"
   _content="$(cat "${_in}")"
   _cur="${_content}"
   if is_object "${_content}"; then
@@ -419,9 +407,10 @@ function expand_filelevel_inheritances() {
     _cur_tmpfile="$(mktemp_with_content "${_cur}")"
     jq -r -c '.|del(.["$extends"])' "${_cur_tmpfile}"
   else
-    cat "$(find_file_in_path_for_nodeentry "${_cur}" "${_path}")"
+    message "WARN: array expansion is not yet implemented."
+    echo "${_content}"
   fi
-  perf "end:${_target}"
+  perf "end:${_materialized_file}"
 }
 
 function materialize_local_nodes() {
@@ -496,31 +485,31 @@ function expand_inheritances() {
 
 function _expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
-  local _target _content _jsonized_content _out _absfile
+  local _materialized_file _content _jsonized_content _out _absfile
   local -a _specifier
   perf "begin: ${_nodeentry}"
 
   mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
-  _absfile="$(find_file_in_path_for_nodeentry "${_specifier[0]}" "${_jf_path}")"
+  _absfile="$(search_file_in "${_specifier[0]}" "${_jf_path}")"
   _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
-  _target="$(mktemp_with_content "${_jsonized_content}")"
-  debug "validating ${_target}"
-  validate_jf_json "${_target}" "${_validation_mode}"
+  _materialized_file="$(mktemp_with_content "${_jsonized_content}")"
+  debug "validating ${_materialized_file}"
+  validate_jf_json "${_materialized_file}" "${_validation_mode}"
   debug "...validated"
   _content="${_jsonized_content}"
   #----
   if ! is_json "${_content}"; then
-    abort "Malformed JSON was given:'${_target}'='${_content}'"
+    abort "Malformed JSON was given:'${_nodeentry}': _materialized_file='${_materialized_file}', _content='${_content}'"
   fi
   if is_object "${_content}"; then
     local _tmp _local_nodes_dir _c _expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
-    _c="$(expand_filelevel_inheritances "${_target}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
+    _c="$(expand_filelevel_inheritances "${_materialized_file}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_nodeentry}'"
     _tmp="$(mktemp_with_content "${_c}")"
     _local_nodes_dir=$(materialize_local_nodes "${_tmp}")
