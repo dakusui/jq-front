@@ -46,8 +46,7 @@ function _expand_inheritances() {
       abort "File-level expansion failed for '${_nodeentry}'"
     _tmp="$(mktemp_with_content "${_c}")"
     _local_nodes_dir=$(materialize_local_nodes "${_tmp}")
-    expand_inheritances_of_local_nodes "${_local_nodes_dir}" \
-      "${_local_nodes_dir}:${_jf_path}"
+    expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
     _expanded="$(expand_nodelevel_inheritances "${_tmp}" \
       "${_validation_mode}" \
       "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
@@ -96,17 +95,17 @@ function expand_filelevel_inheritances() {
   perf "end:${_materialized_file}"
 }
 
-function expand_inheritances_of_local_nodes() {
-  local _path="${1}" _jf_path="${2}"
-  debug "begin: _path=${_path}"
+function expand_inheritances_for_local_nodes() {
+  local _local_nodes_dir="${1}" _jf_path="${2}"
+  debug "begin: _local_nodes_dir=${_local_nodes_dir}"
   while IFS= read -r -d '' i; do
     local _tmp
     local _f="${i}"
     debug "expanding inheritance of a local node:'${i}'"
-    _tmp="$(mktemp_with_content "$(expand_inheritances "${_f}" "no" "${_path}:${_jf_path}")")"
+    _tmp="$(mktemp_with_content "$(expand_inheritances "${_f}" "no" "${_local_nodes_dir}:${_jf_path}")")"
     cp "${_tmp}" "${_f}"
     debug "...expanded"
-  done < <(find "${_path}" -maxdepth 1 -type f -print0)
+  done < <(find "${_local_nodes_dir}" -maxdepth 1 -type f -print0)
   debug "end"
 }
 
