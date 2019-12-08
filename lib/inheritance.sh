@@ -142,17 +142,18 @@ function _expand_nodelevel_inheritances() {
 
 function materialize_local_nodes() {
   local _content="${1}"
-  local _ret
+  local _ret _i
   debug "begin"
   _ret="$(mktemp -d)"
-  # Intentional single quotes for jq.
-  # shellcheck disable=SC2016
-  if has_value_at '."$local"' "${_content}"; then
-    # shellcheck disable=SC2016
-    for i in $(keys_of '."$local"' "${_content}"); do
-      echo "${_content}" | jq '."$local".''"'"${i}"'"' >"${_ret}/${i}"
-    done
-  fi
+  for _i in $(echo "${_content}" | jq -r -c '."$local"
+    |. as $local
+    |keys[]
+    |. as $k
+    |$local|getpath([$k])
+           |. as $v
+           |[$k, $v]'); do
+    echo "${_i}" | jq -c '.[1]' >"${_ret}/$(echo "${_i}" | jq -r -c '.[0]')"
+  done
   echo "${_ret}"
   debug "end"
 }
