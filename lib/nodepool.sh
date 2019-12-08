@@ -17,7 +17,7 @@ function nodepool_prepare() {
 
 function define_nodeentry_reader() {
   local _driver_funcname="${1}" _pooldir="${2}"
-  _NODEPOOL_SH_DRIVER_FUNCNAME="${_driver_funcname}"
+  readonly _NODEPOOL_SH_DRIVER_FUNCNAME="${_driver_funcname}"
   export _NODEPOOL_SH_DRIVER_FUNCNAME
   function read_nodeentry() {
     local _nodeentry="${1}" _validation_mode="${2}" _path="${3}"
