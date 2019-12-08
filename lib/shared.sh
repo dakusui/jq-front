@@ -20,6 +20,12 @@ function mktemp_with_content() {
   echo "${_ret}"
 }
 
+function join_by() {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
+
 function mktempdir() {
   mktemp -d
 }

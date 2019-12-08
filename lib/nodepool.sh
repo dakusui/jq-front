@@ -36,6 +36,15 @@ function _define_nodeentry_reader() {
   }
 }
 
+function _normalize_nodeentry() {
+  local _nodeentry="${1}"
+  local _path="${2}"
+  local _specifier _absfile
+  mapfile -t -d ';' _specifier <<<"${_nodeentry};;"
+  _absfile="$(find_file_in_path "${_specifier[0]}" "${_path}")"
+  echo "${_absfile};${_specifier[1]};$(join_by ';' "${_specifier[@]:2}")"
+}
+
 function _locate_file() {
   local _file="${1}" _path="${2}"
   _search_file_in "${_file}" "${_path}"
@@ -92,34 +101,42 @@ function _nodepool_expand_inheritances() {
 function read_json_from_nodeentry() {
   local _nodeentry="${1}"
   local -a _specifier
-  mapfile -t -d ';' _specifier <<<"$(jsonize "${_nodeentry};;")"
-  jsonize "${_specifier[0]}" "${_specifier[1]}" "${_specifier[2]}"
+  mapfile -t -d ';' _specifier <<<"${_nodeentry};;"
+  jsonize "${_specifier[0]}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")"
 }
 
 function jsonize() {
-  local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
+  local _absfile="${1}" _processor="${2:-""}" _args="${3}"
   local _ret
   debug "in: '${_absfile}' '${_processor}' '${_args}'"
+  local -a _args_array
+  mapfile -t _args_array <<<"$(IFS=';' && echo "${_args}" | tr ';' $'\n' | grep -v -E '^$')"
+  [[ "${#_args_array[@]}" == 1 && "${_args_array[0]}" == "" ]] && _args_array=()
   if [[ ${_processor} == "" ]]; then
     local _cmd="jq"
     if [[ "${_absfile}" == *.yaml || "${_absfile}" == *.yml ]]; then
       _cmd="yq"
     fi
-    # Let the args split. Since it's args.
+    # Let the args split. Since it is args.
     # shellcheck disable=SC2086
-    _ret="$(${_cmd} . ${_args} "${_absfile}")"
+    debug "argslength=${#_args_array[@]}"
+    _ret="$(${_cmd} . "${_args_array[@]}" "${_absfile}")" || abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]})"
   else
     if [[ "${_processor}" == SOURCE ]]; then
-      # Only number of files matters and it's safe to use ls here.
+      # Only number of files matters and it is safe to use ls here.
       # shellcheck disable=SC2012
       cp "${_absfile}" "$(_sourced_files_dir)/$(ls "$(_sourced_files_dir)" | wc -l)"
       _ret="{}"
     else
+      debug "_processor='${_processor}'"
+      debug "_absfile='${_absfile}'"
+      debug "_args=${_args}"
+
       export _path
-      _ret="$(${_processor} "${_absfile}" ${_args} | jq .)"
+      _ret="$(${_processor} "${_absfile}" "${_args_array[@]}" | jq .)"
       unset _path
     fi
   fi
-  debug "output: '${_ret}'"
+  debug "output: ${_ret}"
   echo "${_ret}"
 }

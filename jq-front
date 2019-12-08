@@ -110,7 +110,7 @@ function _expand_nodelevel_inheritances() {
   local _cur _in i
   local -a _keys
   perf "begin"
-  debug "target='${_content}'"
+  debug "_content='${_content}'"
   _cur=$(mktemp_with_content '{}')
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
@@ -122,9 +122,10 @@ function _expand_nodelevel_inheritances() {
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for j in "${_extendeds[@]}"; do
       local _jj _cur_content _tmp_content _original_filename
+      debug "processing nodeentry: '${j}'"
       _jj="$(_normalize_nodeentry "${j}" "${_path}")" || abort "Failed to locate file '${j}'"
       local _next_content
-      _next_content="$(read_json_from_nodeentry "${_jj%%;*}")"
+      _next_content="$(read_json_from_nodeentry "${_jj}")"
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
       local _merged_piece_content
@@ -530,15 +531,6 @@ function _validate_jf_json_with() {
   _validate_json "${1}" "${_JF_SCHEMA_DIR}/${2}.json"
 }
 
-function _normalize_nodeentry() {
-  local _nodeentry="${1}"
-  local _path="${2}"
-  local _specifier _absfile
-  mapfile -t -d ';' _specifier <<<"${_nodeentry};;"
-  _absfile="$(find_file_in_path "${_specifier[0]}" "${_path}")"
-  echo "${_absfile};${_specifier[1]};${_specifier[2]}"
-}
-
 function expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
   local _caching_filename _norm_nodeentry
@@ -547,7 +539,7 @@ function expand_inheritances() {
   _check_cyclic_dependency "${_norm_nodeentry}" inheritance
   _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_norm_nodeentry}")"
   [[ -e "${_caching_filename}" ]] || {
-    perf "cache miss: expanding inheritances for file: '${_norm_nodeentry}'"
+    perf "cache miss: expanding inheritances for nodeentry: '${_norm_nodeentry}'"
     _expand_inheritances "${_norm_nodeentry}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
   }
   cat "${_caching_filename}"
@@ -563,7 +555,7 @@ function _expand_inheritances() {
 
   mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
   _absfile="$(find_file_in_path "${_specifier[0]}" "${_jf_path}")"
-  _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "${_specifier[2]}")"
+  _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
