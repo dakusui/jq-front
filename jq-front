@@ -458,7 +458,7 @@ function expand_nodelevel_inheritances() {
 }
 
 function expand_inheritances_of_local_nodes() {
-  local _path="${1}" _templating="${2}" _jf_path="${3}"
+  local _path="${1}" _jf_path="${2}"
   debug "begin: _path=${_path}"
   while IFS= read -r -d '' i; do
     local _tmp
@@ -526,7 +526,6 @@ function _expand_inheritances() {
     _tmp="$(mktemp_with_content "${_c}")"
     _local_nodes_dir=$(materialize_local_nodes "${_tmp}")
     expand_inheritances_of_local_nodes "${_local_nodes_dir}" \
-      "${_templating}" \
       "${_local_nodes_dir}:${_jf_path}"
     _expanded="$(expand_nodelevel_inheritances "${_tmp}" \
       "${_validation_mode}" \
