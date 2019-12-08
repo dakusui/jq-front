@@ -289,13 +289,13 @@ function _starts_with_templating_keyword() {
   return 1
 }
 
-function find_file_in_path() {
+function find_file_in_path_for_nodeentry() {
   local _specstring="${1}" _path="${2}"
   IFS=';' read -r -a _arr <<<"${_specstring}"
   local _file
   if [[ ${#_arr[@]} -le 1 ]]; then
     _file="$(search_file_in "${_specstring}" "${_path}")"
-  elif [[ ${#_arr[@]} -gt 1 ]]; then
+  else
     _file="$(search_file_in "${_arr[0]}" "${_path}")" || abort "Script file ${_arr[1]} was not found in '${_path}'"
   fi
   echo "${_file}"
@@ -307,7 +307,7 @@ function find_file_in_path() {
 # Search for a file from an environment variable "_JF_PATH" and prints an absolute path of it if found.
 # In case it is not found, 1 will be returned.
 #
-# This function is indirectly called by 'find_file_in_path' through a command line it constructs
+# This function is indirectly called by 'find_file_in_path_for_nodeentry' through a command line it constructs
 #
 function find_file() {
   local _target="${1}"
@@ -397,7 +397,7 @@ function expand_filelevel_inheritances() {
   # shellcheck disable=SC2016
   local _in _cur _content
   perf "begin:${_target}"
-  _in="$(find_file_in_path "${_target}" "${_path}")"
+  _in="$(find_file_in_path_for_nodeentry "${_target}" "${_path}")"
   _content="$(cat "${_in}")"
   _cur="${_content}"
   if is_object "${_content}"; then
@@ -419,7 +419,7 @@ function expand_filelevel_inheritances() {
     _cur_tmpfile="$(mktemp_with_content "${_cur}")"
     jq -r -c '.|del(.["$extends"])' "${_cur_tmpfile}"
   else
-    cat "$(find_file_in_path "${_cur}" "${_path}")"
+    cat "$(find_file_in_path_for_nodeentry "${_cur}" "${_path}")"
   fi
   perf "end:${_target}"
 }
@@ -501,7 +501,7 @@ function _expand_inheritances() {
   perf "begin: ${_nodeentry}"
 
   mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
-  _absfile="$(find_file_in_path "${_specifier[0]}" "${_jf_path}")"
+  _absfile="$(find_file_in_path_for_nodeentry "${_specifier[0]}" "${_jf_path}")"
   _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181

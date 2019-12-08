@@ -41,7 +41,7 @@ function _normalize_nodeentry() {
   local _path="${2}"
   local _specifier _absfile
   mapfile -t -d ';' _specifier <<<"${_nodeentry};;"
-  _absfile="$(find_file_in_path "${_specifier[0]}" "${_path}")"
+  _absfile="$(search_file_in "${_specifier[0]}" "${_path}")"
   echo "${_absfile};${_specifier[1]};$(join_by ';' "${_specifier[@]:2}")"
 }
 
