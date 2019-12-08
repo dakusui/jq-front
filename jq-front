@@ -107,14 +107,6 @@ function _expand_nodelevel_inheritances() {
   jq -r -c . "${_cur}"
 }
 
-function validate_file_in_path() {
-  local _in="${1}" _mode="${2}" _path="${3}"
-  debug "${FUNCNAME[0]}: validating ${_in}"
-  validate_jf_json "${_in}" "${_validation_mode}"
-  debug "${FUNCNAME[0]}: ...validated"
-  echo "${_in}"
-}
-
 function _source_files() {
   local _i _files
   # We know that there is no alphanumerically named files under $(_source_files_dir)
