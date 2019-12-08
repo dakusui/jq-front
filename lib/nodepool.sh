@@ -29,15 +29,17 @@ function define_nodeentry_reader() {
 function nodepool_read_nodeentry() {
   local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4:-${_JF_POOL_DIR}}"
   local _cache
+  perf "begin: '${_nodeentry}'"
   _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
   _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
-  perf "begin: '${_nodeentry}' (cached:'${_cache}')"
+  _check_cyclic_dependency "${_nodeentry}" inheritance
   [[ -e "${_cache}" ]] || {
     perf "Cache miss for node entry: '${_nodeentry}'"
     read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" >"${_cache}"
   }
   cat "${_cache}"
-  perf "end: '${_nodeentry}' (cached:'${_cache}')"
+  _unmark_as_in_progress "${_nodeentry}" inheritance
+  perf "end: '${_nodeentry}' (cached by:'${_cache}')"
 }
 
 function _normalize_nodeentry() {

@@ -3,14 +3,10 @@ set -eu
 _INHERITANCE_SH=yes
 
 function expand_inheritances() {
-  local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
-  local _norm_nodeentry
-  perf "begin: ${_nodeentry}"
-  _norm_nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
-  _check_cyclic_dependency "${_norm_nodeentry}" inheritance
+  local _norm_nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
+  perf "begin: ${_norm_nodeentry}"
   _expand_inheritances "${_norm_nodeentry}" "${_validation_mode}" "${_jf_path}"
-  _unmark_as_in_progress "${_norm_nodeentry}" inheritance
-  perf "end: ${_nodeentry}"
+  perf "end: ${_norm_nodeentry}"
 }
 
 function _expand_inheritances() {
