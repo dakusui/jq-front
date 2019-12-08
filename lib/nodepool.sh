@@ -106,7 +106,15 @@ function read_json_from_nodeentry() {
 }
 
 function jsonize() {
-  local _absfile="${1}" _processor="${2:-""}" _args="${3}"
+  local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
+  local _ret
+  _ret="$(_jsonize "${_absfile}" "${_processor}" "${_args}")" ||
+    abort "Malformed JSON was given:'${_absfile}'(processor=${_processor}, args=${_args})"
+  echo "${_ret}"
+}
+
+function _jsonize() {
+  local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
   local _ret
   debug "in: '${_absfile}' '${_processor}' '${_args}'"
   local -a _args_array
@@ -120,7 +128,8 @@ function jsonize() {
     # Let the args split. Since it is args.
     # shellcheck disable=SC2086
     debug "argslength=${#_args_array[@]}"
-    _ret="$(${_cmd} . "${_args_array[@]}" "${_absfile}")" || abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]})"
+    _ret="$(${_cmd} . "${_args_array[@]}" "${_absfile}")" \
+          || abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(1)"
   else
     if [[ "${_processor}" == SOURCE ]]; then
       # Only number of files matters and it is safe to use ls here.
@@ -128,12 +137,10 @@ function jsonize() {
       cp "${_absfile}" "$(_sourced_files_dir)/$(ls "$(_sourced_files_dir)" | wc -l)"
       _ret="{}"
     else
-      debug "_processor='${_processor}'"
-      debug "_absfile='${_absfile}'"
-      debug "_args=${_args}"
-
+      debug "_processor='${_processor}', _absfile='${_absfile}',_args=${_args}"
       export _path
-      _ret="$(${_processor} "${_absfile}" "${_args_array[@]}" | jq .)"
+      _ret="$(${_processor} "${_absfile}" "${_args_array[@]}" | jq .)" \
+            || abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(2)"
       unset _path
     fi
   fi
