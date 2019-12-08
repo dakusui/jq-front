@@ -145,19 +145,15 @@ function materialize_local_nodes() {
   local _ret _i
   debug "begin"
   _ret="$(mktemp -d)"
-  # Intentional single quotes for reserved words
-  # shellcheck disable=SC2016
-  if has_value_at '."$local"' "${_content}"; then
-    for _i in $(echo "${_content}" | jq -r -c '."$local"
+  for _i in $(echo "${_content}" | jq -r -c '."$local"
     |. as $local
     |keys[]
     |. as $k
     |$local|getpath([$k])
            |. as $v
            |[$k, $v]'); do
-      echo "${_i}" | jq -c '.[1]' >"${_ret}/$(echo "${_i}" | jq -r -c '.[0]')"
-    done
-  fi
+    echo "${_i}" | jq -c '.[1]' >"${_ret}/$(echo "${_i}" | jq -r -c '.[0]')"
+  done
   echo "${_ret}"
   debug "end"
 }
