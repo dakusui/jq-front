@@ -22,10 +22,9 @@ function expand_inheritances() {
     # Explitly check and abotrt this functino.
     _c="$(expand_filelevel_inheritances "${_jsonized_content}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_nodeentry}'"
-    _tmp="$(mktemp_with_content "${_c}")"
-    _local_nodes_dir=$(materialize_local_nodes "${_tmp}")
+    _local_nodes_dir=$(materialize_local_nodes "${_c}")
     expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
-    _expanded="$(expand_nodelevel_inheritances "${_tmp}" \
+    _expanded="$(expand_nodelevel_inheritances "${_c}" \
       "${_validation_mode}" \
       "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "Failed to expand node level inheritance for '${_nodeentry}'(3)"
@@ -43,7 +42,7 @@ function expand_filelevel_inheritances() {
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
-  local _in _cur
+  local _cur
   perf "begin"
   debug "content='${_materialized_content}'"
   _cur="${_materialized_content}"
@@ -84,23 +83,22 @@ function expand_inheritances_for_local_nodes() {
 }
 
 function expand_nodelevel_inheritances() {
-  local _target="${1}" _validation_mode="${2}" _path="${3}"
+  local _materialized_content="${1}" _validation_mode="${2}" _path="${3}"
   local _expanded _expanded_clean _clean _content _ret
-  perf "begin:_target=${_target}"
-  _content="$(cat "${_target}")"
-  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
-    abort "Failed to expand node level inheritance for file:'${_target}'(1)"
-  _clean="$(_remove_meta_nodes "${_content}")"
+  perf "begin"
+  _expanded="$(_expand_nodelevel_inheritances "${_materialized_content}" "${_validation_mode}" "${_path}")" ||
+    abort "Failed to expand node level inheritance for node:'${_materialized_content}'(1)"
+  _clean="$(_remove_meta_nodes "${_materialized_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
   _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") ||
-    abort "Failed to expand node level inheritance for file:'${_target}'(content:'${_content}')(2)"
+    abort "Failed to expand node level inheritance for node:'${_materialized_content}'(2)"
   echo "${_ret}"
   perf "end"
 }
 
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
-  local _cur _in i
+  local _cur i
   local -a _keys
   perf "begin"
   debug "_content='${_content}'"
@@ -143,10 +141,9 @@ function _expand_nodelevel_inheritances() {
 }
 
 function materialize_local_nodes() {
-  local _target="${1}"
-  local _content _ret
+  local _content="${1}"
+  local _ret
   debug "begin"
-  _content="$(cat "${_target}")"
   _ret="$(mktemp -d)"
   # Intentional single quotes for jq.
   # shellcheck disable=SC2016
