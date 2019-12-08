@@ -33,10 +33,6 @@ function _expand_inheritances() {
   _materialized_file="$(mktemp_with_content "${_jsonized_content}")"
   validate_jf_json "${_materialized_file}" "${_validation_mode}"
   _content="${_jsonized_content}"
-  #----
-  if ! is_json "${_content}"; then
-    abort "Malformed JSON was given:'${_nodeentry}': _materialized_file='${_materialized_file}', _content='${_content}'"
-  fi
   if is_object "${_content}"; then
     local _tmp _local_nodes_dir _c _expanded
     ####
@@ -143,9 +139,6 @@ function _expand_nodelevel_inheritances() {
       local _jj _cur_content _tmp_content
       debug "processing nodeentry: '${j}'"
       _jj="$(_normalize_nodeentry "${j}" "${_path}")" || abort "Failed to locate file '${j}'"
-      local _next_content
-      _next_content="$(read_json_from_nodeentry "${_jj}")"
-      is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur_content}"; then
