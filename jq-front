@@ -155,9 +155,10 @@ function _expand_nodelevel_inheritances() {
         _merged_piece_content="${_expanded_tmp}"
         debug "check - 5c"
       fi
-      debug "check - 6"
+      debug "check - 6: ${_cur}"
       _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
-      _cur=$(mktemp_with_content "${_tmp_content}") || abort "TODO(2)"
+      _cur=$(mktemp_with_content "${_tmp_content}") ||
+        abort "Failure detected during creation of a temporary file for file:'${_cur}'"
       debug "check - 7"
     done
   done
@@ -673,14 +674,14 @@ function expand_inheritances() {
   local _jf_path="${3}"
   local _caching_filename
   perf "begin: ${_filename}"
+  _check_cyclic_dependency "${_filename}" inheritance
   _caching_filename="${_JF_POOL_DIR}/$(hashcode "${_filename}")"
   [[ -e "${_caching_filename}" ]] || {
     perf "cache miss: expanding inheritances for file: '${_filename}'"
-    _check_cyclic_dependency "${_filename}" inheritance
     _expand_inheritances "${_filename}" "${_validation_mode}" "${_jf_path}" >"${_caching_filename}"
-    _unmark_as_in_progress "${_filename}" inheritance
   }
   cat "${_caching_filename}"
+  _unmark_as_in_progress "${_filename}" inheritance
   perf "end: ${_filename} (cached in ${_caching_filename})"
 }
 
