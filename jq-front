@@ -117,17 +117,14 @@ function _expand_nodelevel_inheritances() {
   mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
   [[ $? == 0 ]] || abort "Node-level expansion was failed for node:'${_content}'"
   for i in "${_keys[@]}"; do
-    local j
+    local j _p="${i%.\"\$extends\"}"
     local -a _extendeds
-    local _p="${i%.\"\$extends\"}"
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for j in "${_extendeds[@]}"; do
       local _jj _cur_content _tmp_content _original_filename
-      _original_filename="$(search_file_in "${j}" "${_path}")"
-      _jj="$(validate_file_in_path "${_original_filename}" "${_validation_mode}" "${_path}")" ||
-        abort "Failed to locate file '${j}'"
+      _jj="$(_normalize_nodeentry "${j}" "${_path}")" || abort "Failed to locate file '${j}'"
       local _next_content
-      _next_content="$(cat "${_jj}")"
+      _next_content="$(read_json_from_nodeentry "${_jj%%;*}")"
       is_json "${_next_content}" || abort "Malformed JSON was given:'${_jj}'='${_next_content}'"
       _cur_content="$(cat "${_cur}")"
       local _merged_piece_content
@@ -136,7 +133,7 @@ function _expand_nodelevel_inheritances() {
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
-        [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with file:'${_jj}'"
+        [[ $? == 0 ]] || abort "Failed to merge file:'${_cur}' with _nodeentry:'${_jj}'"
       else
         local _expanded_tmp
         _expanded_tmp="$(expand_inheritances "${_jj}" "${_validation_mode}" "${_path}")"
@@ -453,9 +450,6 @@ function expand_filelevel_inheritances() {
   perf "begin:${_target}"
   _original_filename="$(search_file_in "${_target}" "${_path}")"
   _in="$(find_file_in_path "${_target}" "${_path}")"
-  debug "validating ${_in}"
-  validate_jf_json "${_in}" "${_validation_mode}"
-  debug "...validated"
   _content="$(cat "${_in}")"
   _cur="${_content}"
   if is_object "${_content}"; then
@@ -545,7 +539,6 @@ function _normalize_nodeentry() {
   echo "${_absfile};${_specifier[1]};${_specifier[2]}"
 }
 
-
 function expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
   local _caching_filename _norm_nodeentry
@@ -575,6 +568,9 @@ function _expand_inheritances() {
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to find a file '${_target}'."
   _target="$(mktemp_with_content "${_jsonized_content}")"
+  debug "validating ${_target}"
+  validate_jf_json "${_target}" "${_validation_mode}"
+  debug "...validated"
   _content="${_jsonized_content}"
   #----
   if ! is_json "${_content}"; then
@@ -592,7 +588,10 @@ function _expand_inheritances() {
     expand_inheritances_of_private_nodes "${_private_nodes_dir}" \
       "${_templating}" \
       "${_private_nodes_dir}:${_jf_path}"
-    _expanded="$(expand_nodelevel_inheritances "${_tmp}" "${_validation_mode}" "${_private_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" || abort "Failed to expand node level inheritance for file:'${_target}'(3)"
+    _expanded="$(expand_nodelevel_inheritances "${_tmp}" \
+      "${_validation_mode}" \
+      "${_private_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
+      abort "Failed to expand node level inheritance for file:'${_target}'(3)"
     _out=$(mktemp_with_content "${_expanded}")
   else
     : # Clear $?

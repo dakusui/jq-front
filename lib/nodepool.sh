@@ -89,6 +89,13 @@ function _nodepool_expand_inheritances() {
   #----------------------
 }
 
+function read_json_from_nodeentry() {
+  local _nodeentry="${1}"
+  local -a _specifier
+  mapfile -t -d ';' _specifier <<<"$(jsonize "${_nodeentry};;")"
+  jsonize "${_specifier[0]}" "${_specifier[1]}" "${_specifier[2]}"
+}
+
 function jsonize() {
   local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
   local _ret
@@ -109,7 +116,7 @@ function jsonize() {
       _ret="{}"
     else
       export _path
-      _ret="$("${_processor}" "${_absfile}" ${_args} | jq .)"
+      _ret="$(${_processor} "${_absfile}" ${_args} | jq .)"
       unset _path
     fi
   fi
