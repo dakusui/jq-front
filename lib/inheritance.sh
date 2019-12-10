@@ -22,6 +22,7 @@ function expand_inheritances() {
     # Explitly check and abotrt this functino.
     _c="$(expand_filelevel_inheritances "${_jsonized_content}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_nodeentry}'"
+    debug "_nodeentry='${_nodeentry}', _absfile='${_absfile}'"
     _local_nodes_dir=$(materialize_local_nodes "${_c}")
     expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
     _expanded="$(expand_nodelevel_inheritances "${_c}" \
@@ -145,13 +146,14 @@ function materialize_local_nodes() {
   local _ret _i
   debug "begin"
   _ret="$(mktemp -d)"
+  # Quickfix for Issue #98: Probably we should filter null, which can be produced by the first predicate (."$local")
   for _i in $(echo "${_content}" | jq -r -c '."$local"
     |. as $local
     |keys[]
     |. as $k
     |$local|getpath([$k])
            |. as $v
-           |[$k, $v]'); do
+           |[$k, $v]' 2>/dev/null); do
     echo "${_i}" | jq -c '.[1]' >"${_ret}/$(echo "${_i}" | jq -r -c '.[0]')"
   done
   echo "${_ret}"
