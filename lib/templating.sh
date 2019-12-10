@@ -20,15 +20,36 @@ function _perform_templating() {
   local i
   local -a _keys
   # Shorter path comes earlier than longer.
-  mapfile -t _keys < <(_paths_of_string_type "${_content}")
-  for i in "${_keys[@]}"; do
-    local _node_value _templated_node_value _ret_file
-    _node_value="$(value_at "${i}" "${_ret}")"
-    _ret_file=$(mktemp_with_content "${_ret}")
-    _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
-    _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
+  while true; do
+    mapfile -t _keys < <(_paths_of_string_nodes_perform_templating "${_ret}")
+    if is_empty_array "${_keys[@]}"; then
+      break
+    fi
+    debug "begin loop"
+    for i in "${_keys[@]}"; do
+      local _node_value _templated_node_value _ret_file
+      _node_value="$(value_at "${i}" "${_ret}")"
+      _ret_file=$(mktemp_with_content "${_ret}")
+      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
+      _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
+    done
+    debug "end loop"
   done
   echo "${_ret}"
+}
+
+function _paths_of_string_nodes_perform_templating() {
+  local _content="${1}"
+  echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
+import "shared" as shared;
+
+[paths(scalars_or_empty
+      |select(type=="string" and (startswith("eval:") or
+                                  startswith("template:"))))]
+              |sort
+              |sort_by(length)
+              |.[]
+              |shared::path2pexp(.)'
 }
 
 function _render_text_node() {
@@ -38,7 +59,7 @@ function _render_text_node() {
   local _mode="raw" _quote="yes" _ret_code=0
   local _body _ret
   if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
-    abort "Non-templating text node"
+    abort "Non-templating text node was found: '${_node_value}'"
   fi
   _mode="${_node_value%%:*}"
   _body="${_node_value#*:}"
