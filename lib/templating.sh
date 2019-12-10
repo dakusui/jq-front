@@ -87,7 +87,7 @@ function _render_text_node() {
     unset _path
     # shellcheck disable=SC2002
     _error_out="$(cat "${_error}")"
-    [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "Error was detected during templating: $(cat "${_error}")"
+    [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "$(printf "Error was detected during templating:\n%s" "$(cat "${_error}")")"
     debug "stderr during eval:'${_error_out}'"
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
@@ -191,17 +191,21 @@ function _define_builtin_functions() {
   function parent() {
     # shellcheck disable=SC2181
     [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
-    local _path="${1}"
-    local _level="${2:-1}"
+    local _path="${1}" _level="${2:-1}"
+    local _err
     if [[ ! "${_path}" == .* ]]; then
       abort "Path was not valid:(${_path}), it must start with a '.'"
     fi
     if [[ "${_path}" == "." ]]; then
       abort "Root does not have a parent.:(${_path})"
     fi
+    _err="$(mktemp)"
     jq -r -c -n -L "${JF_BASEDIR}/lib" \
       'import "shared" as shared;
-      .|path('"${_path}"')|.[0:-'"${_level}"']|shared::path2pexp(.)'
+      .|path('"${_path}"')|.[0:-'"${_level}"']|shared::path2pexp(.)' 2>"${_err}" ||
+      abort "$(printf \
+        "Error was reported for node path:'${_path}' and level:'${_level}' by jq command. Forgot quoting?:\n%s" \
+        "$(cat "${_err}")")"
   }
 
   function error() {
