@@ -57,14 +57,22 @@ function _sourced_files_dir() {
 }
 
 function usage() {
-  message "Usage: $0 [-h|--help] [--validation=[no|lenient|strict]] [nested-templating-levels] TARGET"
+  message "Usage: $0 [-h|--help] [--validation=[no|lenient|strict]] [nested-templating-levels] [--version] TARGET"
+}
+
+function version() {
+  message "$(jq -r '.version.latestReleased
+                |. as $v
+                |$v.major|tostring|. + "."
+                | . as $tmp
+                |$v.minor|tostring|$tmp + .' 'build_info.json')"
 }
 
 function main() {
   # Call getopt to validate the provided input.
   options=$(getopt \
     -o he \
-    --long help,validation:,nested-templating-levels: -- "$@") || {
+    --long help,version,validation:,nested-templating-levels: -- "$@") || {
     usage
     abort "Failed to  parse command line:'$*'"
   }
@@ -74,6 +82,10 @@ function main() {
       case "${1}" in
       -h | --help)
         usage
+        exit 0
+        ;;
+      --version)
+        version
         exit 0
         ;;
       --nested-templating-levels)
