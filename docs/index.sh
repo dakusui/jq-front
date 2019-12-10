@@ -96,7 +96,7 @@ function render_content() {
   echo '<div id="'${_filestem}'" class="tabcontent">'
   extract_content "${_filestem}"
   echo '<div class="paragraph text-right"><p>'
-  echo '<a href="'${_filestem}'.adoc">open this page in a window</a>'
+  echo '<a href="'${_filestem}'.html">open this page in a window</a>'
   echo '</p></div>'
   echo '</div>'
 }
