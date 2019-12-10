@@ -1286,7 +1286,7 @@ It takes seconds to process even a relatively simple and small file.</p>
 <h3 id="_command_line_interface">Command Line Interface</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">jq-front [-h|--help] [--validation=no|strict|lenient] [--nested-templating-levels=num] [TARGET]</code></pre>
+<pre class="highlight"><code class="language-bash" data-lang="bash">jq-front [-h|--help] [--validation=no|strict|lenient] [--nested-templating-levels=num] [--version] [TARGET]</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -1305,7 +1305,11 @@ The default is <code>5</code>.
 If templating doesn’t finish within <code>num</code> times, an error will be reported.</p>
 </li>
 <li>
-<p><code>TARGET</code>: A file to be processed.</p>
+<p><code>--version</code>: Shows a version.</p>
+</li>
+<li>
+<p><code>TARGET</code>: A file to be processed.
+If not given, <code>stdin</code> will be processed.</p>
 </li>
 </ul>
 </div>
