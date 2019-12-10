@@ -65,7 +65,7 @@ function version() {
                 |. as $v
                 |$v.major|tostring|. + "."
                 | . as $tmp
-                |$v.minor|tostring|$tmp + .' 'build_info.json')"
+                |$v.minor|tostring|$tmp + .' "${JF_BASEDIR}/build_info.json")"
 }
 
 function main() {

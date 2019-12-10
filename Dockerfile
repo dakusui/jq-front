@@ -10,6 +10,7 @@ RUN apt-get update && \
     mkdir -p /app/lib && \
     mkdir -p /app/schema
 COPY ./jq-front /app
+COPY ./build_info.json /app
 COPY ./lib /app/lib
 COPY ./schema /app/schema
 ENTRYPOINT ["/app/jq-front"]
