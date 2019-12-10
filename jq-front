@@ -57,15 +57,16 @@ function _sourced_files_dir() {
 }
 
 function usage() {
-  message "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET"
+  message "Usage: $0 [-h|--help] [--validation=[no|lenient|strict]] [nested-templating-levels] TARGET"
 }
 
 function main() {
   # Call getopt to validate the provided input.
   options=$(getopt \
-    -o hde \
-    --long help,disable-templating,enable-templating,validation:,nested-templating-levels: -- "$@") || {
-    usage_exit
+    -o he \
+    --long help,validation:,nested-templating-levels: -- "$@") || {
+    usage
+    abort "Failed to  parse command line:'$*'"
   }
   if [[ $# -gt 0 ]]; then
     eval set -- "$options"
@@ -75,16 +76,9 @@ function main() {
         usage
         exit 0
         ;;
-      -d | --disable-templating)
-        _JF_TEMPLATING_ENABLED=no
-        shift
-        ;;
-      -e | --enable-templating)
-        _JF_TEMPLATING_ENABLED=yes
-        shift
-        ;;
       --nested-templating-levels)
         _JF_NESTED_TEMPLATING_LEVELS=$2
+        [[ "$2" != 0 ]] || _JF_TEMPLATING_ENABLED=no
         shift
         shift
         ;;

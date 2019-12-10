@@ -28,16 +28,17 @@ function _perform_templating() {
     if [[ "${_c}" -eq 0 ]]; then
       error "Templating has been repeated ${_levels} time(s) but it did not finish.: Keys left untemplated are: [${_keys[*]}]"
     fi
-    debug "begin loop"
+    debug "begin inner loop: (1)"
     for i in "${_keys[@]}"; do
       local _node_value _templated_node_value _ret_file
+      debug "processing: ${i}"
       _node_value="$(value_at "${i}" "${_ret}")"
       _ret_file=$(mktemp_with_content "${_ret}")
       _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
       _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
     done
     _c=$((_c - 1))
-    debug "end loop"
+    debug "end inner loop: (1)"
   done
   echo "${_ret}"
 }

@@ -1,2 +1,2 @@
 Usage:
-jq-front [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET
+[-h|--help] [--validation=[no|lenient|strict]] [nested-templating-levels] TARGET
