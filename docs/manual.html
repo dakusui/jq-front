@@ -458,7 +458,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h3 id="_command_line_interface">Command Line Interface</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">jq-front [-h|--help] [--validation=no|strict|lenient] [--nested-templating-levels=num] [TARGET]</code></pre>
+<pre class="highlight"><code class="language-bash" data-lang="bash">jq-front [-h|--help] [--validation=no|strict|lenient] [--nested-templating-levels=num] [--version] [TARGET]</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -477,7 +477,11 @@ The default is <code>5</code>.
 If templating doesn&#8217;t finish within <code>num</code> times, an error will be reported.</p>
 </li>
 <li>
-<p><code>TARGET</code>: A file to be processed.</p>
+<p><code>--version</code>: Shows a version.</p>
+</li>
+<li>
+<p><code>TARGET</code>: A file to be processed.
+If not given, <code>stdin</code> will be processed.</p>
 </li>
 </ul>
 </div>
@@ -537,7 +541,7 @@ If any other value is set to the variable, it will not be executed.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-12-10 17:40:57 UTC
+Last updated 2019-12-10 18:36:34 UTC
 </div>
 </div>
 </body>
