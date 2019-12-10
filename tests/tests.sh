@@ -129,9 +129,9 @@ function run_validation_test() {
   local _ret=0
   _expected_validity_level=$(jq -r -c ".expectation.validityLevel" "${_testfile}")
   _dirname="$(dirname ${_testfile})"
-  ${_JF} "${_dirname}/input.json" -d --validation=lenient &>"${_dirname}/test-output-lenient".txt
+  ${_JF} "${_dirname}/input.json" --nested-templating-levels=0 --validation=lenient &>"${_dirname}/test-output-lenient".txt
   _actual_lenient=$?
-  ${_JF} "${_dirname}/input.json" -d --validation=strict &>"${_dirname}/test-output-strict".txt
+  ${_JF} "${_dirname}/input.json" --nested-templating-levels=0 --validation=strict &>"${_dirname}/test-output-strict".txt
   _actual_strict=$?
   if [[ "${_expected_validity_level}" == "strict" ]]; then
     if [[ "${_actual_lenient}" != 0 ]]; then

@@ -22,20 +22,6 @@ function _remove_meta_nodes() {
   fi
 }
 
-function _paths_of_string_type() {
-  local _content="${1}"
-  echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
-import "shared" as shared;
-
-[paths(scalars_or_empty
-      |select(type=="string" and (startswith("eval:") or
-                                  startswith("template:"))))]
-              |sort
-              |sort_by(length)
-              |.[]
-              |shared::path2pexp(.)'
-}
-
 function _paths_of_extends() {
   local _content="${1}"
   echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---

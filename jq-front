@@ -28,7 +28,7 @@ source "${JF_BASEDIR}/lib/templating.sh"
 source "${JF_BASEDIR}/lib/helpers.sh"
 
 function perform_jqfront() {
-  local _target="${1}" _templating="${2}" _validation_mode="${3}" _jf_path="${4}"
+  local _target="${1}" _templating="${2}" _templating_level="${3}" _validation_mode="${4}" _jf_path="${5}"
   local _content
   perf "begin"
   mkdir -p "$(_sourced_files_dir)"
@@ -37,7 +37,7 @@ function perform_jqfront() {
   if [[ "${_templating}" == "yes" ]]; then
     local _out
     _out=$(mktemp_with_content "${_content}")
-    _content=$(perform_templating "${_out}")
+    _content=$(perform_templating "${_out}" "${_templating_level}")
   fi
   echo "${_content}"
   perf "end"
@@ -57,13 +57,16 @@ function _sourced_files_dir() {
 }
 
 function usage() {
-  message "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET"
+  message "Usage: $0 [-h|--help] [--validation=[no|lenient|strict]] [nested-templating-levels] TARGET"
 }
 
 function main() {
   # Call getopt to validate the provided input.
-  options=$(getopt -o hde --long help,disable-templating,enable-templating,validation: -- "$@") || {
-    usage_exit
+  options=$(getopt \
+    -o he \
+    --long help,validation:,nested-templating-levels: -- "$@") || {
+    usage
+    abort "Failed to  parse command line:'$*'"
   }
   if [[ $# -gt 0 ]]; then
     eval set -- "$options"
@@ -73,12 +76,10 @@ function main() {
         usage
         exit 0
         ;;
-      -d | --disable-templating)
-        _JF_TEMPLATING_ENABLED=no
+      --nested-templating-levels)
+        _JF_NESTED_TEMPLATING_LEVELS=$2
+        [[ "$2" != 0 ]] || _JF_TEMPLATING_ENABLED=no
         shift
-        ;;
-      -e | --enable-templating)
-        _JF_TEMPLATING_ENABLED=yes
         shift
         ;;
       --validation)
@@ -102,7 +103,7 @@ function main() {
     _target="${1}"
   fi
   mkdir -p "${_JF_SESSION_DIR}"
-  perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_VALIDATION}" "${_JF_PATH}"
+  perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_NESTED_TEMPLATING_LEVELS}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
 _JF_CWD="${JF_CWD:-"$(pwd)"}"
@@ -110,6 +111,7 @@ _JF_BASEDIR="${JF_BASEDIR}"
 _JF_PATH_BASE=${JF_PATH_BASE:-""}
 _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 _JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
+_JF_NESTED_TEMPLATING_LEVELS=5
 _JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
 _JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
@@ -123,6 +125,7 @@ debug "_JF_BASEDIR=${_JF_BASEDIR}"
 debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
 debug "_JF_PATH=${_JF_PATH}"
 debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
+debug "_JF_NESTED_TEMPLATING_LEVELS=${_JF_NESTED_TEMPLATING_LEVELS}"
 debug "_JF_VALIDATION=${_JF_VALIDATION}"
 debug "_JF_DEBUG=${_JF_DEBUG}"
 debug "_JF_PERF=${_JF_PERF}"
