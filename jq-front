@@ -57,12 +57,22 @@ function _sourced_files_dir() {
 }
 
 function usage() {
-  message "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET"
+  message "Usage: $0 [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] [--version] TARGET"
+}
+
+function version() {
+  message "$(jq -r '.version.latestReleased
+                |. as $v
+                |$v.major|tostring|. + "."
+                | . as $tmp
+                |$v.minor|tostring|$tmp + .' 'build_info.json')"
 }
 
 function main() {
   # Call getopt to validate the provided input.
-  options=$(getopt -o hde --long help,disable-templating,enable-templating,validation: -- "$@") || {
+  options=$(getopt \
+    -o hde \
+    --long help,version,disable-templating,enable-templating,validation: -- "$@") || {
     usage_exit
   }
   if [[ $# -gt 0 ]]; then
@@ -71,6 +81,10 @@ function main() {
       case "${1}" in
       -h | --help)
         usage
+        exit 0
+        ;;
+      --version)
+        version
         exit 0
         ;;
       -d | --disable-templating)
