@@ -5,15 +5,15 @@
 ## Usage
 
 ```shell script
-jq-front [-h|--help] [-e|--enable-templating] [-d|--disable-templating] [--validation=no|strict|lenient] [TARGET]
+jq-front [-h|--help] [--validation=no|strict|lenient] [--nested-templating-levels=num] [--version] [TARGET]
 ```
 
 - `-h`, `--help`: Shows a help
-- `-e`, `--enable-templating`: Enables templating
-- `-d`, `--disable-templating`: Disables templating
 - `--validation`: Validation mode.
 `no`, `strict`, and `lenient` are available.
-- `TARGET`: A file to be processed.
+- `--nested-templating-levels:` Number of times templating happens by default. The default is 5. If templating doesn’t finish within num times, an error will be reported.
+- `--version`: Shows a version.
+- `TARGET`: A file to be processed. If not given, `stdin` will be processed
  
 ### Example
 
