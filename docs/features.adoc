@@ -321,3 +321,6 @@ And this will result in an output below.
 
 This feature can be disabled by `-d` (`--disable-templating`) option.
 And to enable it explicitly, you can use `-e` (`--enable-templating`) in case `JF_TEMPLATING_ENABLED` is set to `no`.
+
+[.text-right]
+link:index.html[top]

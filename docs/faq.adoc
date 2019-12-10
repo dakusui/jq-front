@@ -20,3 +20,10 @@ ERROR: Malformed JSON was given:'/home/hiroshi/Documents/jq-front/tests/negative
   at 559 run_jqfront /home/hiroshi/Documents/jq-front/jq-front
   at 472 expand_filelevel_inheritances /home/hiroshi/Documents/jq-front/jq-front
 ----
+
+=== Others
+
+Please also check: https://github.com/dakusui/jq-front/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3Afaq[FAQ on GitHub]
+
+[.text-right]
+link:index.html[top]
