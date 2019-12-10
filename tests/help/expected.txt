@@ -1,2 +1,1 @@
-Usage:
-jq-front [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] TARGET
+Usage: /home/hiroshi/Documents/jq-front/jq-front [-h|--help] [-e|--enable-templating] [-e|--enable-templating] [--validation=[no|lenient|strict]] [--version] TARGET
