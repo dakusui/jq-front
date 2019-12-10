@@ -36,3 +36,5 @@ include::../jq-front_aliases[]
 
 To install `bash` on windows, https://itsfoss.com/install-bash-on-windows/[install-bash-on-windows] will be helpful.
 
+[.text-right]
+link:index.html[top]

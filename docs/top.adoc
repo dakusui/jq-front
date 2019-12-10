@@ -168,3 +168,6 @@ $ yq . -j in.yaml | jq-front  | yq . -y
 - [[[json, 5]]] json.org. http://www.json.org/[JSON]:2019
 - [[[jq, 6]]]  jq https://stedolan.github.io/jq/manual/[jq manual]:2019
 - [[[stackoverflow, 7]]] More complex inheritance in YAML? https://stackoverflow.com/questions/14184971/more-complex-inheritance-in-yaml[stackoverflow]:2019
+
+[.text-right]
+link:index.html[top]

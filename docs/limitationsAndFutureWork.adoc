@@ -43,3 +43,6 @@ In order to implement the 'templating' feature, we need to be able to handle a s
 ----
     "eval:object:{"hello":"$(ref .root.greeting[0].english)"}
 ----
+
+[.text-right]
+link:index.html[top]
