@@ -3,42 +3,68 @@ set -eu
 _TEMPLATING_SH=yes
 
 function perform_templating() {
-  local _src_file="${1}"
+  local _src_file="${1}" _levels="${2}"
   local _content _ret
   perf "begin"
   # define builtin functions such as "ref", "self"
   _define_builtin_functions
   # source files, for which SOURCE directive is specified
   _source_files
-  _perform_templating "$(cat "${_src_file}")"
+  _perform_templating "$(cat "${_src_file}")" "${_levels}"
   perf "end"
 }
 
 function _perform_templating() {
-  local _content="${1}"
+  local _content="${1}" _levels="${2}"
   local _ret="${_content}"
-  local i
+  local _c="${_levels}"
   local -a _keys
   # Shorter path comes earlier than longer.
-  mapfile -t _keys < <(_paths_of_string_type "${_content}")
-  for i in "${_keys[@]}"; do
-    local _node_value _templated_node_value _ret_file
-    _node_value="$(value_at "${i}" "${_ret}")"
-    _ret_file=$(mktemp_with_content "${_ret}")
-    _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
-    _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
+  while [[ "${_c}" -ge 0 || "${_levels}" == -1 ]]; do
+    mapfile -t _keys < <(_paths_of_string_nodes_perform_templating "${_ret}")
+    if is_empty_array "${_keys[@]}"; then
+      break
+    fi
+    if [[ "${_c}" -eq 0 ]]; then
+      error "Templating has been repeated ${_levels} time(s) but it did not finish.: Keys left untemplated are: [${_keys[*]}]"
+    fi
+    debug "begin inner loop: (1)"
+    for i in "${_keys[@]}"; do
+      local _node_value _templated_node_value _ret_file
+      debug "processing: ${i}"
+      _node_value="$(value_at "${i}" "${_ret}")"
+      _ret_file=$(mktemp_with_content "${_ret}")
+      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
+      _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
+    done
+    _c=$((_c - 1))
+    debug "end inner loop: (1)"
   done
   echo "${_ret}"
+}
+
+function _paths_of_string_nodes_perform_templating() {
+  local _content="${1}"
+  echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
+import "shared" as shared;
+
+[paths(scalars_or_empty
+      |select(type=="string" and (startswith("eval:") or
+                                  startswith("template:"))))]
+              |sort
+              |sort_by(length)
+              |.[]
+              |shared::path2pexp(.)'
 }
 
 function _render_text_node() {
   local _node_value="${1}"
   local _path="${2}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
   local _self="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _mode="raw" _quote="yes" _ret_code=0
+  local _mode="raw" _quote="yes" _ret_code=0  _expected_type="string"
   local _body _ret
   if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
-    abort "Non-templating text node"
+    abort "Non-templating text node was found: '${_node_value}'"
   fi
   _mode="${_node_value%%:*}"
   _body="${_node_value#*:}"
@@ -47,6 +73,7 @@ function _render_text_node() {
     if [[ "${_body}" != string:* ]]; then
       _quote="no"
     fi
+    _expected_type="${_body%%:*}"
     _body="${_body#*:}"
   fi
 
@@ -67,10 +94,16 @@ function _render_text_node() {
   fi
   if [[ "${_quote}" == yes ]]; then
     _ret="${_ret//\\/\\\\}"
-    echo "\"${_ret//\"/\\\"}\""
+    _ret="\"${_ret//\"/\\\"}\""
   else
-    echo "${_ret}"
+    _ret="${_ret}"
   fi
+  local _actual_type="(malformed)"
+  _actual_type="$(echo "${_ret}" | jq -r '.|type')"
+  debug "expected type:'${_expected_type}' actual type:'${_actual_type}'"
+  [[ "${_expected_type}" == "${_actual_type}" ]] ||
+    abort "Type mismatch was detected for:'${_node_value}' expected type:'${_expected_type}' actual type:'${_actual_type}'"
+  echo "${_ret}"
   return "${_ret_code}"
 }
 
@@ -110,11 +143,12 @@ function _define_builtin_functions() {
     local value type
     value=$(value_at "${_path}" "$(cat "$(self)")")
     type="$(type_of "${value}")"
-    debug "value:'${value}'(type:'${type}')"
+    debug "value:'${value}'(type:'${type}') self:'${_self}' path:'${_path}'"
     if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
       local ret
       _check_cyclic_dependency "${_path}" reference
       ret="$(_render_text_node "${value}" "${_path}" "${_self}")"
+      [[ $? == 0 ]] || abort "TODO"
       _unmark_as_in_progress "${_path}" reference
       jq -r -c '.' <(echo "${ret}")
     else

@@ -3,6 +3,12 @@ set -eu
 [[ "${_SHARED_SH:-""}" == "yes" ]] && return 0
 _SHARED_SH=yes
 
+function is_empty_array() {
+  [[ "${#}" == 0 ]] && return 0
+  [[ "${#}" == 1 && "${1}" == "" ]] && return 0
+  return 1
+}
+
 function dirof() {
   local _target="${1}"
   local _ret
