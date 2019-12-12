@@ -35,13 +35,13 @@ function run_normal_test() {
   return ${_ret}
 }
 
-function run_help_test() {
+function run_commandline_test() {
   local _testfile="${1}"
-  local _dirname
-  local _diff
+  local _dirname _diff _option
   local _ret=1
-  _dirname="$(dirname ${_testfile})"
-  ${_JF} --help >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" || return 1
+  _dirname="$(dirname "${_testfile}")"
+  _option="$(jq -r -c '.option' "${_testfile}")"
+  ${_JF} "${_option}" >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" || return 1
   local _missings="${_dirname}/test-output.diff"
   {
     local _expected

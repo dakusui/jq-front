@@ -30,11 +30,10 @@ function _perform_templating() {
     fi
     debug "begin inner loop: (1)"
     for i in "${_keys[@]}"; do
-      local _node_value _templated_node_value _ret_file
+      local _node_value _templated_node_value
       debug "processing: ${i}"
       _node_value="$(value_at "${i}" "${_ret}")"
-      _ret_file=$(mktemp_with_content "${_ret}")
-      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
+      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret}")"
       _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
     done
     _c=$((_c - 1))
@@ -59,9 +58,9 @@ import "shared" as shared;
 
 function _render_text_node() {
   local _node_value="${1}"
-  local _path="${2}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _self="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _mode="raw" _quote="yes" _ret_code=0  _expected_type="string"
+  local _path="${2}"         # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _self_content="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _mode="raw" _quote="yes" _ret_code=0 _expected_type="string"
   local _body _ret
   if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
     abort "Non-templating text node was found: '${_node_value}'"
@@ -137,17 +136,16 @@ function _define_builtin_functions() {
   #
   # This is a function intended to be used on templating (_render_text_node)
   function ref() {
-    # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    [[ $? == 0 ]] || abort "Failure was detected."
     local _path="${1}"
     local value type
-    value=$(value_at "${_path}" "$(cat "$(self)")")
+    value=$(value_at "${_path}" "$(self)")
     type="$(type_of "${value}")"
-    debug "value:'${value}'(type:'${type}') self:'${_self}' path:'${_path}'"
+    debug "value:'${value}'(type:'${type}') path:'${_path}'"
     if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
       local ret
       _check_cyclic_dependency "${_path}" reference
-      ret="$(_render_text_node "${value}" "${_path}" "${_self}")"
+      ret="$(_render_text_node "${value}" "${_path}" "${_self_content}")"
       [[ $? == 0 ]] || abort "TODO"
       _unmark_as_in_progress "${_path}" reference
       jq -r -c '.' <(echo "${ret}")
@@ -156,20 +154,41 @@ function _define_builtin_functions() {
     fi
   }
 
+  function refexists() {
+    [[ $? == 0 ]] || abort "Failure was detected."
+    local _path="${1}"
+    has_value_at "${_path}" "$(self)"
+  }
+
+  function reftag() {
+    [[ $? == 0 ]] || abort "Failure was detected."
+    local _tagname="${1}"
+    local _curpath
+    _curpath="$(curn)"
+    while [[ "${_curpath}" != "" ]]; do
+      _curpath="$(parent "${_curpath}")"
+      if refexists "${_curpath}.${_tagname}"; then
+        ref "${_curpath}.${_tagname}"
+        return 0
+      fi
+    done
+    abort "The specified tag:'${_tagname}' was not found from the current path:'$(curn)'"
+  }
+
   ####
   # Prints the entire file (before templating).
   #
   # This is a function intended to be used on templating (_render_text_node)
   function self() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
-    echo "${_self}"
+    [[ $? == 0 ]] || abort "Failure was detected."
+    echo "${_self_content}"
   }
   ####
   # A function that prints a node path to the text node, where the calls this function is directly made.
   function curn() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    [[ $? == 0 ]] || abort "Failure was detected."
     debug "cur:_path='${_path}'"
     echo "${_path}"
   }
@@ -190,7 +209,7 @@ function _define_builtin_functions() {
   # ```.node``` or ```.node.child```
   function parent() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    [[ $? == 0 ]] || abort "Failure was detected."
     local _path="${1}" _level="${2:-1}"
     local _err
     if [[ ! "${_path}" == .* ]]; then
