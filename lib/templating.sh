@@ -59,10 +59,12 @@ import "shared" as shared;
 
 function _render_text_node() {
   local _node_value="${1}"
-  local _path="${2}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _self="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _mode="raw" _quote="yes" _ret_code=0  _expected_type="string"
+  local _path="${2}"      # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _self_file="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _mode="raw" _quote="yes" _ret_code=0 _expected_type="string"
   local _body _ret
+  local _self_content # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  _self_content="$(cat "${_self_file}")"
   if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
     abort "Non-templating text node was found: '${_node_value}'"
   fi
@@ -140,13 +142,13 @@ function _define_builtin_functions() {
     [[ $? == 0 ]] || abort "Failure was detected."
     local _path="${1}"
     local value type
-    value=$(value_at "${_path}" "$(cat "$(self)")")
+    value=$(value_at "${_path}" "$(self)")
     type="$(type_of "${value}")"
-    debug "value:'${value}'(type:'${type}') self:'${_self}' path:'${_path}'"
+    debug "value:'${value}'(type:'${type}') self:'${_self_file}' path:'${_path}'"
     if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
       local ret
       _check_cyclic_dependency "${_path}" reference
-      ret="$(_render_text_node "${value}" "${_path}" "${_self}")"
+      ret="$(_render_text_node "${value}" "${_path}" "${_self_file}")"
       [[ $? == 0 ]] || abort "TODO"
       _unmark_as_in_progress "${_path}" reference
       jq -r -c '.' <(echo "${ret}")
@@ -158,7 +160,7 @@ function _define_builtin_functions() {
   function refexists() {
     [[ $? == 0 ]] || abort "Failure was detected."
     local _path="${1}"
-    has_value_at "${_path}" "$(cat "$(self)")"
+    has_value_at "${_path}" "$(self)"
   }
 
   function reftag() {
@@ -167,11 +169,11 @@ function _define_builtin_functions() {
     local _curpath
     _curpath="$(curn)"
     while [[ "${_curpath}" != "" ]]; do
-    _curpath="$(parent "${_curpath}")"
-    if refexists "${_curpath}.${_tagname}";  then
-      ref "${_curpath}.${_tagname}"
-      return 0
-    fi
+      _curpath="$(parent "${_curpath}")"
+      if refexists "${_curpath}.${_tagname}"; then
+        ref "${_curpath}.${_tagname}"
+        return 0
+      fi
     done
     abort "The specified tag:'${_tagname}' was not found from the current path:'$(curn)'"
   }
@@ -183,7 +185,7 @@ function _define_builtin_functions() {
   function self() {
     # shellcheck disable=SC2181
     [[ $? == 0 ]] || abort "Failure was detected."
-    echo "${_self}"
+    echo "${_self_content}"
   }
   ####
   # A function that prints a node path to the text node, where the calls this function is directly made.
