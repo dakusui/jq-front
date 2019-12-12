@@ -137,8 +137,7 @@ function _define_builtin_functions() {
   #
   # This is a function intended to be used on templating (_render_text_node)
   function ref() {
-    # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    [[ $? == 0 ]] || abort "Failure was detected."
     local _path="${1}"
     local value type
     value=$(value_at "${_path}" "$(cat "$(self)")")
@@ -156,20 +155,41 @@ function _define_builtin_functions() {
     fi
   }
 
+  function refexists() {
+    [[ $? == 0 ]] || abort "Failure was detected."
+    local _path="${1}"
+    has_value_at "${_path}" "$(cat "$(self)")"
+  }
+
+  function reftag() {
+    [[ $? == 0 ]] || abort "Failure was detected."
+    local _tagname="${1}"
+    local _curpath
+    _curpath="$(curn)"
+    while [[ "${_curpath}" != "" ]]; do
+    _curpath="$(parent "${_curpath}")"
+    if refexists "${_curpath}.${_tagname}";  then
+      ref "${_curpath}.${_tagname}"
+      return 0
+    fi
+    done
+    abort "The specified tag:'${_tagname}' was not found from the current path:'$(curn)'"
+  }
+
   ####
   # Prints the entire file (before templating).
   #
   # This is a function intended to be used on templating (_render_text_node)
   function self() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    [[ $? == 0 ]] || abort "Failure was detected."
     echo "${_self}"
   }
   ####
   # A function that prints a node path to the text node, where the calls this function is directly made.
   function curn() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    [[ $? == 0 ]] || abort "Failure was detected."
     debug "cur:_path='${_path}'"
     echo "${_path}"
   }
@@ -190,7 +210,7 @@ function _define_builtin_functions() {
   # ```.node``` or ```.node.child```
   function parent() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "${_error_prefix}Failure was detected."
+    [[ $? == 0 ]] || abort "Failure was detected."
     local _path="${1}" _level="${2:-1}"
     local _err
     if [[ ! "${_path}" == .* ]]; then
