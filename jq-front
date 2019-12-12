@@ -26,6 +26,9 @@ source "${JF_BASEDIR}/lib/templating.sh"
 # shellcheck disable=SC1090
 # source = lib/helpers.sh
 source "${JF_BASEDIR}/lib/helpers.sh"
+# shellcheck disable=SC1090
+# source = build.sh
+source "${JF_BASEDIR}/build_info.sh"
 
 function perform_jqfront() {
   local _target="${1}" _templating="${2}" _templating_level="${3}" _validation_mode="${4}" _jf_path="${5}"
@@ -63,11 +66,12 @@ function usage() {
 }
 
 function version() {
-  message "$(jq -r '.version.latestReleased
-                |. as $v
-                |$v.major|tostring|. + "."
-                | . as $tmp
-                |$v.minor|tostring|$tmp + .' "${JF_BASEDIR}/build_info.json")"
+  local _version_file="${JF_BASEDIR}/version_file"
+  if [[ -e "${_version_file}" ]]; then
+    cat "${_version_file}" >&2
+  else
+    echo "${TARGET_VERSION}(develop)" >&2
+  fi
 }
 
 function main() {

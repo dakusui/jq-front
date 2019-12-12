@@ -23,7 +23,7 @@ function _test_package() {
 
 function _build() {
   local _version="${1}"
-  docker build -t "${DOCKER_REPO_NAME}:${_version}" .
+  docker build --build-arg VERSION="${_version}" -t "${DOCKER_REPO_NAME}:${_version}" .
 }
 
 function message() {
@@ -60,7 +60,7 @@ function execute_doc() {
     local _src_file="${i}"
     message -n "Processing '${_src_file}'"
     docker run --rm \
-      --user 1000:1000 \
+      --user "$(id -u):$(id -g)" \
       -v "$(pwd)":/documents/ \
       asciidoctor/docker-asciidoctor \
       asciidoctor -r asciidoctor-diagram -a toc=left "${i}" -o "${i%.adoc}.html"
