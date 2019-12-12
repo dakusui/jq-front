@@ -68,9 +68,9 @@ function usage() {
 function version() {
   local _version_file="${JF_BASEDIR}/version_file"
   if [[ -e "${_version_file}" ]]; then
-    cat "${_version_file}"
+    cat "${_version_file}" >&2
   else
-    echo "${TARGET_VERSION}(develop)"
+    echo "${TARGET_VERSION}(develop)" >&2
   fi
 }
 
