@@ -30,11 +30,10 @@ function _perform_templating() {
     fi
     debug "begin inner loop: (1)"
     for i in "${_keys[@]}"; do
-      local _node_value _templated_node_value _ret_file
+      local _node_value _templated_node_value
       debug "processing: ${i}"
       _node_value="$(value_at "${i}" "${_ret}")"
-      _ret_file=$(mktemp_with_content "${_ret}")
-      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret_file}")"
+      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret}")"
       _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
     done
     _c=$((_c - 1))
@@ -59,12 +58,10 @@ import "shared" as shared;
 
 function _render_text_node() {
   local _node_value="${1}"
-  local _path="${2}"      # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _self_file="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _path="${2}"         # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
+  local _self_content="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
   local _mode="raw" _quote="yes" _ret_code=0 _expected_type="string"
   local _body _ret
-  local _self_content # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  _self_content="$(cat "${_self_file}")"
   if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
     abort "Non-templating text node was found: '${_node_value}'"
   fi
@@ -144,11 +141,11 @@ function _define_builtin_functions() {
     local value type
     value=$(value_at "${_path}" "$(self)")
     type="$(type_of "${value}")"
-    debug "value:'${value}'(type:'${type}') self:'${_self_file}' path:'${_path}'"
+    debug "value:'${value}'(type:'${type}') path:'${_path}'"
     if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
       local ret
       _check_cyclic_dependency "${_path}" reference
-      ret="$(_render_text_node "${value}" "${_path}" "${_self_file}")"
+      ret="$(_render_text_node "${value}" "${_path}" "${_self_content}")"
       [[ $? == 0 ]] || abort "TODO"
       _unmark_as_in_progress "${_path}" reference
       jq -r -c '.' <(echo "${ret}")

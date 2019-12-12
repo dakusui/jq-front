@@ -48,6 +48,8 @@ function export_names_for_script_inheritance() {
   export -f search_file_in
   export -f abort
   export -f message
+  export -f debug
+  export -f is_debug_enabled
   export _JF_PATH
   export _JF_PATH_BASE
 }
