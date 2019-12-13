@@ -74,10 +74,9 @@ function expand_inheritances_for_local_nodes() {
   local _local_nodes_dir="${1}" _jf_path="${2}"
   debug "begin: _local_nodes_dir=${_local_nodes_dir}"
   while IFS= read -r -d '' i; do
-    local _tmp _f="${i}"
+    local _f="${i}"
     debug "expanding inheritance of a local node:'${i}'"
-    _tmp="$(mktemp_with_content "$(nodepool_read_nodeentry "${_f}" "no" "${_local_nodes_dir}:${_jf_path}")")"
-    cp "${_tmp}" "${_f}"
+    mktemp_with_content "$(nodepool_read_nodeentry """${_f}""" "no" "${_local_nodes_dir}:${_jf_path}")" > "${_f}"
     debug "...expanded"
   done < <(find "${_local_nodes_dir}" -maxdepth 1 -type f -print0)
   debug "end"

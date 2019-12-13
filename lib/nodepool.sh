@@ -10,7 +10,7 @@ source "${JF_BASEDIR}/lib/nodepool.sh"
 function nodepool_prepare() {
   local _pooldir
   debug "begin"
-  _pooldir="$(mktemp -d --suffix=jq-front-nodepool)"
+  _pooldir="$(mktemp -d --suffix=-jq-front-nodepool)"
   echo "${_pooldir}"
   debug "end"
 }
