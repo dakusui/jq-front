@@ -33,10 +33,12 @@ function nodepool_read_nodeentry() {
   _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
   _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
   _check_cyclic_dependency "${_nodeentry}" inheritance
-  [[ -e "${_cache}" ]] || {
+  if [[ -e "${_cache}" ]] ; then
+    perf "Cache hit for node entry: '${_nodeentry}'"
+  else
     perf "Cache miss for node entry: '${_nodeentry}'"
     read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" >"${_cache}"
-  }
+  fi
   cat "${_cache}"
   _unmark_as_in_progress "${_nodeentry}" inheritance
   perf "end: '${_nodeentry}' (cached by:'${_cache}')"
@@ -48,6 +50,7 @@ function _normalize_nodeentry() {
   local _specifier _absfile
   mapfile -t -d ';' _specifier <<<"${_nodeentry};;"
   _absfile="$(search_file_in "${_specifier[0]}" "${_path}")"
+  _absfile="$(echo "${_absfile}" | sed -E 's!^(./)+!!g')"
   echo "${_absfile};${_specifier[1]};$(join_by ';' "${_specifier[@]:2}")" | sed -E 's/\;*$/;;/g'
 }
 
