@@ -21,6 +21,6 @@
   "r5": "eval:string:$(ref .r4)",
   "r6": "eval:string:$(ref .r5)",
   "r7": "eval:string:$(ref .r4)",
-  "r8": "eval:string:$(ref .r8)",
-  "r9": "eval:string:$(ref .r9)"
+  "r8": "eval:string:$(ref .r7)",
+  "r9": "eval:string:$(ref .r8)"
 }
