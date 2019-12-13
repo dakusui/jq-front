@@ -76,7 +76,7 @@ function expand_inheritances_for_local_nodes() {
   while IFS= read -r -d '' i; do
     local _f="${i}"
     debug "expanding inheritance of a local node:'${i}'"
-    mktemp_with_content "$(nodepool_read_nodeentry """${_f}""" "no" "${_local_nodes_dir}:${_jf_path}")" > "${_f}"
+    mktemp_with_content "$(nodepool_read_nodeentry """${_f}""" "no" "${_local_nodes_dir}:${_jf_path}")" >"${_f}"
     debug "...expanded"
   done < <(find "${_local_nodes_dir}" -maxdepth 1 -type f -print0)
   debug "end"
@@ -98,11 +98,11 @@ function expand_nodelevel_inheritances() {
 
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
-  local _cur i
+  local i
   local -a _keys
   perf "begin"
   debug "_content='${_content}'"
-  _cur=$(mktemp_with_content '{}')
+  _cur_content='{}'
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
@@ -115,7 +115,6 @@ function _expand_nodelevel_inheritances() {
     for _jj in "${_extendeds[@]}"; do
       local _cur_content _tmp_content
       debug "processing nodeentry: '${_jj}'"
-      _cur_content="$(cat "${_cur}")"
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece _next_piece
@@ -131,13 +130,12 @@ function _expand_nodelevel_inheritances() {
         [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'"
         _merged_piece_content="${_expanded_tmp}"
       fi
-      _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
-      _cur=$(mktemp_with_content "${_tmp_content}") ||
-        abort "Failure detected during creation of a temporary file for node:'${_tmp_content}'"
+      _tmp_content="$(echo "${_cur_content}" | jq -n "input | ${_p}=input" <(echo "${_merged_piece_content}"))"
+      _cur_content="${_tmp_content}"
     done
   done
   perf "end"
-  jq -r -c . "${_cur}"
+  echo "${_cur_content}" | jq -r -c .
 }
 
 function materialize_local_nodes() {
