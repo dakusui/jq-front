@@ -9,13 +9,6 @@ function is_empty_array() {
   return 1
 }
 
-function dirof() {
-  local _target="${1}"
-  local _ret
-  _ret=$(dirname "$(readlink --canonicalize-missing "${_target}")")
-  echo "${_ret}"
-}
-
 function hashcode() {
   local _nodeentry="${1}"
   echo -n "${_nodeentry}" | md5sum | cut -f 1 -d ' '
@@ -55,10 +48,6 @@ function join_by() {
   local IFS="$1"
   shift
   echo "$*"
-}
-
-function mktempdir() {
-  mktemp -d
 }
 
 function is_debug_enabled() {
@@ -106,14 +95,6 @@ function print_stacktrace() {
     message "  at ${_e}"
     _i=$((_i + 1))
   done
-}
-
-function is_json() {
-  local _content="${1}"
-  local _exitcode
-  jq 'empty' <(echo "${_content}") >/dev/null 2>&1
-  _exitcode=$?
-  return $_exitcode
 }
 
 function is_object() {
@@ -166,12 +147,6 @@ function value_at() {
   else
     echo "${_ret}"
   fi
-}
-
-function keys_of() {
-  local _path="${1}" # A path from which the output is retrieved.
-  local _json="${2}" # JSON content
-  echo "${_json}" | jq -r -c "${_path} | keys[]" || abort "Failed to access keys of '${_path}' in '${_json}'"
 }
 
 # Latter overrides former
