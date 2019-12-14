@@ -1,4 +1,3 @@
-set -eu
 [[ "${_INHERITANCE_SH:-""}" == "yes" ]] && return 0
 _INHERITANCE_SH=yes
 
@@ -55,7 +54,7 @@ function expand_filelevel_inheritances() {
       while IFS= read -r i; do
         local _c _parent
         _parent="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
-        _c="$(_merge_object_nodes "${_parent}" "${_cur}")"
+        _c="$(merge_object_nodes "${_parent}" "${_cur}")"
         # Cannot check the exit code directly because of command substitution
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
@@ -90,7 +89,7 @@ function expand_nodelevel_inheritances() {
     abort "Failed to expand node level inheritance for node:'${_content}'(1)"
   _clean="$(_remove_meta_nodes "${_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
-  _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") ||
+  _ret=$(merge_object_nodes "${_expanded_clean}" "${_clean}") ||
     abort "Failed to expand node level inheritance for node:'${_content}'(2)"
   echo "${_ret}"
   perf "end"
@@ -119,7 +118,7 @@ function _expand_nodelevel_inheritances() {
         local _cur_piece _next_piece
         _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
-        _merged_piece_content="$(_merge_object_nodes "${_cur_piece}" "${_next_piece}")"
+        _merged_piece_content="$(merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge node:'${_cur_content}' with _nodeentry:'${_jj}'"
       else

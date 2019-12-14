@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-set -eu
 [[ "${_DEPENDENCY_SH:-""}" == "yes" ]] && return 0
 _DEPENDENCY_SH=yes
 

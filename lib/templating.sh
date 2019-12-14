@@ -1,4 +1,3 @@
-set -eu
 [[ "${_TEMPLATING_SH:-""}" == "yes" ]] && return 0
 _TEMPLATING_SH=yes
 

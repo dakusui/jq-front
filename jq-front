@@ -9,6 +9,9 @@ export JF_BASEDIR
 # source = lib/shared.sh
 source "${JF_BASEDIR}/lib/shared.sh"
 # shellcheck disable=SC1090
+# source = lib/logging.sh
+source "${JF_BASEDIR}/lib/logging.sh"
+# shellcheck disable=SC1090
 # source = lib/nodepool.sh
 source "${JF_BASEDIR}/lib/nodepool.sh"
 # shellcheck disable=SC1090
