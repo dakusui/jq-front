@@ -63,7 +63,7 @@ function expand_filelevel_inheritances() {
     fi
     echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
   else
-    message "WARN: array expansion is not yet implemented."
+    message "WARN: non-object inheritance is supported."
     echo "${_content}"
   fi
   perf "end"
@@ -142,7 +142,7 @@ function materialize_local_nodes() {
   local _content="${1}"
   local _ret _i
   debug "begin"
-  _ret="$(mktemp -d)"
+  _ret="$(mktemp -d localnodes-XXXXXXXXXX)"
   # Quickfix for Issue #98: Probably we should filter null, which can be produced by the first predicate (."$local")
   for _i in $(echo "${_content}" | jq -r -c '."$local"
     |. as $local

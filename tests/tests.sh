@@ -9,8 +9,8 @@ _JF_PATH=.:${_TEST_ROOT_DIR}/base
 JF_BASEDIR="$(dirname "$(dirname "${0}")")"
 export JF_BASEDIR
 
-# shellcheck disable=SC1090 source=lib/shared.sh
-source "${JF_BASEDIR}/lib/shared.sh"
+# shellcheck disable=SC1090 source=lib/core.sh
+source "${JF_BASEDIR}/lib/core.sh"
 
 function run_normal_test() {
   local _testfile="${1}"

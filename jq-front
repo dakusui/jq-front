@@ -6,11 +6,11 @@ JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
 
 # shellcheck disable=SC1090
-# source = lib/shared.sh
-source "${JF_BASEDIR}/lib/shared.sh"
-# shellcheck disable=SC1090
 # source = lib/logging.sh
 source "${JF_BASEDIR}/lib/logging.sh"
+# shellcheck disable=SC1090
+# source = lib/core.sh
+source "${JF_BASEDIR}/lib/core.sh"
 # shellcheck disable=SC1090
 # source = lib/nodepool.sh
 source "${JF_BASEDIR}/lib/nodepool.sh"
@@ -137,7 +137,7 @@ _JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
 _JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
 _JF_SESSION_ID="$(date +%s.%N)"
-_JF_SESSION_DIR="/tmp/jq-front-${_JF_SESSION_ID}"
+_JF_SESSION_DIR="/tmp/jq-front/${_JF_SESSION_ID}"
 
 debug "_JF_CWD=${_JF_CWD}"
 debug "_JF_BASEDIR=${_JF_BASEDIR}"
@@ -155,11 +155,14 @@ if [[ ${_JF_DEBUG} == enabled ]]; then
   trap _debug_abort ERR
 fi
 
+export TMPDIR="${_JF_SESSION_DIR}"
 ####
 # Export JF_PATH_BASE, which is set for executions under Docker
 if [[ -n "${_JF_PATH_BASE}" ]]; then
-  export TMPDIR="${_JF_PATH_BASE}/tmp"
+  export TMPDIR="${_JF_PATH_BASE}/${TMPDIR}"
 fi
+mkdir -p "${TMPDIR}"
+
 export_names_for_script_inheritance
 export _JF_POOL_DIR
 export _JF_SCHEMA_DIR

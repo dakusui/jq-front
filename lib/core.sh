@@ -1,7 +1,7 @@
 [[ "${_SHARED_SH:-""}" == "yes" ]] && return 0
 _SHARED_SH=yes
 
-function is_empty_array() {
+function is_effectively_empty_array() {
   [[ "${#}" == 0 ]] && return 0
   [[ "${#}" == 1 && "${1}" == "" ]] && return 0
   return 1

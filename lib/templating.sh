@@ -21,7 +21,7 @@ function _perform_templating() {
   # Shorter path comes earlier than longer.
   while [[ "${_c}" -ge 0 || "${_levels}" == -1 ]]; do
     mapfile -t _keys < <(_paths_of_string_nodes_perform_templating "${_ret}")
-    if is_empty_array "${_keys[@]}"; then
+    if is_effectively_empty_array "${_keys[@]}"; then
       break
     fi
     if [[ "${_c}" -eq 0 ]]; then
