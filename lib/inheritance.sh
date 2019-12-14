@@ -16,7 +16,7 @@ function expand_inheritances() {
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
   validate_jf_json "${_jsonized_content}" "${_validation_mode}"
   if is_object "${_jsonized_content}"; then
-    local _tmp _local_nodes_dir _c _expanded
+    local _local_nodes_dir _c _expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
@@ -39,18 +39,18 @@ function expand_inheritances() {
 }
 
 function expand_filelevel_inheritances() {
-  local _materialized_content="${1}" _validation_mode="${2}" _path="${3}"
+  local _content="${1}" _validation_mode="${2}" _path="${3}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
   local _cur
   perf "begin"
-  debug "content='${_materialized_content}'"
-  _cur="${_materialized_content}"
-  if is_object "${_materialized_content}"; then
+  is_debug_enabled && debug "content='${_content}'"
+  _cur="${_content}"
+  if is_object "${_content}"; then
     # shellcheck disable=SC2016
     # this is intentionally suppressing expansion to pass the value to jq.
-    if has_value_at '."$extends"' "${_materialized_content}"; then
+    if has_value_at '."$extends"' "${_content}"; then
       local i
       while IFS= read -r i; do
         local _c _parent
@@ -60,12 +60,12 @@ function expand_filelevel_inheritances() {
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
         _cur="${_c}"
-      done <<<"$(value_at '."$extends"[]' "${_materialized_content}")"
+      done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
     echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
   else
     message "WARN: array expansion is not yet implemented."
-    echo "${_materialized_content}"
+    echo "${_content}"
   fi
   perf "end"
 }
@@ -74,36 +74,34 @@ function expand_inheritances_for_local_nodes() {
   local _local_nodes_dir="${1}" _jf_path="${2}"
   debug "begin: _local_nodes_dir=${_local_nodes_dir}"
   while IFS= read -r -d '' i; do
-    local _tmp _f="${i}"
+    local _f="${i}"
     debug "expanding inheritance of a local node:'${i}'"
-    _tmp="$(mktemp_with_content "$(nodepool_read_nodeentry "${_f}" "no" "${_local_nodes_dir}:${_jf_path}")")"
-    cp "${_tmp}" "${_f}"
+    mktemp_with_content "$(nodepool_read_nodeentry """${_f}""" "no" "${_local_nodes_dir}:${_jf_path}")" >"${_f}"
     debug "...expanded"
   done < <(find "${_local_nodes_dir}" -maxdepth 1 -type f -print0)
   debug "end"
 }
 
 function expand_nodelevel_inheritances() {
-  local _materialized_content="${1}" _validation_mode="${2}" _path="${3}"
+  local _content="${1}" _validation_mode="${2}" _path="${3}"
   local _expanded _expanded_clean _clean _content _ret
   perf "begin"
-  _expanded="$(_expand_nodelevel_inheritances "${_materialized_content}" "${_validation_mode}" "${_path}")" ||
-    abort "Failed to expand node level inheritance for node:'${_materialized_content}'(1)"
-  _clean="$(_remove_meta_nodes "${_materialized_content}")"
+  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
+    abort "Failed to expand node level inheritance for node:'${_content}'(1)"
+  _clean="$(_remove_meta_nodes "${_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
   _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") ||
-    abort "Failed to expand node level inheritance for node:'${_materialized_content}'(2)"
+    abort "Failed to expand node level inheritance for node:'${_content}'(2)"
   echo "${_ret}"
   perf "end"
 }
 
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
-  local _cur i
+  local _cur_content='{}' i
   local -a _keys
   perf "begin"
-  debug "_content='${_content}'"
-  _cur=$(mktemp_with_content '{}')
+  is_debug_enabled && debug "_content='${_content}'"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
@@ -114,9 +112,8 @@ function _expand_nodelevel_inheritances() {
     local -a _extendeds
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for _jj in "${_extendeds[@]}"; do
-      local _cur_content _tmp_content
+      local _tmp_content
       debug "processing nodeentry: '${_jj}'"
-      _cur_content="$(cat "${_cur}")"
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur_content}"; then
         local _cur_piece _next_piece
@@ -132,13 +129,14 @@ function _expand_nodelevel_inheritances() {
         [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'"
         _merged_piece_content="${_expanded_tmp}"
       fi
-      _tmp_content="$(jq -n "input | ${_p}=input" "${_cur}" <(echo "${_merged_piece_content}"))"
-      _cur=$(mktemp_with_content "${_tmp_content}") ||
-        abort "Failure detected during creation of a temporary file for node:'${_tmp_content}'"
+      is_debug_enabled && debug "_merged_piece_content:'${_merged_piece_content}'"
+      _tmp_content="$(jq -n "input | ${_p}=input" <(echo "${_cur_content}") <(echo "${_merged_piece_content}"))"
+      _cur_content="${_tmp_content}"
+      is_debug_enabled && debug "_cur_content(updated):'${_cur_content}'"
     done
   done
   perf "end"
-  jq -r -c . "${_cur}"
+  echo "${_cur_content}" | jq -r -c .
 }
 
 function materialize_local_nodes() {

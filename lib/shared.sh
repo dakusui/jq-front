@@ -119,6 +119,7 @@ function is_json() {
 function is_object() {
   local _json_content="${1}"
   local _ret
+  is_debug_enabled && debug "_json_content:'${_json_content}'"
   _ret="$(echo "${_json_content}" | jq '.|if type=="object" then 0 else 1 end' 2>/dev/null)"
   return "${_ret}"
 }
@@ -181,8 +182,9 @@ function _merge_object_nodes() {
   local _error
   _error=$(mktemp)
   perf "begin"
-  debug "merging _a:'${_a}' and _b:'${_b}'"
+  is_debug_enabled && debug "merging _a:'${_a}' and _b:'${_b}'"
   [[ "${_a}" != '' ]] || abort "An empty string was given as _a"
+  [[ "${_b}" != '' ]] || abort "An empty string was given as _b"
   # shellcheck disable=SC2016
   jq -r -c -n --argjson a "${_a}" --argjson b "${_b}" -L "${JF_BASEDIR}/lib" \
     'import "shared" as shared;

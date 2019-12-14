@@ -4,22 +4,18 @@ _JSON_SH=yes
 
 function _remove_meta_nodes() {
   local _content="${1}"
-  local _cur
   if is_object "${_content}"; then
     local _keys i
-    _cur="$(mktemp_with_content "${_content}")"
     # Intentional single quote to find a keyword that starts with '$'
     # shellcheck disable=SC2016
     mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
     for i in "${_keys[@]}"; do
       local _next
-      _next="$(mktemp_with_content "$(jq ".|del(${i})" "${_cur}")")"
-      _cur="${_next}"
+      _next="$(echo "${_content}" | jq ".|del(${i})")"
+      _content="${_next}"
     done
-    cat "${_cur}"
-  else
-    echo "${_content}"
   fi
+  echo "${_content}"
 }
 
 function _paths_of_extends() {
