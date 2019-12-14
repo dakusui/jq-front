@@ -16,7 +16,7 @@ function expand_inheritances() {
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
   validate_jf_json "${_jsonized_content}" "${_validation_mode}"
   if is_object "${_jsonized_content}"; then
-    local _tmp _local_nodes_dir _c _expanded
+    local _local_nodes_dir _c _expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
@@ -98,11 +98,10 @@ function expand_nodelevel_inheritances() {
 
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
-  local i
+  local _cur_content='{}' i
   local -a _keys
   perf "begin"
   debug "_content='${_content}'"
-  _cur_content='{}'
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
@@ -113,7 +112,7 @@ function _expand_nodelevel_inheritances() {
     local -a _extendeds
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
     for _jj in "${_extendeds[@]}"; do
-      local _cur_content _tmp_content
+      local _tmp_content
       debug "processing nodeentry: '${_jj}'"
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur_content}"; then
@@ -130,8 +129,10 @@ function _expand_nodelevel_inheritances() {
         [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'"
         _merged_piece_content="${_expanded_tmp}"
       fi
-      _tmp_content="$(echo "${_cur_content}" | jq -n "input | ${_p}=input" <(echo "${_merged_piece_content}"))"
+      debug "_merged_piece_content:'${_merged_piece_content}'"
+      _tmp_content="$(jq -n "input | ${_p}=input" <(echo "${_cur_content}") <(echo "${_merged_piece_content}"))"
       _cur_content="${_tmp_content}"
+      debug "_cur_content(updated):'${_cur_content}'"
     done
   done
   perf "end"

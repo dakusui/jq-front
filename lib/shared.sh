@@ -119,6 +119,7 @@ function is_json() {
 function is_object() {
   local _json_content="${1}"
   local _ret
+  debug "_json_content:'${_json_content}'"
   _ret="$(echo "${_json_content}" | jq '.|if type=="object" then 0 else 1 end' 2>/dev/null)"
   return "${_ret}"
 }
