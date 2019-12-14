@@ -105,6 +105,6 @@ function _jsonize() {
       unset _path
     fi
   fi
-  debug "output: ${_ret}"
+  is_debug_enabled && debug "output: ${_ret}"
   echo "${_ret}"
 }

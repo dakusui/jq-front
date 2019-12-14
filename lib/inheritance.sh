@@ -45,7 +45,7 @@ function expand_filelevel_inheritances() {
   # shellcheck disable=SC2016
   local _cur
   perf "begin"
-  debug "content='${_materialized_content}'"
+  is_debug_enabled && debug "content='${_materialized_content}'"
   _cur="${_materialized_content}"
   if is_object "${_materialized_content}"; then
     # shellcheck disable=SC2016
@@ -101,7 +101,7 @@ function _expand_nodelevel_inheritances() {
   local _cur_content='{}' i
   local -a _keys
   perf "begin"
-  debug "_content='${_content}'"
+  is_debug_enabled && debug "_content='${_content}'"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
   mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
@@ -129,10 +129,10 @@ function _expand_nodelevel_inheritances() {
         [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'"
         _merged_piece_content="${_expanded_tmp}"
       fi
-      debug "_merged_piece_content:'${_merged_piece_content}'"
+      is_debug_enabled && debug "_merged_piece_content:'${_merged_piece_content}'"
       _tmp_content="$(jq -n "input | ${_p}=input" <(echo "${_cur_content}") <(echo "${_merged_piece_content}"))"
       _cur_content="${_tmp_content}"
-      debug "_cur_content(updated):'${_cur_content}'"
+      is_debug_enabled && debug "_cur_content(updated):'${_cur_content}'"
     done
   done
   perf "end"
