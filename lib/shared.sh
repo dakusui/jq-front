@@ -160,7 +160,7 @@ function value_at() {
   local _path="${1}" # A path from which the output is retrieved.
   local _json="${2}" # JSON content
   local _ret
-  _ret="$(echo "${_json}" | jq -r -c "${_path}")"
+  _ret="$(echo "${_json}" | jq -r -c "${_path}|select(.)")"
   if [[ -z "${_ret}" ]]; then
     abort "Failed to access '${_path}' and default value for it was not given."
   else
