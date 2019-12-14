@@ -58,6 +58,7 @@ function export_names_for_script_inheritance() {
   export -f is_debug_enabled
   export _JF_PATH
   export _JF_PATH_BASE
+  export TMPDIR
 }
 
 function _sourced_files_dir() {
@@ -137,7 +138,7 @@ _JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
 _JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
 _JF_SESSION_ID="$(date +%s.%N)"
-_JF_SESSION_DIR="/tmp/jq-front/${_JF_SESSION_ID}"
+_JF_SESSION_DIR="/tmp/.jq-front/${_JF_SESSION_ID}"
 
 debug "_JF_CWD=${_JF_CWD}"
 debug "_JF_BASEDIR=${_JF_BASEDIR}"

@@ -15,15 +15,12 @@ function perform_templating() {
 
 function _perform_templating() {
   local _content="${1}" _levels="${2}"
-  local _ret="${_content}"
-  local _c="${_levels}"
+  local _ret="${_content}" _c="${_levels}"
   local -a _keys
   # Shorter path comes earlier than longer.
   while [[ "${_c}" -ge 0 || "${_levels}" == -1 ]]; do
     mapfile -t _keys < <(_paths_of_string_nodes_perform_templating "${_ret}")
-    if is_effectively_empty_array "${_keys[@]}"; then
-      break
-    fi
+    is_effectively_empty_array "${_keys[@]}" && break || :
     if [[ "${_c}" -eq 0 ]]; then
       error "Templating has been repeated ${_levels} time(s) but it did not finish.: Keys left untemplated are: [${_keys[*]}]"
     fi
@@ -59,8 +56,7 @@ function _render_text_node() {
   local _node_value="${1}"
   local _path="${2}"         # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
   local _self_content="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
-  local _mode="raw" _quote="yes" _ret_code=0 _expected_type="string"
-  local _body _ret
+  local _mode="raw" _quote="yes" _ret_code=0 _expected_type="string" _body _ret
   if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
     abort "Non-templating text node was found: '${_node_value}'"
   fi
@@ -76,10 +72,9 @@ function _render_text_node() {
   fi
 
   if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
-    local _error_prefix="ERROR: "
-    local _error _error_out
+    local _error_prefix="ERROR: " _error _error_out
     export _path
-    _error="$(mktemp)"
+    _error="$(mktemp templating-XXXXXXXXXX.stderr)"
     # Perform the 'templating'
     _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
     unset _path

@@ -97,30 +97,30 @@ function expand_nodelevel_inheritances() {
 
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
-  local _cur_content='{}' i
+  local _cur='{}' i
   local -a _keys
   perf "begin"
   is_debug_enabled && debug "_content='${_content}'"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
-  mapfile -t _keys < <(_paths_of_extends "${_content}") || _keys=()
-  # shellcheck disable=SC2181
-  [[ $? == 0 ]] || abort "Node-level expansion was failed for node:'${_content}'"
+  mapfile -t _keys < <(_paths_of_extends "${_content}")
+  is_effectively_empty_array "${_keys[@]}" && _keys=()
   for i in "${_keys[@]}"; do
     local _jj _p="${i%.\"\$extends\"}"
     local -a _extendeds
-    mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]") || _extendeds=()
+    mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]")
+    is_effectively_empty_array "${_extendeds[@]}" && _extendeds=()
     for _jj in "${_extendeds[@]}"; do
       local _tmp_content
       debug "processing nodeentry: '${_jj}'"
       local _merged_piece_content
-      if has_value_at "${_p}" "${_cur_content}"; then
+      if has_value_at "${_p}" "${_cur}"; then
         local _cur_piece _next_piece
-        _cur_piece="$(echo "${_cur_content}" | jq "${_p}")"
+        _cur_piece="$(echo "${_cur}" | jq -r -c "${_p}")"
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to merge node:'${_cur_content}' with _nodeentry:'${_jj}'"
+        [[ $? == 0 ]] || abort "Failed to merge node:'${_cur}' with _nodeentry:'${_jj}'"
       else
         local _expanded_tmp
         _expanded_tmp="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
@@ -129,13 +129,13 @@ function _expand_nodelevel_inheritances() {
         _merged_piece_content="${_expanded_tmp}"
       fi
       is_debug_enabled && debug "_merged_piece_content:'${_merged_piece_content}'"
-      _tmp_content="$(jq -n "input | ${_p}=input" <(echo "${_cur_content}") <(echo "${_merged_piece_content}"))"
-      _cur_content="${_tmp_content}"
-      is_debug_enabled && debug "_cur_content(updated):'${_cur_content}'"
+      _tmp_content="$(jq -n "input | ${_p}=input" <(echo "${_cur}") <(echo "${_merged_piece_content}"))"
+      _cur="${_tmp_content}"
+      is_debug_enabled && debug "_cur(updated):'${_cur}'"
     done
   done
   perf "end"
-  echo "${_cur_content}" | jq -r -c .
+  echo "${_cur}" | jq -r -c .
 }
 
 function materialize_local_nodes() {
