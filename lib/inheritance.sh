@@ -39,18 +39,18 @@ function expand_inheritances() {
 }
 
 function expand_filelevel_inheritances() {
-  local _materialized_content="${1}" _validation_mode="${2}" _path="${3}"
+  local _content="${1}" _validation_mode="${2}" _path="${3}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
   local _cur
   perf "begin"
-  is_debug_enabled && debug "content='${_materialized_content}'"
-  _cur="${_materialized_content}"
-  if is_object "${_materialized_content}"; then
+  is_debug_enabled && debug "content='${_content}'"
+  _cur="${_content}"
+  if is_object "${_content}"; then
     # shellcheck disable=SC2016
     # this is intentionally suppressing expansion to pass the value to jq.
-    if has_value_at '."$extends"' "${_materialized_content}"; then
+    if has_value_at '."$extends"' "${_content}"; then
       local i
       while IFS= read -r i; do
         local _c _parent
@@ -60,12 +60,12 @@ function expand_filelevel_inheritances() {
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
         _cur="${_c}"
-      done <<<"$(value_at '."$extends"[]' "${_materialized_content}")"
+      done <<<"$(value_at '."$extends"[]' "${_content}")"
     fi
     echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
   else
     message "WARN: array expansion is not yet implemented."
-    echo "${_materialized_content}"
+    echo "${_content}"
   fi
   perf "end"
 }
@@ -83,15 +83,15 @@ function expand_inheritances_for_local_nodes() {
 }
 
 function expand_nodelevel_inheritances() {
-  local _materialized_content="${1}" _validation_mode="${2}" _path="${3}"
+  local _content="${1}" _validation_mode="${2}" _path="${3}"
   local _expanded _expanded_clean _clean _content _ret
   perf "begin"
-  _expanded="$(_expand_nodelevel_inheritances "${_materialized_content}" "${_validation_mode}" "${_path}")" ||
-    abort "Failed to expand node level inheritance for node:'${_materialized_content}'(1)"
-  _clean="$(_remove_meta_nodes "${_materialized_content}")"
+  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
+    abort "Failed to expand node level inheritance for node:'${_content}'(1)"
+  _clean="$(_remove_meta_nodes "${_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
   _ret=$(_merge_object_nodes "${_expanded_clean}" "${_clean}") ||
-    abort "Failed to expand node level inheritance for node:'${_materialized_content}'(2)"
+    abort "Failed to expand node level inheritance for node:'${_content}'(2)"
   echo "${_ret}"
   perf "end"
 }
