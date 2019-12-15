@@ -91,10 +91,18 @@ function has_value_at() {
 function value_at() {
   local _path="${1}" # A path from which the output is retrieved.
   local _json="${2}" # JSON content
+  local _default="${3:-}"
+  local _filter="${4:-.}"
   local _ret
-  _ret="$(echo "${_json}" | jq -r -c "${_path}|select(.)")"
+  _ret="$(
+    echo "${_json}" | jq -r -c "${_path}|select(.)" 2>/dev/null
+  )"
   if [[ -z "${_ret}" ]]; then
-    abort "Failed to access '${_path}' and default value for it was not given."
+    if [[ -z "${_default}" ]]; then
+      abort "Failed to access '${_path}' and default value for it was not given."
+    else
+      echo "${_default}" | jq -r -c "${_filter}"
+    fi
   else
     echo "${_ret}"
   fi

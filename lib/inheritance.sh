@@ -46,26 +46,21 @@ function expand_filelevel_inheritances() {
   perf "begin"
   is_debug_enabled && debug "content='${_content}'"
   _cur="${_content}"
-  if is_object "${_content}"; then
-    # shellcheck disable=SC2016
-    # this is intentionally suppressing expansion to pass the value to jq.
-    if has_value_at '."$extends"' "${_content}"; then
-      local i
-      while IFS= read -r i; do
-        local _c _parent
-        _parent="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
-        _c="$(merge_object_nodes "${_parent}" "${_cur}")"
-        # Cannot check the exit code directly because of command substitution
-        # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
-        _cur="${_c}"
-      done <<<"$(value_at '."$extends"[]' "${_content}")"
-    fi
-    echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
-  else
-    message "WARN: non-object inheritance is supported."
-    echo "${_content}"
+  local -a _parents
+  mapfile -t _parents <<<"$(value_at '."$extends"[]' "${_content}" '[]' '.[]')"
+  if ! is_effectively_empty_array "${_parents[@]}"; then
+    local i
+    for i in "${_parents[@]}"; do
+      local _c _parent
+      _parent="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
+      _c="$(merge_object_nodes "${_parent}" "${_cur}")"
+      # Cannot check the exit code directly because of command substitution
+      # shellcheck disable=SC2181
+      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
+      _cur="${_c}"
+    done
   fi
+  echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
   perf "end"
 }
 
