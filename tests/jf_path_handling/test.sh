@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -eu
 
-# shellcheck disable=SC1090 source=lib/shared.sh
-. "${JF_BASEDIR}/lib/shared.sh"
+# shellcheck disable=SC1090 source=lib/core.sh
+. "${JF_BASEDIR}/lib/core.sh"
 
 function run_testcase() {
   local _file_to_be_searched="${1}"

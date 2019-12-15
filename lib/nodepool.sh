@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-set -eu
 [[ "${_NODEPOOL_SH:-""}" == "yes" ]] && return 0
 _NODEPOOL_SH=yes
 
@@ -10,7 +8,8 @@ source "${JF_BASEDIR}/lib/nodepool.sh"
 function nodepool_prepare() {
   local _pooldir
   debug "begin"
-  _pooldir="$(mktemp -d --suffix=-jq-front-nodepool)"
+  _pooldir="${TMPDIR}/nodepool"
+  mkdir -p "${_pooldir}"
   echo "${_pooldir}"
   debug "end"
 }
@@ -33,7 +32,7 @@ function nodepool_read_nodeentry() {
   _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
   _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
   _check_cyclic_dependency "${_nodeentry}" inheritance
-  if [[ -e "${_cache}" ]] ; then
+  if [[ -e "${_cache}" ]]; then
     perf "Cache hit for node entry: '${_nodeentry}'"
   else
     perf "Cache miss for node entry: '${_nodeentry}'"
@@ -52,18 +51,6 @@ function _normalize_nodeentry() {
   _absfile="$(search_file_in "${_specifier[0]}" "${_path}")"
   _absfile="$(echo "${_absfile}" | sed -E 's!^(./)+!!g')"
   echo "${_absfile};${_specifier[1]};$(join_by ';' "${_specifier[@]:2}")" | sed -E 's/\;*$/;;/g'
-}
-
-function _locate_file() {
-  local _file="${1}" _path="${2}"
-  _search_file_in "${_file}" "${_path}"
-}
-
-function read_json_from_nodeentry() {
-  local _nodeentry="${1}"
-  local -a _specifier
-  mapfile -t -d ';' _specifier <<<"${_nodeentry};;"
-  jsonize "${_specifier[0]}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")"
 }
 
 function jsonize() {
