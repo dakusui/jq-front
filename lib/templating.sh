@@ -66,6 +66,7 @@ function _render_text_node() {
   local _path="${2}"         # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
   local _self_content="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
   local _mode="raw" _quote="yes" _ret_code=0 _expected_type="string" _body _ret
+  [[ "${TMPDIR}" != "" ]] || abort "TMPDIR was not set"
   if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
     abort "Non-templating text node was found: '${_node_value}'"
   fi
@@ -83,7 +84,7 @@ function _render_text_node() {
   if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
     local _error_prefix="ERROR: " _error _error_out
     export _path
-    _error="$(mktemp templating-XXXXXXXXXX.stderr)"
+    _error="$(mktemp "${TMPDIR}/templating-XXXXXXXXXX.stderr")"
     # Perform the 'templating'
     _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
     unset _path
