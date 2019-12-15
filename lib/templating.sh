@@ -16,40 +16,49 @@ function perform_templating() {
 function _perform_templating() {
   local _content="${1}" _levels="${2}"
   local _ret="${_content}" _c="${_levels}"
-  local -a _keys
+  local -a _entries
   # Shorter path comes earlier than longer.
+  debug "begin"
   while [[ "${_c}" -ge 0 || "${_levels}" == -1 ]]; do
-    mapfile -t _keys < <(_paths_of_string_nodes_perform_templating "${_ret}")
-    is_effectively_empty_array "${_keys[@]}" && break || :
+    local _each
+    mapfile -t _entries < <(_string_node_entries_to_perform_templating "${_ret}")
+    is_effectively_empty_array "${_entries[@]}" && break || :
     if [[ "${_c}" -eq 0 ]]; then
-      error "Templating has been repeated ${_levels} time(s) but it did not finish.: Keys left untemplated are: [${_keys[*]}]"
+      error "Templating has been repeated ${_levels} time(s) but it did not finish.: Entries left untemplated are: [${_entries[*]}]"
     fi
     perf "begin loop: remaining: ${_c}"
-    for i in "${_keys[@]}"; do
-      local _node_value _templated_node_value
-      perf "processing: ${i}"
-      _node_value="$(value_at "${i}" "${_ret}")"
-      _templated_node_value="$(_render_text_node "${_node_value}" "${i}" "${_ret}")"
-      _ret="$(jq -r -c -n "input|${i}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
+    for _each in "${_entries[@]}"; do
+      local _node_path _node_value _templated_node_value _entry
+      perf "processing: entry:'${_each}'"
+      IFS=$'\t' read -r -a _entry <<<"${_each}"
+      _node_path="${_entry[0]}"
+      _node_value="${_entry[1]}"
+      debug "processing: nodepath:'${_node_path}', nodevalue:'${_node_value}'"
+      _templated_node_value="$(_render_text_node "${_node_value}" "${_node_path}" "${_ret}")"
+      _ret="$(jq -r -c -n "input|${_node_path}=input" <(echo "${_ret}") <(echo "${_templated_node_value}"))"
     done
     perf "end loop: remaining: ${_c}"
     _c=$((_c - 1))
   done
   echo "${_ret}"
+  debug "end"
 }
 
-function _paths_of_string_nodes_perform_templating() {
+function _string_node_entries_to_perform_templating() {
   local _content="${1}"
   echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
 import "shared" as shared;
-
-[paths(scalars_or_empty
-      |select(type=="string" and (startswith("eval:") or
-                                  startswith("template:"))))]
-              |sort
-              |sort_by(length)
-              |.[]
-              |shared::path2pexp(.)'
+. as $content
+|[paths(scalars_or_empty
+       |select(type=="string" and (startswith("eval:") or
+                                   startswith("template:"))))]
+       |sort
+       |sort_by(length)
+       |.[]
+       |. as $p
+       |$content
+       |[shared::path2pexp($p),getpath($p)]
+       |@tsv'
 }
 
 function _render_text_node() {
