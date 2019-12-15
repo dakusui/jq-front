@@ -120,7 +120,7 @@ function merge_object_nodes() {
         $v | type;
       def _setvalue_at($n; $p; $v):
         $n | try setpath($p; $v)
-             catch error("Failed to process node at path:<\($p|shared::path2pexp(.[]))>; the value:<\($v)>).");
+             catch error("Failed to process node at path:<\($p|shared::path2pexp(.))>; the value:<\($v)>).");
       $n | if type_of($v)=="object" or type_of($v)=="array" then
              if type_of(value_at($n; $p))!="object" and type_of(value_at($n; $p)!="array") then
                _setvalue_at(.;$p; $v)
