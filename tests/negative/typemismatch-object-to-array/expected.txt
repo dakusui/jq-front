@@ -1,1 +1,3 @@
-ERROR: Error was detected during templating:
+ERROR: Type mismatch was detected for:
+expected type:'array'
+actual type:'object'
