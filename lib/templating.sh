@@ -235,6 +235,20 @@ function _define_builtin_functions() {
         "$(cat "${_err}")")"
   }
 
+  function array_append() {
+    [[ $# -gt 0 ]] || abort "No argument was given"
+    local _cur="${1}"
+    local _i
+    shift
+    for _i in "${@}"; do
+      _cur="$(_array_append "${_cur}" "${_i}")"
+    done
+    echo "${_cur}"
+  }
+
+  function _array_append() {
+    jq -r -c -n --argjson a "${1}" --argjson b "${2}" '$a + $b'
+  }
   function error() {
     abort "${@}"
   }
