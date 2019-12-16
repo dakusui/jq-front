@@ -91,7 +91,7 @@ function _render_text_node() {
     _error="$(mktemp "${TMPDIR:-/tmp}/templating-XXXXXXXXXX.stderr")"
     debug "error: '${_error}'"
     # Perform the 'templating'
-    _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
+    _ret="$(eval "echo ${_body}" 2>"${_error}")"
     [[ -z "${_original_err_handler}" ]] || ${_original_err_handler}
     unset _path
     # shellcheck disable=SC2002
@@ -233,10 +233,6 @@ function _define_builtin_functions() {
       abort "$(printf \
         "Error was reported for node path:'${_path}' and level:'${_level}' by jq command. Forgot quoting?:\n%s" \
         "$(cat "${_err}")")"
-  }
-
-  function quote() {
-    echo "${@}"
   }
 
   function error() {
