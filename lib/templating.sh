@@ -82,7 +82,7 @@ function _render_text_node() {
 
   if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
     function _err_handler() {
-      abort "Failed on eval: '${_body}'"
+      abort "Failed on eval: 'echo \"${_body}\"'"
     }
     local _error_prefix="ERROR: " _error _error_out _original_err_handler
     export _path
@@ -91,21 +91,19 @@ function _render_text_node() {
     _error="$(mktemp "${TMPDIR:-/tmp}/templating-XXXXXXXXXX.stderr")"
     debug "error: '${_error}'"
     # Perform the 'templating'
-    _ret="$(eval "echo \"${_body}\"" 2>"${_error}")"
+    _ret="$(eval "echo ${_body}" 2>"${_error}")"
     [[ -z "${_original_err_handler}" ]] || ${_original_err_handler}
     unset _path
     # shellcheck disable=SC2002
     _error_out="$(cat "${_error}")"
     [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "$(printf "Error was detected during templating: '${_body}'\n%s" "$(cat "${_error}")")"
-    debug "stderr during eval:'${_error_out}'"
+    debug "value: '${_ret}', stderr during eval:'${_error_out}'"
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
   fi
   if [[ "${_quote}" == yes ]]; then
     _ret="${_ret//\\/\\\\}"
     _ret="\"${_ret//\"/\\\"}\""
-  else
-    _ret="${_ret}"
   fi
   local _actual_type="(malformed)"
   _actual_type="$(echo "${_ret}" | jq -r '.|type')"
@@ -237,6 +235,20 @@ function _define_builtin_functions() {
         "$(cat "${_err}")")"
   }
 
+  function array_append() {
+    [[ $# -gt 0 ]] || abort "No argument was given"
+    local _cur="${1}"
+    local _i
+    shift
+    for _i in "${@}"; do
+      _cur="$(_array_append "${_cur}" "${_i}")"
+    done
+    echo "${_cur}"
+  }
+
+  function _array_append() {
+    jq -r -c -n --argjson a "${1}" --argjson b "${2}" '$a + $b'
+  }
   function error() {
     abort "${@}"
   }
