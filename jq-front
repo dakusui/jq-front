@@ -6,9 +6,6 @@ JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
 
 # shellcheck disable=SC1090
-# source = lib/logging.sh
-source "${JF_BASEDIR}/lib/logging.sh"
-# shellcheck disable=SC1090
 # source = lib/core.sh
 source "${JF_BASEDIR}/lib/core.sh"
 # shellcheck disable=SC1090
