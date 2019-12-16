@@ -82,7 +82,7 @@ function _render_text_node() {
 
   if [[ "${_mode}" == "template" || "${_mode}" == "eval" ]]; then
     function _err_handler() {
-      abort "Failed on eval: '${_body}'"
+      abort "Failed on eval: 'echo \"${_body}\"'"
     }
     local _error_prefix="ERROR: " _error _error_out _original_err_handler
     export _path
@@ -97,15 +97,13 @@ function _render_text_node() {
     # shellcheck disable=SC2002
     _error_out="$(cat "${_error}")"
     [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "$(printf "Error was detected during templating: '${_body}'\n%s" "$(cat "${_error}")")"
-    debug "stderr during eval:'${_error_out}'"
+    debug "value: '${_ret}', stderr during eval:'${_error_out}'"
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
   fi
   if [[ "${_quote}" == yes ]]; then
     _ret="${_ret//\\/\\\\}"
     _ret="\"${_ret//\"/\\\"}\""
-  else
-    _ret="${_ret}"
   fi
   local _actual_type="(malformed)"
   _actual_type="$(echo "${_ret}" | jq -r '.|type')"
@@ -235,6 +233,10 @@ function _define_builtin_functions() {
       abort "$(printf \
         "Error was reported for node path:'${_path}' and level:'${_level}' by jq command. Forgot quoting?:\n%s" \
         "$(cat "${_err}")")"
+  }
+
+  function quote() {
+    echo "${@}"
   }
 
   function error() {
