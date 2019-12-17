@@ -106,7 +106,8 @@ function _render_text_node() {
     _ret="\"${_ret//\"/\\\"}\""
   fi
   local _actual_type="(malformed)"
-  _actual_type="$(echo "${_ret}" | jq -r '.|type')"
+  _actual_type="$(echo "${_ret}" | jq -r '.|type')" ||
+    abort "'${_node_value}' was rendered into '${_ret}' and it seems not a wel-formed JSON."
   debug "expected type:'${_expected_type}' actual type:'${_actual_type}'"
   [[ "${_expected_type}" == "${_actual_type}" ]] ||
     abort "Type mismatch was detected for:'${_node_value}' expected type:'${_expected_type}' actual type:'${_actual_type}'"
