@@ -12,6 +12,20 @@ function debug() {
   fi
 }
 
+function is_info_enabled() {
+  [[ ${_JF_INFO:-""} == "enabled" ]] && return 0
+  return 1
+}
+
+function info() {
+  if is_debug_enabled; then
+    message "INFO: $(date '+%Y-%m-%d %H:%M:%S.%3N'): ${FUNCNAME[1]}:" "${@}"
+  elif is_info_enabled; then
+    message "INFO: unknown: ${FUNCNAME[1]}:" "${@}"
+  fi
+}
+
+
 function is_perf_enabled() {
   [[ ${_JF_PERF:-""} == "enabled" ]] && return 0
   return 1

@@ -144,9 +144,10 @@ function _define_builtin_functions() {
   #
   # This is a function intended to be used on templating (_render_text_node)
   function ref() {
-    [[ $? == 0 ]] || abort "Failure was detected."
+    [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
     local _path="${1}"
     local value type
+    info "args:'${*}'"
     value=$(value_at "${_path}" "$(self)")
     type="$(type_of "${value}")"
     debug "value:'${value}'(type:'${type}') path:'${_path}'"
@@ -163,15 +164,17 @@ function _define_builtin_functions() {
   }
 
   function refexists() {
-    [[ $? == 0 ]] || abort "Failure was detected."
+    [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
     local _path="${1}"
+    info "args:'${*}'"
     has_value_at "${_path}" "$(self)"
   }
 
   function reftag() {
-    [[ $? == 0 ]] || abort "Failure was detected."
+    [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
     local _tagname="${1}"
     local _curpath
+    info "args:'${*}'"
     _curpath="$(curn)"
     while [[ "${_curpath}" != "" ]]; do
       _curpath="$(parent "${_curpath}")"
@@ -189,14 +192,16 @@ function _define_builtin_functions() {
   # This is a function intended to be used on templating (_render_text_node)
   function self() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "Failure was detected."
+    [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
+    info "args:(none)"
     echo "${_self_content}"
   }
   ####
   # A function that prints a node path to the text node, where the calls this function is directly made.
   function curn() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "Failure was detected."
+    [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
+    info "args:(none)"
     debug "cur:_path='${_path}'"
     echo "${_path}"
   }
@@ -206,6 +211,7 @@ function _define_builtin_functions() {
   # belongs to.
   # An entry here means a pair of key and value or an element in an array.
   function cur() {
+    info "args:'${*}'"
     parent "$(curn)"
   }
 
@@ -217,9 +223,10 @@ function _define_builtin_functions() {
   # ```.node``` or ```.node.child```
   function parent() {
     # shellcheck disable=SC2181
-    [[ $? == 0 ]] || abort "Failure was detected."
+    [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
     local _path="${1}" _level="${2:-1}"
     local _err
+    info "args:'${*}'"
     if [[ ! "${_path}" == .* ]]; then
       abort "Path was not valid:(${_path}), it must start with a '.'"
     fi
@@ -236,10 +243,13 @@ function _define_builtin_functions() {
   }
 
   function array_append() {
-    [[ $# -gt 0 ]] || abort "No argument was given"
+    # shellcheck disable=SC2181
+    [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
+    [[ $# -gt 0 ]] || abort "No argument was given to built-in:'array_append'"
     local _cur="${1}"
     local _i
     shift
+    info "args:'${*}'"
     for _i in "${@}"; do
       _cur="$(_array_append "${_cur}" "${_i}")"
     done
@@ -247,8 +257,14 @@ function _define_builtin_functions() {
   }
 
   function _array_append() {
+    info "jq -r -c -n"
+    info "--argjson a '${1}'"
+    info "--argjson b '${2}'"
+    # shellcheck disable=SC2154
+    info "'\$a + \$b'"
     jq -r -c -n --argjson a "${1}" --argjson b "${2}" '$a + $b'
   }
+
   function error() {
     abort "${@}"
   }
