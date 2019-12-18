@@ -3,13 +3,13 @@ ARG VERSION=unknown
 RUN apt-get update && \
     apt-get install jq -y && \
     apt-get install npm -y && \
-    apt-get install python -y && \
-    apt-get install python-pip -y && \
-    pip install yq && \
     npm install -g ajv-cli && \
+    npm install -g yamljs && \
     mkdir -p /var/lib/jq-front && \
     mkdir -p /app/lib && \
     mkdir -p /app/schema && \
+    apt-get remove npm -y && \
+    apt-get autoremove -y && \
     echo $VERSION > /app/version_file
 COPY ./jq-front /app
 COPY ./build_info.sh /app

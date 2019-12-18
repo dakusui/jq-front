@@ -69,14 +69,14 @@ function _jsonize() {
   mapfile -t _args_array <<<"$(IFS=';' && echo "${_args}" | tr ';' $'\n' | grep -v -E '^$')"
   [[ "${#_args_array[@]}" == 1 && "${_args_array[0]}" == "" ]] && _args_array=()
   if [[ ${_processor} == "" ]]; then
-    local _cmd="jq"
+    local _cmd="jq ."
     if [[ "${_absfile}" == *.yaml || "${_absfile}" == *.yml ]]; then
-      _cmd="yq"
+      _cmd="yaml2json"
     fi
     # Let the args split. Since it is args.
     # shellcheck disable=SC2086
     debug "argslength=${#_args_array[@]}"
-    _ret="$(${_cmd} . "${_args_array[@]}" "${_absfile}")" ||
+    _ret="$(${_cmd} "${_args_array[@]}" "${_absfile}")" ||
       abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(1)"
   else
     if [[ "${_processor}" == SOURCE ]]; then
