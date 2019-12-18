@@ -135,7 +135,7 @@ _JF_VALIDATION=${JF_VALIDATION:-"no"}
 _JF_DEBUG=${JF_DEBUG:-"disabled"}
 _JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
 _JF_SESSION_ID="$(date +%s.%N)"
-_JF_SESSION_DIR="/tmp/.jq-front/${_JF_SESSION_ID}"
+_JF_SESSION_DIR="/tmp/.jq-front-${_JF_SESSION_ID}"
 
 debug "_JF_CWD=${_JF_CWD}"
 debug "_JF_BASEDIR=${_JF_BASEDIR}"
