@@ -4,6 +4,7 @@ RUN apt-get update && \
     apt-get install jq -y && \
     apt-get install npm -y && \
     npm install -g ajv-cli && \
+    npm install -g yamljs && \
     mkdir -p /var/lib/jq-front && \
     mkdir -p /app/lib && \
     mkdir -p /app/schema && \
