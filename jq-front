@@ -63,7 +63,7 @@ function _sourced_files_dir() {
 }
 
 function usage() {
-  message "Usage: $0 [-h|--help] [--validation=[no|lenient|strict]] [nested-templating-levels] [--version] TARGET"
+  message "Usage: $0 [-h|--help] [-o OUT] [--validation=[no|lenient|strict]] [nested-templating-levels] [--xargs=""] [--version] TARGET"
 }
 
 function version() {
@@ -76,10 +76,13 @@ function version() {
 }
 
 function main() {
+  local options
+  local xargs_options="" xargs="no" xargs_jqfront_options=("${@}")
+  local outfile=""
   # Call getopt to validate the provided input.
   options=$(getopt \
-    -o he \
-    --long help,version,validation:,nested-templating-levels: -- "$@") || {
+    -o heo: \
+    --long help,version,validation:,nested-templating-levels:,xargs: -- "$@") || {
     usage
     abort "Failed to  parse command line:'$*'"
   }
@@ -95,6 +98,11 @@ function main() {
         version
         exit 0
         ;;
+      -o)
+        outfile=$2
+        shift
+        shift
+        ;;
       --nested-templating-levels)
         _JF_NESTED_TEMPLATING_LEVELS=$2
         [[ "$2" != 0 ]] || _JF_TEMPLATING_ENABLED=no
@@ -103,6 +111,12 @@ function main() {
         ;;
       --validation)
         _JF_VALIDATION=$2
+        shift
+        shift
+        ;;
+      --xargs)
+        xargs="yes"
+        xargs_options="${2}"
         shift
         shift
         ;;
@@ -116,13 +130,30 @@ function main() {
       esac
     done
   fi
-  if [[ $# == 0 ]]; then
-    _target="$(mktemp_with_content "$(cat)")"
+  if [[ "${xargs}" == "yes" ]]; then
+    local i
+    for i in "${!xargs_jqfront_options[@]}"; do
+      [[ "${xargs_jqfront_options[${i}]}" == "--xargs="* ]] && unset -v 'xargs_jqfront_options[$i]'
+    done
+    xargs_jqfront_options=("${xargs_jqfront_options[@]}")
+    # shellcheck disable=SC2086
+    xargs ${xargs_options} "$(readlink -f ${BASH_SOURCE[0]})" "${xargs_jqfront_options[@]}"
   else
-    _target="${1}"
+    function perform() {
+      perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_NESTED_TEMPLATING_LEVELS}" "${_JF_VALIDATION}" "${_JF_PATH}" ${outfile}
+    }
+    if [[ $# == 0 ]]; then
+      _target="$(mktemp_with_content "$(cat)")"
+    else
+      _target="${1}"
+    fi
+    mkdir -p "${_JF_SESSION_DIR}"
+    if [[ "${outfile}" != "" ]]; then
+      perform >"${outfile}"
+    else
+      perform
+    fi
   fi
-  mkdir -p "${_JF_SESSION_DIR}"
-  perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_NESTED_TEMPLATING_LEVELS}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
 _JF_CWD="${JF_CWD:-"$(pwd)"}"
