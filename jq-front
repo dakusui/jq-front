@@ -137,7 +137,8 @@ function main() {
     done
     xargs_jqfront_options=("${xargs_jqfront_options[@]}")
     # shellcheck disable=SC2086
-    xargs ${xargs_options} "$(readlink -f ${BASH_SOURCE[0]})" "${xargs_jqfront_options[@]}"
+    debug "command line: '"xargs ${xargs_options} "$(readlink -f ${BASH_SOURCE[0]})" "${xargs_jqfront_options[@]}" "'"
+    xargs ${xargs_options} bash -c "$(readlink -f "${BASH_SOURCE[0]}")" "${xargs_jqfront_options[@]}"
   else
     function perform() {
       perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_NESTED_TEMPLATING_LEVELS}" "${_JF_VALIDATION}" "${_JF_PATH}" ${outfile}
