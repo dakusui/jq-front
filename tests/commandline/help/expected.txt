@@ -1,2 +1,8 @@
 Usage:
-[-h|--help] [--validation=[no|lenient|strict]] [nested-templating-levels] [--version] TARGET
+[-h|--help]
+[-o OUT]
+[--validation=[no|lenient|strict]]
+[nested-templating-levels]
+[--xargs=]
+[--version]
+TARGET
