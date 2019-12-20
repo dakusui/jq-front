@@ -139,6 +139,7 @@ function main() {
     xargs_jqfront_options=("${xargs_jqfront_options[@]}")
     _cmd="$(readlink -f "${BASH_SOURCE[0]}") ${xargs_jqfront_options[*]}"
     info "batch-mode: command line: 'xargs ${xargs_options} bash -c \"${_cmd}\"'"
+    # shellcheck disable=SC2086
     xargs ${xargs_options} bash -c "${_cmd}"
   else
     function perform() {
