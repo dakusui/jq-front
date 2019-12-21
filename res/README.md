@@ -11,7 +11,7 @@ jq-front [-h|--help] [--validation=no|strict|lenient] [--nested-templating-level
 - `-h`, `--help`: Shows a help
 - `--validation`: Validation mode.
 `no`, `strict`, and `lenient` are available.
-- `--nested-templating-levels:` Number of times templating happens by default. The default is 5. If templating doesn’t finish within num times, an error will be reported.
+- `--nested-templating-levels:` Number of times templating happens in the process. The default is 5. If templating doesn’t finish within ```num``` times, an error will be reported.
 - `--version`: Shows a version.
 - `TARGET`: A file to be processed. If not given, `stdin` will be processed
  
