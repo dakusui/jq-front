@@ -8,7 +8,6 @@ RUN apt-get update && \
     mkdir -p /var/lib/jq-front && \
     mkdir -p /app/lib && \
     mkdir -p /app/schema && \
-    apt-get remove npm -y && \
     apt-get autoremove -y && \
     echo $VERSION > /app/version_file
 COPY ./jq-front /app
