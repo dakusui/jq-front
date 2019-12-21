@@ -16,5 +16,6 @@ COPY ./build_info.sh /app
 COPY ./build_info.json /app
 COPY ./lib /app/lib
 COPY ./schema /app/schema
+COPY ./bin /usr/local/bin
 ENTRYPOINT ["/app/jq-front"]
 CMD []

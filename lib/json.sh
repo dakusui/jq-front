@@ -68,6 +68,8 @@ function is_object() {
   local _ret
   is_debug_enabled && debug "_json_content:'${_json_content}'"
   _ret="$(echo "${_json_content}" | jq '.|if type=="object" then 0 else 1 end' 2>/dev/null)"
+  [[ "${_ret}" == "" ]] &&
+    abort "Probably jq wrote something other than numeric value from the content:'${_json_content}'."
   return "${_ret}"
 }
 

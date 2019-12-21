@@ -2,9 +2,11 @@
 set -E -o nounset -o errexit +o posix -o pipefail
 shopt -s inherit_errexit
 
-JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
+readonly JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
 export JF_BASEDIR
-
+# shellcheck disable=SC1090
+# source = lib/jq-front.rc
+source "${JF_BASEDIR}/lib/jq-front.rc"
 # shellcheck disable=SC1090
 # source = lib/core.sh
 source "${JF_BASEDIR}/lib/core.sh"
@@ -31,6 +33,9 @@ source "${JF_BASEDIR}/lib/helpers.sh"
 source "${JF_BASEDIR}/build_info.sh"
 
 function perform_jqfront() {
+  function _sourced_files_dir() {
+    echo "${_JF_SESSION_DIR}/source_files"
+  }
   local _target="${1}" _templating="${2}" _templating_level="${3}" _validation_mode="${4}" _jf_path="${5}"
   local _content
   perf "begin"
@@ -46,7 +51,12 @@ function perform_jqfront() {
   perf "end"
 }
 
-function export_names_for_script_inheritance() {
+function prepare_temporary_directory() {
+  mkdir -p "${TMPDIR}"
+}
+
+function export_names() {
+  # for script inheritance
   export -f find_file
   export -f search_file_in
   export -f abort
@@ -56,14 +66,15 @@ function export_names_for_script_inheritance() {
   export _JF_PATH
   export _JF_PATH_BASE
   export TMPDIR
-}
-
-function _sourced_files_dir() {
-  echo "${_JF_SESSION_DIR}/source_files"
+  #
+  export _JF_POOL_DIR
+  export _JF_SCHEMA_DIR
+  _JF_POOL_DIR="$(nodepool_prepare)"
+  _JF_SCHEMA_DIR="${JF_BASEDIR}/schema"
 }
 
 function usage() {
-  message "Usage: $0 [-h|--help] [--validation=[no|lenient|strict]] [nested-templating-levels] [--version] TARGET"
+  message "Usage: $0 [-h|--help] [-o OUT] [--validation=[no|lenient|strict]] [nested-templating-levels] [--xargs=""] [--version] TARGET"
 }
 
 function version() {
@@ -76,10 +87,14 @@ function version() {
 }
 
 function main() {
+  local _templating_enabled=yes _nested_templating_levels=5 _validation=no
+  local xargs_options="" xargs="no" xargs_jqfront_options=("${@}") outfile=""
+  local options
+  info "command line: ${0} ${*}"
   # Call getopt to validate the provided input.
   options=$(getopt \
-    -o he \
-    --long help,version,validation:,nested-templating-levels: -- "$@") || {
+    -o heo: \
+    --long help,version,validation:,nested-templating-levels:,xargs: -- "$@") || {
     usage
     abort "Failed to  parse command line:'$*'"
   }
@@ -95,14 +110,25 @@ function main() {
         version
         exit 0
         ;;
+      -o)
+        outfile=$2
+        shift
+        shift
+        ;;
       --nested-templating-levels)
-        _JF_NESTED_TEMPLATING_LEVELS=$2
-        [[ "$2" != 0 ]] || _JF_TEMPLATING_ENABLED=no
+        _nested_templating_levels=$2
+        [[ "$2" != 0 ]] || _templating_enabled=no
         shift
         shift
         ;;
       --validation)
-        _JF_VALIDATION=$2
+        _validation=$2
+        shift
+        shift
+        ;;
+      --xargs)
+        xargs="yes"
+        xargs_options="${2}"
         shift
         shift
         ;;
@@ -116,56 +142,42 @@ function main() {
       esac
     done
   fi
-  if [[ $# == 0 ]]; then
-    _target="$(mktemp_with_content "$(cat)")"
+  if [[ "${xargs}" == "yes" ]]; then
+    local i _cmd
+    for i in "${!xargs_jqfront_options[@]}"; do
+      [[ "${xargs_jqfront_options[${i}]}" == "--xargs="* ]] && unset -v 'xargs_jqfront_options[$i]'
+    done
+    xargs_jqfront_options=("${xargs_jqfront_options[@]}")
+    _cmd="$(readlink -f "${BASH_SOURCE[0]}") ${xargs_jqfront_options[*]}"
+    info "batch-mode: command line: 'xargs ${xargs_options} bash -c \"${_cmd}\"'"
+    # shellcheck disable=SC2086
+    xargs ${xargs_options} bash -c "${_cmd}"
   else
-    _target="${1}"
+    function perform() {
+      perform_jqfront "${_target}" "${_templating_enabled}" "${_nested_templating_levels}" "${_validation}" "${_JF_PATH}"
+    }
+    if [[ $# == 0 ]]; then
+      _target="$(mktemp_with_content "$(cat)")" || abort "Failed to create a temporary file"
+    else
+      _target="${1}"
+    fi
+    mkdir -p "${_JF_SESSION_DIR}"
+    if [[ "${outfile}" != "" ]]; then
+      local _dir
+      _dir="$(dirname "${outfile}")"
+      [[ -d "${_dir}" ]] || abort "No directory:'${_dir}' is found"
+      [[ -w "${_dir}" ]] || abort "Cannot write a file under a directory:'${_dir}'"
+      [[ ! -e "${outfile}" || -w "${outfile}" ]] || abort "Cannot write to a file:'${outfile}'"
+      perform >"${outfile}"
+    else
+      perform
+    fi
   fi
-  mkdir -p "${_JF_SESSION_DIR}"
-  perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_NESTED_TEMPLATING_LEVELS}" "${_JF_VALIDATION}" "${_JF_PATH}"
 }
 
-_JF_CWD="${JF_CWD:-"$(pwd)"}"
-_JF_BASEDIR="${JF_BASEDIR}"
-_JF_PATH_BASE=${JF_PATH_BASE:-""}
-_JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
-_JF_TEMPLATING_ENABLED=${JF_TEMPLATING_ENABLED:-"yes"}
-_JF_NESTED_TEMPLATING_LEVELS=5
-_JF_VALIDATION=${JF_VALIDATION:-"no"}
-_JF_DEBUG=${JF_DEBUG:-"disabled"}
-_JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
-_JF_SESSION_ID="$(date +%s.%N)"
-_JF_SESSION_DIR="/tmp/.jq-front-${_JF_SESSION_ID}"
-
-debug "_JF_CWD=${_JF_CWD}"
-debug "_JF_BASEDIR=${_JF_BASEDIR}"
-####
-# JF_PATH_BASE is set when this program is run under Docker.
-debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
-debug "_JF_PATH=${_JF_PATH}"
-debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
-debug "_JF_NESTED_TEMPLATING_LEVELS=${_JF_NESTED_TEMPLATING_LEVELS}"
-debug "_JF_VALIDATION=${_JF_VALIDATION}"
-debug "_JF_DEBUG=${_JF_DEBUG}"
-debug "_JF_PERF=${_JF_PERF}"
-
-if [[ ${_JF_DEBUG} == enabled ]]; then
-  trap _debug_abort ERR
-fi
-
-export TMPDIR="${_JF_SESSION_DIR}"
-####
-# Export JF_PATH_BASE, which is set for executions under Docker
-if [[ -n "${_JF_PATH_BASE}" ]]; then
-  export TMPDIR="${_JF_PATH_BASE}/${TMPDIR}"
-fi
-mkdir -p "${TMPDIR}"
-
-export_names_for_script_inheritance
-export _JF_POOL_DIR
-export _JF_SCHEMA_DIR
-_JF_POOL_DIR="$(nodepool_prepare)"
-_JF_SCHEMA_DIR="${_JF_BASEDIR}/schema"
+print_global_variables
+prepare_temporary_directory
+export_names
 define_nodeentry_reader "expand_inheritances" "${_JF_POOL_DIR}"
 
 main "${@}"

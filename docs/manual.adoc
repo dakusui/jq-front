@@ -33,15 +33,6 @@ When it is searching for a file during node-level inheritance resolution, it fir
 
 `.`
 
-==== JF_TEMPLATING_ENABLED
-
-You can enable `jq-front` 's templating feature by setting this environment variable's value to `yes`.
-If any other value is set to the variable, it will not be executed.
-
-===== Default value
-
-`yes`
-
 ==== JF_DEBUG
 
 If this variable is set to `enabled`, debug information will be printed to `stderr`.
@@ -49,6 +40,24 @@ If this variable is set to `enabled`, debug information will be printed to `stde
 ===== Default value
 
 `disabled`
+
+==== JF_INFO
+
+(t.b.d.)
+
+===== Default value
+
+`disabled`
+
+
+==== JF_PERF
+
+(t.b.d.)
+
+===== Default value
+
+`disabled`
+
 
 [.text-right]
 link:index.html[top]

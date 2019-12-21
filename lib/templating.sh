@@ -22,6 +22,7 @@ function _perform_templating() {
   while [[ "${_c}" -ge 0 || "${_levels}" == -1 ]]; do
     local _each
     mapfile -t _entries < <(_string_node_entries_to_perform_templating "${_ret}")
+    # shellcheck disable=SC2015
     is_effectively_empty_array "${_entries[@]}" && break || :
     if [[ "${_c}" -eq 0 ]]; then
       error "Templating has been repeated ${_levels} time(s) but it did not finish.: Entries left untemplated are: [${_entries[*]}]"
@@ -145,6 +146,7 @@ function _define_builtin_functions() {
   #
   # This is a function intended to be used on templating (_render_text_node)
   function ref() {
+    # shellcheck disable=SC2181
     [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
     local _path="${1}"
     local value type
@@ -155,8 +157,7 @@ function _define_builtin_functions() {
     if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
       local ret
       _check_cyclic_dependency "${_path}" reference
-      ret="$(_render_text_node "${value}" "${_path}" "${_self_content}")"
-      [[ $? == 0 ]] || abort "TODO"
+      ret="$(_render_text_node "${value}" "${_path}" "${_self_content}")" || abort "TODO"
       _unmark_as_in_progress "${_path}" reference
       jq -r -c '.' <(echo "${ret}")
     else
@@ -165,6 +166,7 @@ function _define_builtin_functions() {
   }
 
   function refexists() {
+    # shellcheck disable=SC2181
     [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
     local _path="${1}"
     info "args:'${*}'"
@@ -172,6 +174,7 @@ function _define_builtin_functions() {
   }
 
   function reftag() {
+    # shellcheck disable=SC2181
     [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
     local _tagname="${1}"
     local _curpath
