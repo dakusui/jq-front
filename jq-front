@@ -2,6 +2,8 @@
 set -E -o nounset -o errexit +o posix -o pipefail
 shopt -s inherit_errexit
 
+readonly JF_BASEDIR=$(dirname "$(readlink --canonicalize "${0}")")
+export JF_BASEDIR
 # shellcheck disable=SC1090
 # source = lib/jq-front.rc
 source "${JF_BASEDIR}/lib/jq-front.rc"
@@ -31,6 +33,9 @@ source "${JF_BASEDIR}/lib/helpers.sh"
 source "${JF_BASEDIR}/build_info.sh"
 
 function perform_jqfront() {
+  function _sourced_files_dir() {
+    echo "${_JF_SESSION_DIR}/source_files"
+  }
   local _target="${1}" _templating="${2}" _templating_level="${3}" _validation_mode="${4}" _jf_path="${5}"
   local _content
   perf "begin"
@@ -46,7 +51,12 @@ function perform_jqfront() {
   perf "end"
 }
 
-function export_names_for_script_inheritance() {
+function prepare_temporary_directory() {
+  mkdir -p "${TMPDIR}"
+}
+
+function export_names() {
+  # for script inheritance
   export -f find_file
   export -f search_file_in
   export -f abort
@@ -56,10 +66,11 @@ function export_names_for_script_inheritance() {
   export _JF_PATH
   export _JF_PATH_BASE
   export TMPDIR
-}
-
-function _sourced_files_dir() {
-  echo "${_JF_SESSION_DIR}/source_files"
+  #
+  export _JF_POOL_DIR
+  export _JF_SCHEMA_DIR
+  _JF_POOL_DIR="$(nodepool_prepare)"
+  _JF_SCHEMA_DIR="${JF_BASEDIR}/schema"
 }
 
 function usage() {
@@ -76,9 +87,9 @@ function version() {
 }
 
 function main() {
+  local _templating_enabled=yes _nested_templating_levels=5 _validation=no
+  local xargs_options="" xargs="no" xargs_jqfront_options=("${@}") outfile=""
   local options
-  local xargs_options="" xargs="no" xargs_jqfront_options=("${@}")
-  local outfile=""
   info "command line: ${0} ${*}"
   # Call getopt to validate the provided input.
   options=$(getopt \
@@ -105,13 +116,13 @@ function main() {
         shift
         ;;
       --nested-templating-levels)
-        _JF_NESTED_TEMPLATING_LEVELS=$2
-        [[ "$2" != 0 ]] || _JF_TEMPLATING_ENABLED=no
+        _nested_templating_levels=$2
+        [[ "$2" != 0 ]] || _templating_enabled=no
         shift
         shift
         ;;
       --validation)
-        _JF_VALIDATION=$2
+        _validation=$2
         shift
         shift
         ;;
@@ -143,7 +154,7 @@ function main() {
     xargs ${xargs_options} bash -c "${_cmd}"
   else
     function perform() {
-      perform_jqfront "${_target}" "${_JF_TEMPLATING_ENABLED}" "${_JF_NESTED_TEMPLATING_LEVELS}" "${_JF_VALIDATION}" "${_JF_PATH}"
+      perform_jqfront "${_target}" "${_templating_enabled}" "${_nested_templating_levels}" "${_validation}" "${_JF_PATH}"
     }
     if [[ $# == 0 ]]; then
       _target="$(mktemp_with_content "$(cat)")" || abort "Failed to create a temporary file"
@@ -164,26 +175,9 @@ function main() {
   fi
 }
 
-debug "_JF_CWD=${_JF_CWD}"
-debug "_JF_BASEDIR=${_JF_BASEDIR}"
-####
-# JF_PATH_BASE is set when this program is run under Docker.
-debug "_JF_PATH_BASE=${_JF_PATH_BASE}"
-debug "_JF_PATH=${_JF_PATH}"
-debug "_JF_TEMPLATING_ENABLED=${_JF_TEMPLATING_ENABLED}"
-debug "_JF_NESTED_TEMPLATING_LEVELS=${_JF_NESTED_TEMPLATING_LEVELS}"
-debug "_JF_VALIDATION=${_JF_VALIDATION}"
-debug "_JF_INFO=${_JF_INFO}"
-debug "_JF_DEBUG=${_JF_DEBUG}"
-debug "_JF_PERF=${_JF_PERF}"
-
-mkdir -p "${TMPDIR}"
-
-export_names_for_script_inheritance
-export _JF_POOL_DIR
-export _JF_SCHEMA_DIR
-_JF_POOL_DIR="$(nodepool_prepare)"
-_JF_SCHEMA_DIR="${_JF_BASEDIR}/schema"
+print_global_variables
+prepare_temporary_directory
+export_names
 define_nodeentry_reader "expand_inheritances" "${_JF_POOL_DIR}"
 
 main "${@}"
