@@ -47,3 +47,5 @@ export TMPDIR="${_JF_SESSION_DIR}"
 if [[ -n "${_JF_PATH_BASE}" ]]; then
   export TMPDIR="${_JF_PATH_BASE}/${TMPDIR}"
 fi
+
+alias jq='jq -M'

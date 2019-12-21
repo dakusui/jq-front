@@ -42,7 +42,7 @@ function run_commandline_test() {
   _dirname="$(dirname "${_testfile}")"
   _option="$(jq -r -c '.option' "${_testfile}")"
   ${_JF} "${_option}" >"${_dirname}/test-output".json 2>"${_dirname}/test-error.txt" || return 1
-  local _missings="${_dirname}/test-output.diff"
+  local _mismatches="${_dirname}/test-output.diff"
   {
     local _expected
     local _error
@@ -53,13 +53,13 @@ function run_commandline_test() {
       if [[ ${_error} == *"${i}"* ]]; then
         continue
       else
-        echo "${i}" >>"${_missings}"
+        echo "${i}" >>"${_mismatches}"
       fi
     done
   }
-  if [[ -f ${_missings} ]]; then
+  if [[ -f ${_mismatches} ]]; then
     local _diff
-    _diff=$(cat "${_missings}") || return
+    _diff=$(cat "${_mismatches}") || return
     _ret=1
     message "FAILED: missing messages in stderr--->
     ${_diff}
@@ -80,24 +80,34 @@ function run_negative_test() {
     message "ABNORMAL EXIT WAS EXPECTED BUT IT WAS NORMAL:<${_JF}>:<$?>"
     return 1
   }
-  local _missings="${_dirname}/test-output.diff"
+  local _mismatches="${_dirname}/test-output.diff"
   {
-    local _expected
-    local _error
-    local i
+    local _expected _error i
     _error="$(cat "${_dirname}/test-error.txt")"
     IFS=$'\n' read -d '' -a _expected <"${_dirname}/expected.txt"
     for i in "${_expected[@]}"; do
       if [[ ${_error} =~ ${i} ]]; then
         continue
       else
-        echo "${i}" >>"${_missings}"
+        echo "< ${i}" >>"${_mismatches}"
       fi
     done
   }
-  if [[ -f ${_missings} ]]; then
+  [[ -e "${_dirname}/unexpected.txt" ]] && {
+    local _expected _error i
+    _error="$(cat "${_dirname}/test-error.txt")"
+    IFS=$'\n' read -d '' -a _expected <"${_dirname}/unexpected.txt"
+    for i in "${_expected[@]}"; do
+      if [[ ${_error} =~ ${i} ]]; then
+        echo "> ${i}" >>"${_mismatches}"
+      else
+        continue
+      fi
+    done
+  }
+  if [[ -f ${_mismatches} ]]; then
     local _diff
-    _diff=$(cat "${_missings}") || return
+    _diff=$(cat "${_mismatches}") || return
     _ret=1
     message "FAILED: missing messages in stderr--->
     ${_diff}
