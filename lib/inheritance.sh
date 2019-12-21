@@ -113,7 +113,7 @@ function _expand_nodelevel_inheritances() {
         local _cur_piece _next_piece
         _cur_piece="$(echo "${_cur}" | jq -r -c "${_p}")"
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
-        _merged_piece_content="$(merge_object_nodes "${_cur_piece}" "${_next_piece}")"
+        _merged_piece_content="$(merge_object_nodes "${_next_piece}" "${_cur_piece}")"
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge node:'${_cur}' with _nodeentry:'${_jj}'"
       else
