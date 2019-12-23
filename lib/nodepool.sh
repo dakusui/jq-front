@@ -77,7 +77,7 @@ function _jsonize() {
     # Let the args split. Since it is args.
     # shellcheck disable=SC2086
     debug "args.length=${#_args_array[@]}"
-    _ret="$(${_cmd} "${_args_array[@]}" "${_absfile}" | jq .)" ||
+    _ret="$(${_cmd} "${_args_array[@]}" "${_absfile}")" ||
       abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(1)"
   else
     if [[ "${_processor}" == SOURCE ]]; then
