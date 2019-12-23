@@ -8,6 +8,8 @@ export JF_BASEDIR
 # source = lib/jq-front.rc
 source "${JF_BASEDIR}/lib/jq-front.rc"
 # shellcheck disable=SC1090
+[[ -e "${HOME}/.jq-front.rc" ]] && source "${HOME}/.jq-front.rc"
+# shellcheck disable=SC1090
 # source = lib/core.sh
 source "${JF_BASEDIR}/lib/core.sh"
 # shellcheck disable=SC1090

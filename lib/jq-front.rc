@@ -1,3 +1,17 @@
+function expand_processor() {
+  local _processor_name="${1}" _target_file="${2}"
+  local _ret="${_processor_name}"
+  local _bash="bash -eu"
+  if [[ "${_processor_name}" == BASH ]]; then
+    _ret="${_bash}"
+  elif [[ "${_processor_name}" == DEFAULT ]]; then
+    if [[ "${_target_file}" == *.sh ]]; then
+    _ret="${_bash}"
+    fi
+  fi
+  echo "${_ret}"
+}
+
 function _debug_abort() {
   print_stacktrace "DEBUG: error trapped"
   exit 1

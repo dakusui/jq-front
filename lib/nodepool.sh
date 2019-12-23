@@ -54,15 +54,16 @@ function _normalize_nodeentry() {
 }
 
 function jsonize() {
-  local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
+  local _absfile="${1}" _processor="${2}" _args="${3:-""}"
   local _ret
+  _processor="$(expand_processor "${_processor}" "${_absfile}")"
   _ret="$(_jsonize "${_absfile}" "${_processor}" "${_args}")" ||
     abort "Malformed JSON was given:'${_absfile}'(processor=${_processor}, args=${_args})"
   echo "${_ret}"
 }
 
 function _jsonize() {
-  local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
+  local _absfile="${1}" _processor="${2}" _args="${3:-""}"
   local _ret
   debug "in: '${_absfile}' '${_processor}' '${_args}'"
   local -a _args_array
@@ -75,8 +76,8 @@ function _jsonize() {
     fi
     # Let the args split. Since it is args.
     # shellcheck disable=SC2086
-    debug "argslength=${#_args_array[@]}"
-    _ret="$(${_cmd} "${_args_array[@]}" "${_absfile}")" ||
+    debug "args.length=${#_args_array[@]}"
+    _ret="$(${_cmd} "${_args_array[@]}" "${_absfile}" | jq .)" ||
       abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(1)"
   else
     if [[ "${_processor}" == SOURCE ]]; then
