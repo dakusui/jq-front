@@ -138,7 +138,7 @@ function materialize_local_nodes() {
   local _content="${1}"
   local _ret _i
   debug "begin"
-  _ret="$(mktemp -d "${TMPDIR}/localnodes-XXXXXXXXXX")"
+  _ret="$(mk_localnodedir)"
   # Quickfix for Issue #98: Probably we should filter null, which can be produced by the first predicate (."$local")
   for _i in $(echo "${_content}" | jq -r -c '."$local"
     |. as $local

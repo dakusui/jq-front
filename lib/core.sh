@@ -68,6 +68,16 @@ function mktemp_with_content() {
   echo "${_ret}"
 }
 
+function is_localnode() {
+  local _absfile="${1}"
+  [[ "${_absfile}" == "${TMPDIR}/localnodes-"*/* ]] && return 0
+  return 1
+}
+
+function mk_localnodedir() {
+  mktemp -d "${TMPDIR}/localnodes-XXXXXXXXXX"
+}
+
 function search_file_in() {
   local _target="${1}" _path="${2}" _path_base="${3:-${_JF_PATH_BASE}}"
   local i

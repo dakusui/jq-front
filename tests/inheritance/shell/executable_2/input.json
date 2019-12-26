@@ -1,7 +1,7 @@
 {
   "i": {
     "$extends": [
-      "E.sh;DEFAULT;hello world"
+      "E;;hello world"
     ],
     "o": "hello world"
   }
