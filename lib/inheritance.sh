@@ -47,6 +47,7 @@ function expand_filelevel_inheritances() {
   is_debug_enabled && debug "content='${_content}'"
   _cur="${_content}"
   local -a _parents
+  # shellcheck disable=SC2016 # Intentional
   mapfile -t _parents <<<"$(value_at '."$extends"[]' "${_content}" '[]' '.[]')"
   if ! is_effectively_empty_array "${_parents[@]}"; then
     local i
@@ -56,7 +57,7 @@ function expand_filelevel_inheritances() {
       _c="$(merge_object_nodes "${_parent}" "${_cur}")"
       # Cannot check the exit code directly because of command substitution
       # shellcheck disable=SC2181
-      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'${_cur}'"
+      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'$(trim "${_cur}")'"
       _cur="${_c}"
     done
   fi
@@ -81,11 +82,11 @@ function expand_nodelevel_inheritances() {
   local _expanded _expanded_clean _clean _content _ret
   perf "begin"
   _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
-    abort "Failed to expand node level inheritance for node:'${_content}'(1)"
+    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)"
   _clean="$(_remove_meta_nodes "${_content}")"
   _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
   _ret=$(merge_object_nodes "${_expanded_clean}" "${_clean}") ||
-    abort "Failed to expand node level inheritance for node:'${_content}'(2)"
+    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(2)"
   echo "${_ret}"
   perf "end"
 }
@@ -115,7 +116,7 @@ function _expand_nodelevel_inheritances() {
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         _merged_piece_content="$(merge_object_nodes "${_next_piece}" "${_cur_piece}")"
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to merge node:'${_cur}' with _nodeentry:'${_jj}'"
+        [[ $? == 0 ]] || abort "Failed to merge node:'$(trim "${_cur}")' with _nodeentry:'${_jj}'"
       else
         local _expanded_tmp
         _expanded_tmp="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
@@ -137,7 +138,7 @@ function materialize_local_nodes() {
   local _content="${1}"
   local _ret _i
   debug "begin"
-  _ret="$(mktemp -d "${TMPDIR}/localnodes-XXXXXXXXXX")"
+  _ret="$(mk_localnodedir)"
   # Quickfix for Issue #98: Probably we should filter null, which can be produced by the first predicate (."$local")
   for _i in $(echo "${_content}" | jq -r -c '."$local"
     |. as $local

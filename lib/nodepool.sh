@@ -54,7 +54,7 @@ function _normalize_nodeentry() {
 }
 
 function jsonize() {
-  local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
+  local _absfile="${1}" _processor="${2}" _args="${3:-""}"
   local _ret
   _ret="$(_jsonize "${_absfile}" "${_processor}" "${_args}")" ||
     abort "Malformed JSON was given:'${_absfile}'(processor=${_processor}, args=${_args})"
@@ -62,35 +62,26 @@ function jsonize() {
 }
 
 function _jsonize() {
-  local _absfile="${1}" _processor="${2:-""}" _args="${3:-""}"
+  local _absfile="${1}" _processor="${2}" _args="${3:-""}"
   local _ret
   debug "in: '${_absfile}' '${_processor}' '${_args}'"
   local -a _args_array
   mapfile -t _args_array <<<"$(IFS=';' && echo "${_args}" | tr ';' $'\n' | grep -v -E '^$')"
-  [[ "${#_args_array[@]}" == 1 && "${_args_array[0]}" == "" ]] && _args_array=()
+  is_effectively_empty_array "${_args_array[@]}" && _args_array=()
   if [[ ${_processor} == "" ]]; then
-    local _cmd="jq ."
-    if [[ "${_absfile}" == *.yaml || "${_absfile}" == *.yml ]]; then
-      _cmd="yaml2json"
-    fi
-    # Let the args split. Since it is args.
-    # shellcheck disable=SC2086
-    debug "argslength=${#_args_array[@]}"
-    _ret="$(${_cmd} "${_args_array[@]}" "${_absfile}")" ||
-      abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(1)"
+    _processor="$(resolve_processor "${_absfile}")"
+  fi
+  if [[ "${_processor}" == SOURCE ]]; then
+    # Only number of files matters and it is safe to use ls here.
+    # shellcheck disable=SC2012
+    cp "${_absfile}" "$(_sourced_files_dir)/$(ls "$(_sourced_files_dir)" | wc -l)"
+    _ret="{}"
   else
-    if [[ "${_processor}" == SOURCE ]]; then
-      # Only number of files matters and it is safe to use ls here.
-      # shellcheck disable=SC2012
-      cp "${_absfile}" "$(_sourced_files_dir)/$(ls "$(_sourced_files_dir)" | wc -l)"
-      _ret="{}"
-    else
-      debug "_processor='${_processor}', _absfile='${_absfile}',_args=${_args}"
-      export _path
-      _ret="$(${_processor} "${_absfile}" "${_args_array[@]}" | jq .)" ||
-        abort "Failed to parse '${_absfile}' with '${_cmd}'(args:${_args_array[*]}):(2)"
-      unset _path
-    fi
+    debug "_processor='${_processor}', _absfile='${_absfile}',_args=${_args}"
+    export _path
+    _ret="$(${_processor} "${_absfile}" "${_args_array[@]}" | jq .)" ||
+      abort "Failed to parse '${_absfile}' with '${_processor}'(args:${_args_array[*]}):(2)"
+    unset _path
   fi
   is_debug_enabled && debug "output: ${_ret}"
   echo "${_ret}"

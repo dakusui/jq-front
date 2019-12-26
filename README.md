@@ -72,6 +72,7 @@ Add a following entry to your `.bashrc` or a file sourced through it.
 function jq-front() {
   docker run --rm -i \
     -v /:/var/lib/jf \
+    -v "${HOME}/.jq-front.rc:/root/.jq-front.rc" \
     -e JF_PATH_BASE="/var/lib/jf" \
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \

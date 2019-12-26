@@ -1,0 +1,8 @@
+{
+  "i": {
+    "$extends": [
+      "E;;hello world"
+    ],
+    "o": "hello world"
+  }
+}

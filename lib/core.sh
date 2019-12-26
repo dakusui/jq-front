@@ -22,6 +22,15 @@ function join_by() {
   echo "$*"
 }
 
+function trim() {
+  local _data="${1}" _length="${2:-40}"
+  if [[ "${#_data}" -gt "${_length}" ]]; then
+    echo "${_data}"
+    return 0
+  fi
+  echo "${_data:0:40}..."
+}
+
 function message() {
   local IFS=" "
   local _o
@@ -57,6 +66,16 @@ function mktemp_with_content() {
   _ret="$(mktemp)"
   echo "${_content}" >"${_ret}"
   echo "${_ret}"
+}
+
+function is_localnode() {
+  local _absfile="${1}"
+  [[ "${_absfile}" == "${TMPDIR}/localnodes-"*/* ]] && return 0
+  return 1
+}
+
+function mk_localnodedir() {
+  mktemp -d "${TMPDIR}/localnodes-XXXXXXXXXX"
 }
 
 function search_file_in() {

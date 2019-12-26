@@ -1,3 +1,16 @@
+function resolve_processor() {
+  local _absfile="${1}"
+  local _processor=""
+  if is_localnode "${_absfile}" || [[ ${_absfile} == *.json ]]; then
+    _processor="jq ."
+  elif [[ "${_absfile}" == *.yaml || "${_absfile}" == *.yml ]]; then
+    _processor="yaml2json"
+  elif [[ "${_absfile}" == *.sh ]]; then
+    _processor="bash -eu"
+  fi
+  echo "${_processor}"
+}
+
 function _debug_abort() {
   print_stacktrace "DEBUG: error trapped"
   exit 1
@@ -35,7 +48,7 @@ readonly _JF_INFO=${JF_INFO:-"disabled"}
 readonly _JF_DEBUG=${JF_DEBUG:-"disabled"}
 readonly _JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
 readonly _JF_SESSION_ID="$(date +%s.%N)"
-readonly _JF_SESSION_DIR="/tmp/.jq-front-${_JF_SESSION_ID}"
+readonly _JF_SESSION_DIR="${TMPDIR:-/tmp}/.jq-front-${_JF_SESSION_ID}"
 
 if [[ ${_JF_DEBUG} == enabled ]]; then
   trap _debug_abort ERR

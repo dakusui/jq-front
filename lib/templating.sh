@@ -68,7 +68,7 @@ function _render_text_node() {
   local _self_content="${3}" # DO NOT REMOVE: This local variable is referenced by built-in functions invoked on 'templating' stage.
   local _mode="raw" _quote="yes" _ret_code=0 _expected_type="string" _body _ret
   if [[ "${_node_value}" != template:* && "${_node_value}" != eval:* && "${_node_value}" != raw:* ]]; then
-    abort "Non-templating text node was found: '${_node_value}'"
+    abort "Non-templating text node was found: '$(trim "${_node_value}")'"
   fi
   _mode="${_node_value%%:*}"
   _body="${_node_value#*:}"
@@ -108,10 +108,10 @@ function _render_text_node() {
   fi
   local _actual_type="(malformed)"
   _actual_type="$(echo "${_ret}" | jq -r '.|type')" ||
-    abort "'${_node_value}' was rendered into '${_ret}' and it seems not a wel-formed JSON."
+    abort "'$(trim "${_node_value}")' was rendered into '${_ret}' and it seems not a wel-formed JSON."
   debug "expected type:'${_expected_type}' actual type:'${_actual_type}'"
   [[ "${_expected_type}" == "${_actual_type}" ]] ||
-    abort "Type mismatch was detected for:'${_node_value}' expected type:'${_expected_type}' actual type:'${_actual_type}'"
+    abort "Type mismatch was detected for:'$(trim "${_node_value}")' expected type:'${_expected_type}' actual type:'${_actual_type}'"
   echo "${_ret}"
   return "${_ret_code}"
 }
