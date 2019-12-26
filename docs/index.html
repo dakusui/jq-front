@@ -1173,6 +1173,7 @@ To install docker, visit</p>
 <pre class="highlight"><code class="language-shell script" data-lang="shell script">function jq-front() {
   docker run --rm -i \
     -v /:/var/lib/jf \
+    -v "${HOME}/.jq-front.rc:/root/.jq-front.rc" \
     -e JF_PATH_BASE="/var/lib/jf" \
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \

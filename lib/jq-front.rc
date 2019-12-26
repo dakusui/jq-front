@@ -58,7 +58,7 @@ export TMPDIR="${_JF_SESSION_DIR}"
 ####
 # Export JF_PATH_BASE, which is set for executions under Docker
 if [[ -n "${_JF_PATH_BASE}" ]]; then
-  export TMPDIR="${_JF_PATH_BASE}/${TMPDIR}"
+  export TMPDIR="${_JF_PATH_BASE}${TMPDIR}"
 fi
 
 alias jq='jq -M'
