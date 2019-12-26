@@ -22,6 +22,15 @@ function join_by() {
   echo "$*"
 }
 
+function trim() {
+  local _data="${1}" _length="${2:-40}"
+  if [[ "${#_data}" -gt "${_length}" ]]; then
+    echo "${_data}"
+    return 0
+  fi
+  echo "${_data:0:40}..."
+}
+
 function message() {
   local IFS=" "
   local _o
