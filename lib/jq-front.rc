@@ -1,6 +1,6 @@
 function resolve_processor() {
   local _absfile="${1}"
-  local _processor=""
+  local _processor="jq ."
   if is_localnode "${_absfile}" || [[ ${_absfile} == *.json ]]; then
     _processor="jq ."
   elif [[ "${_absfile}" == *.yaml || "${_absfile}" == *.yml ]]; then
