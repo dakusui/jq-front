@@ -26,30 +26,29 @@ function define_nodeentry_reader() {
 }
 
 function nodepool_read_nodeentry() {
-  local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4:-${_JF_POOL_DIR}}"
-  if [[ ${_nodeentry} == *\? ]]; then
-    _nodepool_read_nodeentry "${_nodeentry%\?}" "${_validation_mode}" "${_path}" "${_pooldir}" || echo '{}'
-  else
-    _nodepool_read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" "${_pooldir}"
-  fi
-}
-
-function _nodepool_read_nodeentry() {
   local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4}"
   local _cache
   perf "begin: '${_nodeentry}'"
-  _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
-  _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
-  _check_cyclic_dependency "${_nodeentry}" inheritance
-  if [[ -e "${_cache}" ]]; then
-    perf "Cache hit for node entry: '${_nodeentry}'"
+  if [[ ${_nodeentry} == *\? ]]; then
+    _nodeentry="$(_normalize_nodeentry "${_nodeentry%\?}" "${_path}")" || {
+      perf "end: '${_nodeentry}' (missing optional file)"
+      echo '{}'
+      return 0
+    }
   else
-    perf "Cache miss for node entry: '${_nodeentry}'"
-    read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" >"${_cache}"
+    _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
+    _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
+    _check_cyclic_dependency "${_nodeentry}" inheritance
+    if [[ -e "${_cache}" ]]; then
+      perf "Cache hit for node entry: '${_nodeentry}'"
+    else
+      perf "Cache miss for node entry: '${_nodeentry}'"
+      read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" >"${_cache}"
+    fi
+    cat "${_cache}"
+    _unmark_as_in_progress "${_nodeentry}" inheritance
+    perf "end: '${_nodeentry}' (cached by:'${_cache}')"
   fi
-  cat "${_cache}"
-  _unmark_as_in_progress "${_nodeentry}" inheritance
-  perf "end: '${_nodeentry}' (cached by:'${_cache}')"
 }
 
 function _normalize_nodeentry() {
