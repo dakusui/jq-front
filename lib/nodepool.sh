@@ -27,8 +27,8 @@ function define_nodeentry_reader() {
 
 function nodepool_read_nodeentry() {
   local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4:-${_JF_POOL_DIR}}"
-  if [[ ${_nodeentry} == *? ]]; then
-    _nodepool_read_nodeentry "${_nodeentry%?}" "${_validation_mode}" "${_path}" "${_pooldir}" || echo '{}'
+  if [[ ${_nodeentry} == *\? ]]; then
+    _nodepool_read_nodeentry "${_nodeentry%\?}" "${_validation_mode}" "${_path}" "${_pooldir}" || echo '{}'
   else
     _nodepool_read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" "${_pooldir}"
   fi
