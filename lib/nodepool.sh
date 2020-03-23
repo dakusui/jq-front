@@ -20,22 +20,21 @@ function define_nodeentry_reader() {
   export _NODEPOOL_SH_DRIVER_FUNCNAME
   function read_nodeentry() {
     local _nodeentry="${1}" _validation_mode="${2}" _path="${3}"
-    "${_NODEPOOL_SH_DRIVER_FUNCNAME}" "${_nodeentry}" "${_validation_mode}" "${_path}"
+    if [[ "${_nodeentry}" == *\? ]]; then
+      "${_NODEPOOL_SH_DRIVER_FUNCNAME}" "${_nodeentry%\?}" "${_validation_mode}" "${_path}" || {
+        echo "{}"
+      }
+    else
+      "${_NODEPOOL_SH_DRIVER_FUNCNAME}" "${_nodeentry}" "${_validation_mode}" "${_path}"
+    fi
   }
   debug "read_nodeentry was defined:$(type read_nodeentry)"
 }
 
 function nodepool_read_nodeentry() {
-  local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4}"
+  local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4:-${_JF_POOL_DIR}}"
   local _cache
   perf "begin: '${_nodeentry}'"
-  if [[ ${_nodeentry} == *\? ]]; then
-    _nodeentry="$(_normalize_nodeentry "${_nodeentry%\?}" "${_path}")" || {
-      perf "end: '${_nodeentry}' (missing optional file)"
-      echo '{}'
-      return 0
-    }
-  else
     _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
     _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
     _check_cyclic_dependency "${_nodeentry}" inheritance
@@ -48,7 +47,6 @@ function nodepool_read_nodeentry() {
     cat "${_cache}"
     _unmark_as_in_progress "${_nodeentry}" inheritance
     perf "end: '${_nodeentry}' (cached by:'${_cache}')"
-  fi
 }
 
 function _normalize_nodeentry() {
