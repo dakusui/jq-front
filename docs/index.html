@@ -435,7 +435,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
-
 // For tabs
 body {font-family: Arial;}
 
@@ -581,8 +580,7 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div>
-<div class="paragraph text-right"><p>
+</div><div class="paragraph text-right"><p>
 <a href="design.html">open this page in a window</a>
 </p></div>
 </div>
@@ -630,8 +628,7 @@ However, due to the specification of <code>bash</code>, if you use command subst
 </div>
 </div>
 </div>
-</div>
-<div class="paragraph text-right"><p>
+</div><div class="paragraph text-right"><p>
 <a href="faq.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1071,8 +1068,7 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div>
-<div class="paragraph text-right"><p>
+</div><div class="paragraph text-right"><p>
 <a href="features.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1182,7 +1178,7 @@ To install docker, visit</p>
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.40}" "${@}"
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.41}" "${@}"
 }</code></pre>
 </div>
 </div>
@@ -1195,8 +1191,7 @@ To install docker, visit</p>
 </div>
 </div>
 </div>
-</div>
-<div class="paragraph text-right"><p>
+</div><div class="paragraph text-right"><p>
 <a href="installation.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1211,6 +1206,39 @@ To install docker, visit</p>
 <p><a href="https://github.com/dakusui/jq-front/issues">Issues</a></p>
 </li>
 </ul>
+</div>
+<div class="sect2">
+<h3 id="_file_ends_with">File ends with <code>?</code></h3>
+<div class="paragraph">
+<p>With <a href="https://github.com/dakusui/jq-front/issues/138">Issue-138</a>, now a question mark <code>?</code> in a file name has a special semantics, where it means that it is considered an empty JSON object file if the file is not found by the `jq-front’s file searching mechanism.</p>
+</div>
+<div class="paragraph">
+<p>For instance,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "key": {
+     "$extends": [ "missingFile.json?" ]
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now, this produces</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "key": {}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Instead of giving you an error.
+And currently there is no way to specify a file whose name really ends with <code>?</code>.
+This semantics is only introduced in inheritances of JSON files, any other usages are not considered as of now.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_make_it_faster">Make it faster</h3>
@@ -1246,12 +1274,8 @@ It takes seconds to process even a relatively simple and small file.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-json" data-lang="json">{
-    "a": {
-       "b": 123,
-       "c": ["HELLO"]
-    }
-}</code></pre>
+<pre class="highlight"><code class="language-json" data-lang="json">{ "a": { "b": 123, "c": ["HELLO"]
+} }</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1279,8 +1303,7 @@ It takes seconds to process even a relatively simple and small file.</p>
 </div>
 </div>
 </div>
-</div>
-<div class="paragraph text-right"><p>
+</div><div class="paragraph text-right"><p>
 <a href="limitationsAndFutureWork.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1384,8 +1407,7 @@ Entries in the variable are separated by colons(<code>:</code>).</p>
 </div>
 </div>
 </div>
-</div>
-<div class="paragraph text-right"><p>
+</div><div class="paragraph text-right"><p>
 <a href="manual.html">open this page in a window</a>
 </p></div>
 </div>
@@ -2288,8 +2310,7 @@ And as you see, you are now able to call the function you defined, <code>hello_w
 </div>
 </div>
 </div>
-</div>
-<div class="paragraph text-right"><p>
+</div><div class="paragraph text-right"><p>
 <a href="syntax.html">open this page in a window</a>
 </p></div>
 </div>
@@ -2535,8 +2556,7 @@ foo_database:
 </div>
 </div>
 </div>
-</div>
-<div class="paragraph text-right"><p>
+</div><div class="paragraph text-right"><p>
 <a href="top.html">open this page in a window</a>
 </p></div>
 </div>
