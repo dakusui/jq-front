@@ -20,13 +20,7 @@ function define_nodeentry_reader() {
   export _NODEPOOL_SH_DRIVER_FUNCNAME
   function read_nodeentry() {
     local _nodeentry="${1}" _validation_mode="${2}" _path="${3}"
-    if [[ "${_nodeentry}" == *\? ]]; then
-      "${_NODEPOOL_SH_DRIVER_FUNCNAME}" "${_nodeentry%\?}" "${_validation_mode}" "${_path}" || {
-        echo "{}"
-      }
-    else
-      "${_NODEPOOL_SH_DRIVER_FUNCNAME}" "${_nodeentry}" "${_validation_mode}" "${_path}"
-    fi
+    "${_NODEPOOL_SH_DRIVER_FUNCNAME}" "${_nodeentry}" "${_validation_mode}" "${_path}"
   }
   debug "read_nodeentry was defined:$(type read_nodeentry)"
 }
@@ -35,18 +29,18 @@ function nodepool_read_nodeentry() {
   local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4:-${_JF_POOL_DIR}}"
   local _cache
   perf "begin: '${_nodeentry}'"
-    _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
-    _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
-    _check_cyclic_dependency "${_nodeentry}" inheritance
-    if [[ -e "${_cache}" ]]; then
-      perf "Cache hit for node entry: '${_nodeentry}'"
-    else
-      perf "Cache miss for node entry: '${_nodeentry}'"
-      read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" >"${_cache}"
-    fi
-    cat "${_cache}"
-    _unmark_as_in_progress "${_nodeentry}" inheritance
-    perf "end: '${_nodeentry}' (cached by:'${_cache}')"
+  _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
+  _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
+  _check_cyclic_dependency "${_nodeentry}" inheritance
+  if [[ -e "${_cache}" ]]; then
+    perf "Cache hit for node entry: '${_nodeentry}'"
+  else
+    perf "Cache miss for node entry: '${_nodeentry}'"
+    read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" >"${_cache}"
+  fi
+  cat "${_cache}"
+  _unmark_as_in_progress "${_nodeentry}" inheritance
+  perf "end: '${_nodeentry}' (cached by:'${_cache}')"
 }
 
 function _normalize_nodeentry() {
