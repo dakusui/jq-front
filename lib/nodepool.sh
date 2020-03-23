@@ -25,8 +25,17 @@ function define_nodeentry_reader() {
   debug "read_nodeentry was defined:$(type read_nodeentry)"
 }
 
-function nodepool_read_nodeentry() {
+function _nodepool_read_nodeentry() {
   local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4:-${_JF_POOL_DIR}}"
+  if [[ ${_nodeentry} == *? ]]; then
+    _nodepool_read_nodeentry "${_nodeentry%?}" "${_validation_mode}" "${_path}" "${_pooldir}" || echo '{}'
+  else
+    _nodepool_read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" "${_pooldir}"
+  fi
+}
+
+function _nodepool_read_nodeentry() {
+  local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4}"
   local _cache
   perf "begin: '${_nodeentry}'"
   _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
