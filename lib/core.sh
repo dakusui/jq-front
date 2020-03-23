@@ -62,8 +62,9 @@ function mktemp_with_content() {
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Preceding command is suspected to be failed already."
   local _content="${1:?No content was given}"
+  local _suffix="${2:-}"
   local _ret
-  _ret="$(mktemp)"
+  _ret="$(mktemp --suffix="${_suffix}")"
   echo "${_content}" >"${_ret}"
   echo "${_ret}"
 }
@@ -80,8 +81,13 @@ function mk_localnodedir() {
 
 function search_file_in() {
   local _target="${1}" _path="${2}" _path_base="${3:-${_JF_PATH_BASE}}"
+  local _optional="no"
   local i
-  debug "begin: _target='${_target}', _path='${_path}', _path_base='${_path_base}'"
+  if [[ "${_target}" == *\? ]]; then
+    _optional="yes"
+    _target="${_target%\?}"
+  fi
+  debug "begin: _target='${_target}', _path='${_path}', _path_base='${_path_base}', optional=${_optional}"
   IFS=':' read -r -a _arr <<<":${_path}"
   for i in "${_arr[@]}"; do
     local _ret
@@ -93,5 +99,9 @@ function search_file_in() {
       return 0
     fi
   done
-  abort "File '${_target}' was not found in '${_path}'(cwd:'$(pwd)')"
+  if [[ "${_optional}" == yes ]]; then
+    mktemp_with_content '{}' '.json'
+  else
+    abort "File '${_target}' was not found in '${_path}'(cwd:'$(pwd)')"
+  fi
 }

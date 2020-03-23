@@ -2,6 +2,34 @@
 
 * https://github.com/dakusui/jq-front/issues[Issues]
 
+=== File ends with `?`
+
+With https://github.com/dakusui/jq-front/issues/138[Issue-138], now a question mark `?` in a file name has a special semantics, where it means that it is considered an empty JSON object file if the file is not found by the `jq-front`'s file searching mechanism.
+
+For instance,
+
+[source,json]
+----
+{
+  "key": {
+     "$extends": [ "missingFile.json?" ]
+  }
+}
+----
+
+Now, this produces
+
+[source,json]
+----
+{
+  "key": {}
+}
+----
+
+Instead of giving you an error.
+And currently there is no way to specify a file whose name really ends with `?`.
+This semantics is only introduced in inheritances of JSON files, any other usages are not considered as of now.
+
 === Make it faster
 
 The largest weakpoint of `jq-front` is its performance.
@@ -22,14 +50,12 @@ To implement a processor like `jq-front` requires a notation to specify a certai
 
 `jq` has such as feature out-of-box.
 
-[source, json]
+[source,json]
 ----
-{
-    "a": {
-       "b": 123,
-       "c": ["HELLO"]
-    }
-}
+
+{ "a": { "b": 123, "c": ["HELLO"]
+} }
+
 ----
 
 The string `HELLO` in the array in the example above can be specified by a string `.a.c[0]`.
@@ -41,6 +67,7 @@ We need to choose a library that can do this sort of work or implement such a fu
 In order to implement the 'templating' feature, we need to be able to handle a string like following.
 
 ----
+
     "eval:object:{"hello":"$(ref .root.greeting[0].english)"}
 ----
 
