@@ -1,3 +1,4 @@
 {
-  "a": "A"
+  "a": "valueInA",
+  "b": "valueInB"
 }
