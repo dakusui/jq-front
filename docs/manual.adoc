@@ -43,7 +43,8 @@ If this variable is set to `enabled`, debug information will be printed to `stde
 
 ==== JF_INFO
 
-(t.b.d.)
+If this variable is set to `enabled`, "INFO"(information) level log will be printed to `stderr`.
+
 
 ===== Default value
 
@@ -52,7 +53,8 @@ If this variable is set to `enabled`, debug information will be printed to `stde
 
 ==== JF_PERF
 
-(t.b.d.)
+If this variable is set to `enabled`, "PERF"(performance) level log will be printed to `stderr`.
+
 
 ===== Default value
 
