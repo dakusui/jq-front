@@ -2517,6 +2517,47 @@ foo_database:
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_hocon">HOCON?</h3>
+<div class="paragraph">
+<p>HOCON<a href="#hocon">[hocon]</a> is another notation intended for human readability and writability.
+It also supports the data inheritance, and the node reference feature.
+However, you have still have good reasons to use <code>jq-front</code>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The input and output of <code>jq-front</code> are both JSON, which are widely accepted standard.</p>
+</li>
+<li>
+<p><code>jq-front</code> allows you to define custom operations very easily by "templating".</p>
+</li>
+<li>
+<p>The capability to structure data (data inheritance and node inheritance) and the improvements in human readability are two separate concerns, which shouldn’t be confused.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The last point tends to be looked over frequently but important in context of automating the system configuration, which is necessary in CI/CD.
+In order to configure your system automatically, it is important to generate the configuration file for the system programmatically.</p>
+</div>
+<div class="paragraph">
+<p>Nevertheless, HOCON is not so machine generatable format as JSON because it is a superset of JSON.
+Even if it is possible, still you end up in a problem, where you will potentially get an object looking differently after a round trip generation.
+That is, you first Write a HOCON file by hand, then process it by your program.
+After that, you may notice that the output of your program doesn’t respect your style.
+Style is not important for computers, but it is for human’s readability and wasn’t it the intention of the notation?
+This situation may come from the design of your pipeline, where you are trying to resolve two problems in a single stage by HOCON.
+One is human readability and the other is value resolution to structure your data.
+Instead, you can separate it into two stages, where those are executed separately.</p>
+</div>
+<div class="paragraph">
+<p>You can use <code>jq-front</code> for the second stage.
+With that, you can utilize any tools and libraries that are designed for JSON.
+(Remember, <code>jq</code> itself equips with a very powerful query language after which the tool was named).
+This approach delivers you another benefit, where you can select another solution to improve human readability of your configuration such as YAML.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -2548,6 +2589,9 @@ foo_database:
 </li>
 <li>
 <p><a id="stackoverflow"></a>[7] More complex inheritance in YAML? <a href="https://stackoverflow.com/questions/14184971/more-complex-inheritance-in-yaml">stackoverflow</a>:2019</p>
+</li>
+<li>
+<p><a id="hocon"></a> HOCON (Human-Optimized Config Object Notation) <a href="https://github.com/lightbend/config">HOCON</a>:2020</p>
 </li>
 </ul>
 </div>
