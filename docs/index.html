@@ -2521,8 +2521,7 @@ foo_database:
 <h3 id="_hocon">HOCON?</h3>
 <div class="paragraph">
 <p>HOCON<a href="#hocon">[hocon]</a> is another notation intended for human readability and writability.
-It also supports the data inheritance, and the node reference feature.
-However, you have still have good reasons to use <code>jq-front</code>.</p>
+It also supports the data inheritance, and the node reference feature but you have still have good reasons to use <code>jq-front</code>.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -2542,14 +2541,14 @@ However, you have still have good reasons to use <code>jq-front</code>.</p>
 In order to configure your system automatically, it is important to generate the configuration file for the system programmatically.</p>
 </div>
 <div class="paragraph">
-<p>Nevertheless, HOCON is not so machine generatable format as JSON because it is a superset of JSON.
+<p>However, HOCON is not so machine generatable format as JSON because it is a superset of JSON.
 Even if it is possible, still you end up in a problem, where you will potentially get an object looking differently after a round trip generation.
-That is, you first Write a HOCON file by hand, then process it by your program.
+That is, you first write a HOCON file by hand, then process it by your program.
 After that, you may notice that the output of your program doesn’t respect your style.
 Style is not important for computers, but it is for human’s readability and wasn’t it the intention of the notation?
 This situation may come from the design of your pipeline, where you are trying to resolve two problems in a single stage by HOCON.
 One is human readability and the other is value resolution to structure your data.
-Instead, you can separate it into two stages, where those are executed separately.</p>
+Instead, you can separate it into two stages, where those are executed independently.</p>
 </div>
 <div class="paragraph">
 <p>You can use <code>jq-front</code> for the second stage.
