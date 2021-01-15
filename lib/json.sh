@@ -54,7 +54,11 @@ function safe_path() {
   mapfile -td '.' _path_components < <(echo -n "${_path}")
   _ret=""
   for _i in "${_path_components[@]}"; do
-    _ret="${_ret}"'."'${_i}'"'
+    if [[ "${_i}" == '"'* ]]; then
+        _ret="${_ret}"'.'${_i}
+      else
+        _ret="${_ret}"'."'${_i}'"'
+    fi
   done
   echo -n "${_ret}"
 }

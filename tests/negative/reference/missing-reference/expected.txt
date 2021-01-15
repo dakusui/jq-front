@@ -1,1 +1,1 @@
-ERROR: Failed to access '.b' and default value for it was not given.
+ERROR: Failed to access '."b"' and default value for it was not given.
