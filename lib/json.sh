@@ -44,6 +44,25 @@ function validate_jf_json() {
   return $?
 }
 
+function safe_path() {
+  local _path="${1}"
+  local _i _path_components _ret
+  if [[ "${_path}" != "."* ]]; then
+    abort "Invalid path '${_path}' was given. A JSON path should start with a dot ('.')"
+  fi
+  _path="${_path#.}"
+  mapfile -td '.' _path_components < <(echo -n "${_path}")
+  _ret=""
+  for _i in "${_path_components[@]}"; do
+    if [[ "${_i}" == '"'* ]]; then
+        _ret="${_ret}"'.'${_i}
+      else
+        _ret="${_ret}"'."'${_i}'"'
+    fi
+  done
+  echo -n "${_ret}"
+}
+
 function _validate_jf_json_with() {
   validate_json "${1}" "${_JF_SCHEMA_DIR}/${2}.json"
 }

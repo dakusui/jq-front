@@ -151,7 +151,7 @@ function _define_builtin_functions() {
     local _path="${1}"
     local value type
     info "args:'${*}'"
-    value=$(value_at "${_path}" "$(self)")
+    value=$(value_at "$(safe_path "${_path}")" "$(self)")
     type="$(type_of "${value}")"
     debug "value:'${value}'(type:'${type}') path:'${_path}'"
     if [[ "${type}" == string && ("${value}" == eval:* || "${value}" == template:*) ]]; then
@@ -170,7 +170,7 @@ function _define_builtin_functions() {
     [[ $? == 0 ]] || abort "Preceding failure was detected by '${FUNCNAME[0]}'."
     local _path="${1}"
     info "args:'${*}'"
-    has_value_at "${_path}" "$(self)"
+    has_value_at "$(safe_path "${_path}")" "$(self)"
   }
 
   function reftag() {
