@@ -46,7 +46,6 @@ function validate_jf_json() {
 
 function safe_path() {
   local _path="${1}"
-  message "safe_path:${_path}"
   if [[ "${_path}" != "."* ]]; then
     abort "Invalid path '${_path}' was given. A JSON path should start with a dot ('.')"
   fi

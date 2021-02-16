@@ -151,7 +151,6 @@ function _define_builtin_functions() {
     local _path="${1}"
     local value type
     info "args:'${*}'"
-    message "_path:'${_path}'"
     value=$(value_at "$(safe_path "${_path}")" "$(self)")
     type="$(type_of "${value}")"
     debug "value:'${value}'(type:'${type}') path:'${_path}'"
