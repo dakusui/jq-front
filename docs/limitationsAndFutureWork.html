@@ -444,6 +444,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_limitations_and_future_work">Limitations and Future Work</a>
 <ul class="sectlevel2">
 <li><a href="#_file_ends_with">File ends with <code>?</code></a></li>
+<li><a href="#_referencing_a_json_path_containing">Referencing a JSON path containing <code><code>.</code></code></a></li>
 <li><a href="#_make_it_faster">Make it faster</a></li>
 </ul>
 </li>
@@ -492,6 +493,38 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Instead of giving you an error.
 And currently there is no way to specify a file whose name really ends with <code>?</code>.
 This semantics is only introduced in inheritances of JSON files, any other usages are not considered as of now.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_referencing_a_json_path_containing">Referencing a JSON path containing <code><code>.</code></code></h3>
+<div class="paragraph">
+<p>It is tricky to reference a path containing <code><code>.</code></code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "key": "eval:string:$(ref '.\"key-2.suffix\"')",
+  "key-2.suffix": "Hello, world!"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that you first need the double quotes for the path component (<code><code>key-2.suffix</code></code>).
+Then, you need the single quotes for the entire path expression ('.\"key-2.suffix\"') to prevent the double quotes going away.</p>
+</div>
+<div class="paragraph">
+<p>Finally, the input renders into a following JSON content.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "key": "Hello, world!",
+  "key-2.suffix": "Hello, world!"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The quotings are necessary because the <code><code>jq-front</code></code> relies on <code><code>eval</code></code> built-in of <code><code>bash</code></code> for implementing the <code><code>eval:</code></code> syntax.</p>
 </div>
 </div>
 <div class="sect2">
@@ -560,7 +593,7 @@ It takes seconds to process even a relatively simple and small file.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-03-23 17:45:35 UTC
+Last updated 2021-02-16 09:18:53 UTC
 </div>
 </div>
 </body>
