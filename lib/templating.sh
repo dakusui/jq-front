@@ -97,7 +97,7 @@ function _render_text_node() {
     unset _path
     # shellcheck disable=SC2002
     _error_out="$(cat "${_error}")"
-    [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "$(printf "Error was detected during templating: '${_body}'\n%s" "$(cat "${_error}")")"
+    [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "$(printf "Error was detected during templating: '${_body}'\n====\n%s\n----" "$(cat "${_error}")")"
     debug "value: '${_ret}', stderr during eval:'${_error_out}'"
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
@@ -151,6 +151,7 @@ function _define_builtin_functions() {
     local _path="${1}"
     local value type
     info "args:'${*}'"
+    message "_path:'${_path}'"
     value=$(value_at "$(safe_path "${_path}")" "$(self)")
     type="$(type_of "${value}")"
     debug "value:'${value}'(type:'${type}') path:'${_path}'"

@@ -30,6 +30,34 @@ Instead of giving you an error.
 And currently there is no way to specify a file whose name really ends with `?`.
 This semantics is only introduced in inheritances of JSON files, any other usages are not considered as of now.
 
+=== Referencing a JSON path containing ```.```
+
+It is tricky to reference a path containing ```.```.
+
+[source,json]
+----
+{
+  "key": "eval:string:$(ref '.\"key-2.suffix\"')",
+  "key-2.suffix": "Hello, world!"
+}
+----
+
+Note that you first need the double quotes for the path component (```key-2.suffix```).
+Then, you need the single quotes for the entire path expression ('.\"key-2.suffix\"') to prevent the double quotes going away.
+
+Finally, the input renders into a following JSON content.
+
+[source,json]
+----
+{
+  "key": "Hello, world!",
+  "key-2.suffix": "Hello, world!"
+}
+
+----
+
+The quotings are necessary because the ```jq-front``` relies on ```eval``` built-in of ```bash``` for implementing the ```eval:``` syntax.
+
 === Make it faster
 
 The largest weakpoint of `jq-front` is its performance.
