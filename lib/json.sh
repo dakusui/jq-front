@@ -46,21 +46,41 @@ function validate_jf_json() {
 
 function safe_path() {
   local _path="${1}"
-  local _i _path_components _ret
   if [[ "${_path}" != "."* ]]; then
     abort "Invalid path '${_path}' was given. A JSON path should start with a dot ('.')"
   fi
-  _path="${_path#.}"
-  mapfile -td '.' _path_components < <(echo -n "${_path}")
-  _ret=""
-  for _i in "${_path_components[@]}"; do
-    if [[ "${_i}" == '"'* ]]; then
-        _ret="${_ret}"'.'${_i}
-      else
-        _ret="${_ret}"'."'${_i}'"'
-    fi
+  _safe_path "${_path}"
+}
+
+function _safe_path() {
+  function _safe_path_head() {
+    local _text="${1}"
+    echo "$_text" | sed -E 's/\.("([^"]+)"|([^"^.]+))(.*$)/\1/'
+  }
+
+  function _safe_path_tail() {
+    local _text="${1}"
+    echo "$_text" | sed -E 's/\.("([^"]+)"|([^"^.]+))(.*$)/\4/'
+  }
+
+  local _path="${1}"
+  local _rest="${_path}"
+
+  while [ "${_rest}" != "" ]; do
+    _safe_path_component "$(_safe_path_head "${_rest}")"
+    _rest=$(_safe_path_tail "${_rest}")
   done
-  echo -n "${_ret}"
+}
+
+function _safe_path_component() {
+  local _path_component="${1}"
+  if [[ "${_path_component}" == '"'*'"' ]]; then
+    echo -n ."${_path_component}"
+  elif [[ "${_path_component}" != '"'* && "${_path_component}" != *'"' ]]; then
+    echo -n .'"'"${_path_component}"'"'
+  else
+    abort "Invalid path component '${_path_component}' was found."
+  fi
 }
 
 function _validate_jf_json_with() {
