@@ -1,9 +1,9 @@
 function resolve_processor() {
   local _absfile="${1}"
   local _processor="jq ."
-  if is_localnode "${_absfile}" || [[ ${_absfile} == *.json ]]; then
+  if is_localnode "${_absfile}" || [[ ${_absfile} == *.json++ || ${_absfile} == *.json ]]; then
     _processor="jq ."
-  elif [[ "${_absfile}" == *.yaml || "${_absfile}" == *.yml ]]; then
+  elif [[ "${_absfile}" == *.yaml++ || "${_absfile}" == *.yaml || "${_absfile}" == *.yml ]]; then
     _processor="yaml2json"
   elif [[ "${_absfile}" == *.sh ]]; then
     _processor="bash -eu"
@@ -41,7 +41,7 @@ function _mangle_path() {
   echo "${_path_base}:${_ret}"
 }
 
-readonly _JF_CWD="${JF_CWD:-"$(pwd)"}"
+readonly _JF_CWD="${JF_CWD:-"$(pwd)"}"c
 readonly _JF_PATH_BASE=${JF_PATH_BASE:-""}
 readonly _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 readonly _JF_INFO=${JF_INFO:-"disabled"}
@@ -49,6 +49,12 @@ readonly _JF_DEBUG=${JF_DEBUG:-"disabled"}
 readonly _JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
 readonly _JF_SESSION_ID="$(date +%s.%N)"
 readonly _JF_SESSION_DIR="${TMPDIR:-/tmp}/.jq-front-${_JF_SESSION_ID}"
+
+function __jqfront__abort_jq_front() {
+  abort "SIGINT TRAPPED!!!!"
+}
+
+trap __jqfront__abort_jq_front SIGINT
 
 if [[ ${_JF_DEBUG} == enabled ]]; then
   trap _debug_abort ERR
