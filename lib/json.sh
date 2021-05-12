@@ -1,6 +1,8 @@
 [[ "${_JSON_SH:-""}" == "yes" ]] && return 0
 _JSON_SH=yes
 
+source "$(dirname "${BASH_SOURCE[0]}")/core.sh"
+
 function _remove_meta_nodes() {
   local _content="${1}"
   if is_object "${_content}"; then
@@ -154,14 +156,18 @@ function value_at() {
 # Latter overrides former
 function merge_object_nodes() {
   local _a="${1}" _b="${2}"
-  local _error
+  local _afile _bfile _error
   _error=$(mktemp)
   perf "begin"
   [[ "${_a}" != '' ]] || abort "An empty string was given as _a"
   [[ "${_b}" != '' ]] || abort "An empty string was given as _b"
   is_debug_enabled && debug "merging _a:'${_a}' and _b:'${_b}'"
+  _afile="$(mktemp)"
+  echo "${_a}" >"${_afile}"
+  _bfile="$(mktemp)"
+  echo "${_b}" >"${_bfile}"
   # shellcheck disable=SC2016
-  jq -r -c -n --argjson a "${_a}" --argjson b "${_b}" -L "${JF_BASEDIR}/lib" \
+  jq -r -c -n --slurpfile a "${_afile}" --slurpfile b "${_bfile}" -L "${JF_BASEDIR}/lib" \
     'import "shared" as shared;
     def value_at($n; $p):
       $n | getpath($p);
@@ -186,11 +192,12 @@ function merge_object_nodes() {
       $b | [paths(scalars_or_empty)]
          | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
 
-    merge_objects($a; $b)' 2>"${_error}" || {
+    merge_objects($a; $b) | .[]' 2>"${_error}" || {
     abort "$(printf "jq-front: Failed to merge object nodes:\n    a=<%s>\n    b=<%s>\nERROR: %s)" \
       "$(jq -r -c -n "${_a}|." || echo "MALFORMED: ${_a}")" \
       "$(jq -r -c -n "${_b}|." || echo "MALFORMED: ${_b}")" \
       "$(cat "${_error}" || echo "UNAVAILABLE")")"
   }
+  rm -f "${_bfile}" "${_afile}"
   perf "end"
 }
