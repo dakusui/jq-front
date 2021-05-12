@@ -55,12 +55,12 @@ function safe_path() {
 function _safe_path() {
   function _safe_path_head() {
     local _text="${1}"
-    echo "$_text" | sed -E 's/\.("([^"]+)"|([^"^.]+))(.*$)/\1/'
+    echo "$_text" | sed -E 's/\.("([^"]+)"([^"^.]+)?|([^"^.]+))(.*$)/\1/'
   }
 
   function _safe_path_tail() {
     local _text="${1}"
-    echo "$_text" | sed -E 's/\.("([^"]+)"|([^"^.]+))(.*$)/\4/'
+    echo "$_text" | sed -E 's/\.("([^"]+)"([^"^.]+)?|([^"^.]+))(.*$)/\5/'
   }
 
   local _path="${1}"
@@ -75,6 +75,8 @@ function _safe_path() {
 function _safe_path_component() {
   local _path_component="${1}"
   if [[ "${_path_component}" == '"'*'"' ]]; then
+    echo -n ."${_path_component}"
+  elif [[ "${_path_component}" == '"'*'"['*']' ]]; then
     echo -n ."${_path_component}"
   elif [[ "${_path_component}" != '"'* && "${_path_component}" != *'"' ]]; then
     echo -n .'"'"${_path_component}"'"'

@@ -269,7 +269,7 @@ This feature is still experimental.
 === Templating
 
 Sometimes we need to compose a value of text node from a value of another.
-Following is a such an example.
+Following is such an example.
 
 [source, json]
 .Version file
