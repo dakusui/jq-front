@@ -8,7 +8,7 @@
 <title>jq-front: JSON with inheritance and templating</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
-
+<style><![CDATA[
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
 /* Uncomment @import statement to use as custom stylesheet */
 /*@import "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700";*/
@@ -435,6 +435,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer{background:none}
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
+]]></style>
 // For tabs
 body {font-family: Arial;}
 
@@ -500,7 +501,7 @@ body {font-family: Arial;}
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/pipeline.png" alt="pipeline" width="920" height="574">
+<img src="images/pipeline.png" alt="pipeline" width="920" height="574"/>
 </div>
 <div class="title">Figure 1. jq-front’s pipeline</div>
 </div>
@@ -580,7 +581,8 @@ Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> h
 </div>
 </div>
 </div>
-</div><div class="paragraph text-right"><p>
+</div>
+<div class="paragraph text-right"><p>
 <a href="design.html">open this page in a window</a>
 </p></div>
 </div>
@@ -628,7 +630,8 @@ However, due to the specification of <code>bash</code>, if you use command subst
 </div>
 </div>
 </div>
-</div><div class="paragraph text-right"><p>
+</div>
+<div class="paragraph text-right"><p>
 <a href="faq.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1068,7 +1071,8 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 </div>
 </div>
-</div><div class="paragraph text-right"><p>
+</div>
+<div class="paragraph text-right"><p>
 <a href="features.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1178,7 +1182,7 @@ To install docker, visit</p>
     -e JF_PATH="${JF_PATH}" \
     -e JF_DEBUG=${JF_DEBUG:-disabled} \
     -e JF_CWD="$(pwd)" \
-    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.46}" "${@}"
+    dakusui/jq-front:"${JF_DOCKER_TAG:-v0.47}" "${@}"
 }</code></pre>
 </div>
 </div>
@@ -1191,7 +1195,8 @@ To install docker, visit</p>
 </div>
 </div>
 </div>
-</div><div class="paragraph text-right"><p>
+</div>
+<div class="paragraph text-right"><p>
 <a href="installation.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1335,7 +1340,8 @@ It takes seconds to process even a relatively simple and small file.</p>
 </div>
 </div>
 </div>
-</div><div class="paragraph text-right"><p>
+</div>
+<div class="paragraph text-right"><p>
 <a href="limitationsAndFutureWork.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1439,7 +1445,8 @@ Entries in the variable are separated by colons(<code>:</code>).</p>
 </div>
 </div>
 </div>
-</div><div class="paragraph text-right"><p>
+</div>
+<div class="paragraph text-right"><p>
 <a href="manual.html">open this page in a window</a>
 </p></div>
 </div>
@@ -1769,8 +1776,8 @@ In case cyclic reference is found during this process, it will be reported and t
 <h4 id="_examples">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
 </colgroup>
 <thead>
 <tr>
@@ -1908,8 +1915,8 @@ This function is intended for internal use.</p>
 <h4 id="_examples_2">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
 </colgroup>
 <thead>
 <tr>
@@ -2011,8 +2018,8 @@ An "entry" means a string element in an array or a pair of key and value in an o
 <h4 id="_examples_3">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
 </colgroup>
 <thead>
 <tr>
@@ -2146,8 +2153,8 @@ Thus, <code>cur</code> function calls in inherited files are evaluated based on 
 <h4 id="_examples_4">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
 </colgroup>
 <thead>
 <tr>
@@ -2263,8 +2270,8 @@ In this case, the evaluation will not stop at the point and <code>jq-front</code
 <h4 id="_examples_5">Examples</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
 </colgroup>
 <thead>
 <tr>
@@ -2342,7 +2349,8 @@ And as you see, you are now able to call the function you defined, <code>hello_w
 </div>
 </div>
 </div>
-</div><div class="paragraph text-right"><p>
+</div>
+<div class="paragraph text-right"><p>
 <a href="syntax.html">open this page in a window</a>
 </p></div>
 </div>
@@ -2369,8 +2377,8 @@ For instance, under a situation, where we need to generate similar but slightly 
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
 </colgroup>
 <thead>
 <tr>
@@ -2439,8 +2447,8 @@ For instance, under a situation, where we need to generate similar but slightly 
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
 </colgroup>
 <thead>
 <tr>
@@ -2492,8 +2500,8 @@ Although I am a bit skeptical at the discussion from some view points (e.g., use
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
 </colgroup>
 <thead>
 <tr>
@@ -2597,32 +2605,32 @@ This approach delivers you another benefit, where you can select another solutio
 <div class="ulist bibliography">
 <ul class="bibliography">
 <li>
-<p><a id="jq-front"></a>[1] jq-front project in github.org. <a href="https://github.com/dakusui/jq-front">jq-front</a>:
+<p><a id="jq-front"/>[1] jq-front project in github.org. <a href="https://github.com/dakusui/jq-front">jq-front</a>:
 2019</p>
 </li>
 <li>
-<p><a id="Cfront"></a>[2] Cfront article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/Cfront">Cfront</a>:
+<p><a id="Cfront"/>[2] Cfront article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/Cfront">Cfront</a>:
 2019</p>
 </li>
 <li>
-<p><a id="cr"></a>[3] Thayne McCombs. <a href="https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/">Why JSON isn’t a Good Configuration Language</a>:
+<p><a id="cr"/>[3] Thayne McCombs. <a href="https://www.lucidchart.com/techblog/2018/07/16/why-json-isnt-a-good-configuration-language/">Why JSON isn’t a Good Configuration Language</a>:
 2018.</p>
 </li>
 <li>
-<p><a id="yaml"></a>[4] YAML article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/YAML">YAML</a>:
+<p><a id="yaml"/>[4] YAML article in en.wikipedia.org. <a href="https://en.wikipedia.org/wiki/YAML">YAML</a>:
 2019</p>
 </li>
 <li>
-<p><a id="json"></a>[5] json.org. <a href="http://www.json.org/">JSON</a>:2019</p>
+<p><a id="json"/>[5] json.org. <a href="http://www.json.org/">JSON</a>:2019</p>
 </li>
 <li>
-<p><a id="jq"></a>[6]  jq <a href="https://stedolan.github.io/jq/manual/">jq manual</a>:2019</p>
+<p><a id="jq"/>[6]  jq <a href="https://stedolan.github.io/jq/manual/">jq manual</a>:2019</p>
 </li>
 <li>
-<p><a id="stackoverflow"></a>[7] More complex inheritance in YAML? <a href="https://stackoverflow.com/questions/14184971/more-complex-inheritance-in-yaml">stackoverflow</a>:2019</p>
+<p><a id="stackoverflow"/>[7] More complex inheritance in YAML? <a href="https://stackoverflow.com/questions/14184971/more-complex-inheritance-in-yaml">stackoverflow</a>:2019</p>
 </li>
 <li>
-<p><a id="hocon"></a> HOCON (Human-Optimized Config Object Notation) <a href="https://github.com/lightbend/config">HOCON</a>:2020</p>
+<p><a id="hocon"/> HOCON (Human-Optimized Config Object Notation) <a href="https://github.com/lightbend/config">HOCON</a>:2020</p>
 </li>
 </ul>
 </div>
@@ -2631,7 +2639,8 @@ This approach delivers you another benefit, where you can select another solutio
 </div>
 </div>
 </div>
-</div><div class="paragraph text-right"><p>
+</div>
+<div class="paragraph text-right"><p>
 <a href="top.html">open this page in a window</a>
 </p></div>
 </div>
