@@ -192,7 +192,7 @@ function merge_object_nodes() {
       $b | [paths(scalars_or_empty)]
          | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
 
-    merge_objects($a; $b) | .[]' 2>"${_error}" || {
+    merge_objects($a[0]; $b[0])' 2>"${_error}" || {
     abort "$(printf "jq-front: Failed to merge object nodes:\n    a=<%s>\n    b=<%s>\nERROR: %s)" \
       "$(jq -r -c -n "${_a}|." || echo "MALFORMED: ${_a}")" \
       "$(jq -r -c -n "${_b}|." || echo "MALFORMED: ${_b}")" \
