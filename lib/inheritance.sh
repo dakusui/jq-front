@@ -133,20 +133,22 @@ function _expand_nodelevel_inheritances() {
   perf "end"
   echo "${_cur}" | jq -r -c .
 }
-
+# "
 function materialize_local_nodes() {
   local _content="${1}"
   local _ret _i
   debug "begin"
   _ret="$(mk_localnodedir)"
   # Quickfix for Issue #98: Probably we should filter null, which can be produced by the first predicate (."$local")
-  for _i in $(echo "${_content}" | jq -r -c '."$local"
-    |. as $local
-    |keys[]
-    |. as $k
-    |$local|getpath([$k])
-           |. as $v
-           |[$k, $v]' 2>/dev/null); do
+  mapfile -t _local_nodes < <(echo "${_content}" | jq -r -c '."$local"
+                                   |. as $local
+                                   |keys[]
+                                   |. as $k
+                                   |$local|getpath([$k])
+                                          |. as $v
+                                          |[$k, $v]' 2>/dev/null)
+  for _i in "${_local_nodes[@]}"; do
+    debug "_i:'${_i}'"
     echo "${_i}" | jq -c '.[1]' >"${_ret}/$(echo "${_i}" | jq -r -c '.[0]')"
   done
   echo "${_ret}"
