@@ -55,13 +55,15 @@ Doesn't it seem useful? Have fun!
 
 ### Ubuntu
 Place the file `jq-front`, `lib`, and `schema` somewhere on your `PATH`.
-Followings will be required by `jq-front`
+Following tools are used to develop `jq-front`.
+A version for each tool used for development and testing are found in parentheses.
 
-* `jq`
-* `bash`
-* `npm`
-  * `ajv-cli`
-* `yq`
+* `bash` (`5.0.17`)
+* `jq` (`1.6`)
+* `npm` (`6.14.4`)
+  * `yamljs` (`0.3.0`)
+
+Refer to the `Dockerfile` for procedure to set up development environment. 
 
 ### With Docker
 
