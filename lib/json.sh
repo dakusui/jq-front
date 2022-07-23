@@ -125,18 +125,6 @@ function has_value_at() {
   has_value_at_strict "${@}"
 }
 
-function has_value_at_loose() {
-  local _path="${1}"
-  local _json="${2}"
-  local _val
-  _val=$(echo "${_json}" | jq "${_path}|select(.)") || return 1
-  if [[ -z ${_val} ]]; then
-    return 1
-  else
-    return 0
-  fi
-}
-
 function has_value_at_strict() {
   local _path="${1}"
   local _json="${2}"
@@ -167,26 +155,6 @@ function has_value_at_strict() {
 
 function value_at() {
   value_at_strict "${@}"
-}
-
-function value_at_loose() {
-  local _path="${1}" # A path from which the output is retrieved.
-  local _json="${2}" # JSON content
-  local _default="${3:-}"
-  local _filter="${4:-.}"
-  local _ret
-  _ret="$(
-    echo "${_json}" | jq -r -c "${_path}|select(.)" 2>/dev/null
-  )"
-  if [[ -z "${_ret}" ]]; then
-    if [[ -z "${_default}" ]]; then
-      abort "Failed to access '${_path}' and default value for it was not given."
-    else
-      echo "${_default}" | jq -r -c "${_filter}"
-    fi
-  else
-    echo "${_ret}"
-  fi
 }
 
 function value_at_strict() {
