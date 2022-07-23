@@ -122,6 +122,10 @@ function type_of() {
 }
 
 function has_value_at() {
+  has_value_at_strict "${@}"
+}
+
+function has_value_at_loose() {
   local _path="${1}"
   local _json="${2}"
   local _val
@@ -133,7 +137,39 @@ function has_value_at() {
   fi
 }
 
+function has_value_at_strict() {
+  local _path="${1}"
+  local _json="${2}"
+  local _r
+  _r="$(echo "${_json}" | jq -r -c '
+  . as $c |
+  null | try path('"${_path}"') catch error("not an exact path expression.") | . as $p |
+  length as $l |
+  $p | .[$l - 1] | . as $last |
+  $p |
+  if $l - 1 <= 0 then
+    []
+  else
+    [limit($l -1; .[])]
+  end | . as $q |
+  if $q | length == 0 then
+    $c | has($last)
+  else
+    $c | getpath($q) | type == "object" and has($last)
+  end')" 2> /dev/null || abort "Failed to access path:'${_path}' json:'${_json}'"
+  if [[ "${_r}" == 'true' ]]; then
+    return 0
+  elif [[ "${_r}" == 'false' ]]; then
+    return 1
+  fi
+  abort "INTERNAL ERROR: Invalid value:'${_r}' produced by 'has_value_at_strict'(_path:'${_path}' json:'${_json}')"
+}
+
 function value_at() {
+  value_at_strict "${@}"
+}
+
+function value_at_loose() {
   local _path="${1}" # A path from which the output is retrieved.
   local _json="${2}" # JSON content
   local _default="${3:-}"
@@ -151,6 +187,34 @@ function value_at() {
   else
     echo "${_ret}"
   fi
+}
+
+function value_at_strict() {
+  local _path="${1}"
+  local _json="${2}"
+  if ! has_value_at "${_path}" "${_json}"; then
+    if [[ -z "${3+x}" ]]; then
+      abort "Failed to access '${_path}' and default value for it was not given."
+    fi
+    echo "${3}"
+    return 0
+  fi
+  echo "${_json}" |
+  jq -r -c '. as $c |
+            null | try path('"${_path}"') catch error("not an exact path expression.") | . as $p |
+            length as $l |
+            $p | .[$l - 1] | . as $last |
+            $p |
+            if $l - 1 <= 0 then
+              []
+            else
+              [limit($l -1; .[])]
+            end | . as $q |
+            if $q | length == 0 then
+              $c | getpath([$last])
+            else
+              $c | getpath($p)
+            end' 2> /dev/null
 }
 
 # Latter overrides former

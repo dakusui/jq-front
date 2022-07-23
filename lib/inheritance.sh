@@ -48,7 +48,7 @@ function expand_filelevel_inheritances() {
   _cur="${_content}"
   local -a _parents
   # shellcheck disable=SC2016 # Intentional
-  mapfile -t _parents <<<"$(value_at '."$extends"[]' "${_content}" '[]' '.[]')"
+  mapfile -t _parents <<<"$(value_at '."$extends"' "${_content}" '[]' | jq -c -r '.[]')"
   if ! is_effectively_empty_array "${_parents[@]}"; then
     local i
     for i in "${_parents[@]}"; do
