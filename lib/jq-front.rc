@@ -41,7 +41,7 @@ function _mangle_path() {
   echo "${_path_base}:${_ret}"
 }
 
-readonly _JF_CWD="${JF_CWD:-"$(pwd)"}"c
+readonly _JF_CWD="${JF_CWD:-"$(pwd)"}"
 readonly _JF_PATH_BASE=${JF_PATH_BASE:-""}
 readonly _JF_PATH=$(_mangle_path "${JF_PATH:-"."}" "${_JF_PATH_BASE}")
 readonly _JF_INFO=${JF_INFO:-"disabled"}
