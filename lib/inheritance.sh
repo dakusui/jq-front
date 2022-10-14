@@ -47,7 +47,8 @@ function expand_filelevel_inheritances() {
   is_debug_enabled && debug "content='${_content}'"
   _cur="${_content}"
   local -a _parents
-  # shellcheck disable=SC2016 # Intentional
+  # BEGIN: normal inheritance
+  # shellcheck disable=SC2016
   mapfile -t _parents <<<"$(value_at '."$extends"' "${_content}" '[]' | jq -c -r '.[]')"
   if ! is_effectively_empty_array "${_parents[@]}"; then
     local i
@@ -61,7 +62,25 @@ function expand_filelevel_inheritances() {
       _cur="${_c}"
     done
   fi
-  echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
+  # END: normal inheritance
+  # BEGIN: reverse inheritance
+  # shellcheck disable=SC2016
+  mapfile -t _children <<<"$(value_at '."$includes"' "${_content}" '[]' | jq -c -r '.[]')"
+  if ! is_effectively_empty_array "${_children[@]}"; then
+    local i
+    for i in "${_children[@]}"; do
+      local _c _child
+      _child="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
+      _c="$(merge_object_nodes "${_cur}" "${_child}")"
+      # Cannot check the exit code directly because of command substitution
+      # shellcheck disable=SC2181
+      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'$(trim "${_cur}")'"
+      _cur="${_c}"
+    done
+  fi
+  # END: reverse inheritance
+  # remove reserved keywords
+  echo "${_cur}" | jq -r -c '.|del(.["$extends"])'| jq -r -c '.|del(.["$includes"])'
   perf "end"
 }
 
