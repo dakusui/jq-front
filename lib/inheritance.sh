@@ -102,8 +102,10 @@ function expand_nodelevel_inheritances() {
   perf "begin"
   _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)"
-  _clean="$(_remove_meta_nodes "${_content}")"
-  _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
+  # shellcheck disable=SC2016
+  _clean="$(remove_nodes "${_content}" '$extends')"
+  # shellcheck disable=SC2016
+  _expanded_clean="$(remove_nodes "${_expanded}" '$extends')"
   _ret=$(merge_object_nodes "${_expanded_clean}" "${_clean}") ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(2)"
   echo "${_ret}"

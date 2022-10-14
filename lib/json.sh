@@ -3,13 +3,14 @@ _JSON_SH=yes
 
 source "$(dirname "${BASH_SOURCE[0]}")/core.sh"
 
-function _remove_meta_nodes() {
-  local _content="${1}"
+# Remove paths which end with a given keyword from a JSON object and prints it.
+function remove_nodes() {
+  local _content="${1}" _keyword="${2}"
   if is_object "${_content}"; then
     local _keys i
     # Intentional single quote to find a keyword that starts with '$'
     # shellcheck disable=SC2016
-    mapfile -t _keys < <(paths_of "${_content}" '$extends') || _keys=()
+    mapfile -t _keys < <(paths_of "${_content}" "${_keyword}") || _keys=()
     for i in "${_keys[@]}"; do
       local _next
       _next="$(echo "${_content}" | jq ".|del(${i})")"
@@ -19,6 +20,7 @@ function _remove_meta_nodes() {
   echo "${_content}"
 }
 
+# List paths in a json object which end with a given keyword.
 function paths_of() {
   local _content="${1}" _keyword="${2}"
   echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
