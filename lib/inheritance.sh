@@ -118,7 +118,7 @@ function _expand_nodelevel_inheritances() {
   is_debug_enabled && debug "_content='${_content}'"
   # Intentional single quote to find a keyword that starts with '$'
   # shellcheck disable=SC2016
-  mapfile -t _keys < <(_paths_of_extends "${_content}")
+  mapfile -t _keys < <(paths_of "${_content}" '$extends')
   is_effectively_empty_array "${_keys[@]}" && _keys=()
   for i in "${_keys[@]}"; do
     local _jj _p="${i%.\"\$extends\"}"
@@ -152,6 +152,7 @@ function _expand_nodelevel_inheritances() {
   perf "end"
   echo "${_cur}" | jq -r -c .
 }
+
 # "
 function materialize_local_nodes() {
   local _content="${1}"
