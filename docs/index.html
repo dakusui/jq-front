@@ -664,6 +664,9 @@ To specify JSON objects to be inherited, <code>jq-front</code> searches for keys
 <p>Node-level Inheritance</p>
 </li>
 <li>
+<p>Reverse Inheritance</p>
+</li>
+<li>
 <p>Script-output Inheritance</p>
 </li>
 <li>
@@ -909,6 +912,55 @@ And <code>P.json</code> will result in following output.</p>
     "a": "a"
   }
 }</code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_reverse_inheritance">Reverse Inheritance</h4>
+<div class="paragraph">
+<p>When you design a data structure using JSON (or YAML), you often find that you want to define a template, where user custom files are inserted.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "company": "SPQR",
+  "laptopSpec": {
+    "cpu": "M1",
+    "mem": "16GB",
+    "storage": "512GB"
+  },
+  "userConfig" : {
+    "userName": "eval:$(whoami)",
+    "preferredShell": "zsh",
+    "preferredWindowManager": "twm"
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Suppose that your users have their user preference files at <code>/userhome/.yourapp/config</code> as a JSON file.
+You are thinking of overriding the elements under <code>userConfig</code> by the JSON config file.
+But using the normal inheritance (<code>$extends</code>) here will not help.
+Because the values you define in the base file as default values will override the user specific configuration.
+Not the other way around.
+What you can do here is "reverse inheritance" with the <code>$includes</code> keyword.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "company": "SPQR",
+  "laptopSpec": {
+    "cpu": "M1",
+    "mem": "16GB",
+    "storage": "512GB"
+  },
+  "userConfig" : {
+    "$includes": [ "/userhome/.yourapp/config" ],
+    "userName": "eval:$(whoami)",
+    "preferredShell": "zsh",
+    "preferredWindowManager": "twm"
+  }
+}</code></pre>
+</div>
 </div>
 </div>
 <div class="sect3">

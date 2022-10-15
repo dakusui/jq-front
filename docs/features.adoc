@@ -11,6 +11,7 @@ Basic features offered by the product are following
 * Inheritance
 ** File-level Inheritance
 ** Node-level Inheritance
+** Reverse Inheritance
 ** Script-output Inheritance
 ** Yaml inheritance
 * Templating ("eval" feature)
@@ -21,29 +22,30 @@ And usage of them will be discussed in this section.
 In this section, we introduce features of the product using following data.
 
 * link:examples/A.json[A.json]
-[source, json]
+[source,json]
 include::examples/A.json[]
 
 * link:examples/AA.json[AA.json]
-[source, json]
+[source,json]
 include::examples/AA.json[]
 
 * link:examples/B.json[B.json]
-[source, json]
+[source,json]
 include::examples/B.json[]
 
 * link:examples/T.json[T.json]
-[source, json]
+[source,json]
 include::examples/T.json[]
 
 === Inheritance
+
 ==== File-level Inheritance
 
 In programming languages, inheritance is an indispensable technique to reuse a component.
 `jq-front` offers it for the purpose.
 A usage example is as follows.
 
-[source, json]
+[source,json]
 .I.json
 ----
 {
@@ -58,8 +60,7 @@ jq-front I.json
 
 `I.json` will be rendered into the following JSON object with this command line.
 
-
-[source, json]
+[source,json]
 .File-level Inheritance output
 ----
 {
@@ -74,7 +75,7 @@ Multiple inheritance is also supported by `jq-front`.
 Just by listing file names of JSONs to be inherited, multiple inheritance happens, like `"$extends": ["A.json", "B.json"]`.
 When both `A.json` and `B.json` have attributes at the same path, `A.json` side's value will be used.
 
-[source, json]
+[source,json]
 .J.json
 ----
 {
@@ -84,7 +85,7 @@ When both `A.json` and `B.json` have attributes at the same path, `A.json` side'
 
 That is, `J.json` will be rendered into following output.
 
-[source, json]
+[source,json]
 .File-level Multiple Inheritance output
 ----
 {
@@ -100,7 +101,7 @@ For instance, one is for authentication information and the other is for GUI fla
 
 JSON objects that are inherited can also inherit some other JSON files.
 
-[source, json]
+[source,json]
 .K.json
 ----
 {
@@ -110,7 +111,7 @@ JSON objects that are inherited can also inherit some other JSON files.
 
 That is, `K.json` is rendered into a following JSON file.
 
-[source, json]
+[source,json]
 .File-level Inheritance output (2)
 ----
 {
@@ -129,7 +130,7 @@ It will be checked and result in an error.
 "Node-level Inheritance" refers to an inheritance happens on an internal (object) node of a given JSON file.
 Although it is implemented as a separate mechanism from the file-level one as it will be discussed in "Design" section, it behaves almost the same as the "file-level" one.
 
-[source, json]
+[source,json]
 .L.json
 ----
 {
@@ -140,7 +141,7 @@ Although it is implemented as a separate mechanism from the file-level one as it
 }
 ----
 
-[source, json]
+[source,json]
 .Node-level Inheritance output
 ----
 {
@@ -155,7 +156,7 @@ As it worked for File-level Inheritance, multiple inheritance works also for Nod
 
 However, for internal nodes, you can also reference "local" nodes not only external files.
 
-[source, json]
+[source,json]
 .P.json
 ----
 {
@@ -177,7 +178,7 @@ These nodes can be referenced through "node-level inheritance feature" as shown 
 Note that you do not need to specify `.json` extension.
 And `P.json` will result in following output.
 
-[source, json]
+[source,json]
 .Local Node Inheritance output
 ----
 {
@@ -188,13 +189,59 @@ And `P.json` will result in following output.
 }
 ----
 
+==== Reverse Inheritance
+
+When you design a data structure using JSON (or YAML), you often find that you want to define a template, where user custom files are inserted.
+
+[source,json]
+----
+{
+  "company": "SPQR",
+  "laptopSpec": {
+    "cpu": "M1",
+    "mem": "16GB",
+    "storage": "512GB"
+  },
+  "userConfig" : {
+    "userName": "eval:$(whoami)",
+    "preferredShell": "zsh",
+    "preferredWindowManager": "twm"
+  }
+}
+----
+
+Suppose that your users have their user preference files at `/userhome/.yourapp/config` as a JSON file.
+You are thinking of overriding the elements under `userConfig` by the JSON config file.
+But using the normal inheritance (`$extends`) here will not help.
+Because the values you define in the base file as default values will override the user specific configuration.
+Not the other way around.
+What you can do here is "reverse inheritance" with the `$includes` keyword.
+
+[source,json]
+----
+{
+  "company": "SPQR",
+  "laptopSpec": {
+    "cpu": "M1",
+    "mem": "16GB",
+    "storage": "512GB"
+  },
+  "userConfig" : {
+    "$includes": [ "/userhome/.yourapp/config" ],
+    "userName": "eval:$(whoami)",
+    "preferredShell": "zsh",
+    "preferredWindowManager": "twm"
+  }
+}
+----
+
 ==== Script Inheritance
 
 `jq-front` can use the output from your shell as a file to be extended if it is a JSON node.
 
 For instance, if you have a following script file: `S.sh`, which prints something like `{"S":"shell"}`.
 
-[source, bash]
+[source,bash]
 .S.sh
 ----
 echo '{"S":"shell-'${1}'"}'
@@ -229,13 +276,12 @@ This results in a file as follows.
 The component `bash -eu` is a program with which the script (`S.sh`) is executed.
 This feature is still experimental.
 
-
 ==== Yaml file inheritance
 
 `jq-front` can handle YAML files also.
 If you have following two files,
 
-[source, yaml]
+[source,yaml]
 .A.yml
 ----
 ---
@@ -244,7 +290,7 @@ o: A
 y: Y
 ----
 
-[source, json]
+[source,json]
 ----
 {
   "$extends": [ "A.yml" ],
@@ -254,7 +300,7 @@ y: Y
 
 The output will be like following
 
-[source, json]
+[source,json]
 ----
 {
   "a": "A",
@@ -263,7 +309,6 @@ The output will be like following
 }
 ----
 
-
 This feature is still experimental.
 
 === Templating
@@ -271,7 +316,7 @@ This feature is still experimental.
 Sometimes we need to compose a value of text node from a value of another.
 Following is such an example.
 
-[source, json]
+[source,json]
 .Version file
 ----
 {
@@ -287,7 +332,7 @@ Templating is a feature to offer a solution to this challenge.
 
 We can describe this relationship by using the templating feature of `jq-front`.
 
-[source, json]
+[source,json]
 .T.json
 ----
 {
@@ -302,7 +347,8 @@ Once you render this file with `jq-front`, you will get the first file (Version 
 Not only built-in functions but also any commands (bash expressions) valid on a platform on which `jq-front` is running can be used here.
 
 For instance, following is a valid input to `jq-front`.
-[source, json]
+[source,json]
+
 ----
 {
   "releaseVersion": "2.12.0",
@@ -311,7 +357,8 @@ For instance, following is a valid input to `jq-front`.
 ----
 
 And this will result in an output below.
-[source, json]
+[source,json]
+
 ----
 {
   "releaseVersion": "2.12.0",

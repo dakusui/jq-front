@@ -15,7 +15,7 @@ function expand_inheritances() {
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
   validate_jf_json "${_jsonized_content}" "${_validation_mode}"
   if is_object "${_jsonized_content}"; then
-    local _local_nodes_dir _c _expanded
+    local _local_nodes_dir _c _extends_expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
@@ -24,11 +24,11 @@ function expand_inheritances() {
     debug "_nodeentry='${_nodeentry}', _absfile='${_absfile}'"
     _local_nodes_dir=$(materialize_local_nodes "${_c}")
     expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
-    _expanded="$(expand_nodelevel_inheritances "${_c}" \
+    _extends_expanded="$(expand_nodelevel_inheritances "${_c}" \
       "${_validation_mode}" \
       "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "Failed to expand node level inheritance for '${_nodeentry}'(3)"
-    _out="${_expanded}"
+    _out="${_extends_expanded}"
   else
     : # Clear $?
     _out="${_jsonized_content}"
@@ -47,7 +47,8 @@ function expand_filelevel_inheritances() {
   is_debug_enabled && debug "content='${_content}'"
   _cur="${_content}"
   local -a _parents
-  # shellcheck disable=SC2016 # Intentional
+  # BEGIN: normal inheritance
+  # shellcheck disable=SC2016
   mapfile -t _parents <<<"$(value_at '."$extends"' "${_content}" '[]' | jq -c -r '.[]')"
   if ! is_effectively_empty_array "${_parents[@]}"; then
     local i
@@ -61,7 +62,25 @@ function expand_filelevel_inheritances() {
       _cur="${_c}"
     done
   fi
-  echo "${_cur}" | jq -r -c '.|del(.["$extends"])'
+  # END: normal inheritance
+  # BEGIN: reverse inheritance
+  # shellcheck disable=SC2016
+  mapfile -t _children <<<"$(value_at '."$includes"' "${_content}" '[]' | jq -c -r '.[]')"
+  if ! is_effectively_empty_array "${_children[@]}"; then
+    local i
+    for i in "${_children[@]}"; do
+      local _c _child
+      _child="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
+      _c="$(merge_object_nodes "${_cur}" "${_child}")"
+      # Cannot check the exit code directly because of command substitution
+      # shellcheck disable=SC2181
+      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'$(trim "${_cur}")'"
+      _cur="${_c}"
+    done
+  fi
+  # END: reverse inheritance
+  # remove reserved keywords
+  echo "${_cur}" | jq -r -c '.|del(.["$extends"])' | jq -r -c '.|del(.["$includes"])'
   perf "end"
 }
 
@@ -79,30 +98,36 @@ function expand_inheritances_for_local_nodes() {
 
 function expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
-  local _expanded _expanded_clean _clean _content _ret
+  local _extends_expanded _includes_expanded _clean _content _ret
   perf "begin"
-  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
+  _clean="${_content}"
+  _clean="$(remove_nodes "${_clean}" '$extends')"
+  _clean="$(remove_nodes "${_clean}" '$includes')"
+  _extends_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$extends')" ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)"
-  _clean="$(_remove_meta_nodes "${_content}")"
-  _expanded_clean="$(_remove_meta_nodes "${_expanded}")"
-  _ret=$(merge_object_nodes "${_expanded_clean}" "${_clean}") ||
+  _extends_expanded=$(merge_object_nodes "${_extends_expanded}" "${_clean}") ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(2)"
+  _includes_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$includes')" ||
+    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(3)"
+  _ret=$(merge_object_nodes "${_extends_expanded}" "${_includes_expanded}") ||
+    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(4)"
+  _ret="$(remove_nodes "${_ret}" '$extends')"
+  _ret="$(remove_nodes "${_ret}" '$includes')"
   echo "${_ret}"
   perf "end"
 }
 
 function _expand_nodelevel_inheritances() {
-  local _content="${1}" _validation_mode="${2}" _path="${3}"
+  local _content="${1}" _validation_mode="${2}" _path="${3}" _keyword="${4}"
   local _cur='{}' i
   local -a _keys
   perf "begin"
   is_debug_enabled && debug "_content='${_content}'"
   # Intentional single quote to find a keyword that starts with '$'
-  # shellcheck disable=SC2016
-  mapfile -t _keys < <(_paths_of_extends "${_content}")
+  mapfile -t _keys < <(paths_of "${_content}" "${_keyword}")
   is_effectively_empty_array "${_keys[@]}" && _keys=()
   for i in "${_keys[@]}"; do
-    local _jj _p="${i%.\"\$extends\"}"
+    local _jj _p="${i%.\"${_keyword}\"}"
     local -a _extendeds
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]")
     is_effectively_empty_array "${_extendeds[@]}" && _extendeds=()
@@ -114,7 +139,13 @@ function _expand_nodelevel_inheritances() {
         local _cur_piece _next_piece
         _cur_piece="$(echo "${_cur}" | jq -r -c "${_p}")"
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
-        _merged_piece_content="$(merge_object_nodes "${_next_piece}" "${_cur_piece}")"
+        if [[ "${_keyword}" == '$extends' ]]; then
+          _merged_piece_content="$(merge_object_nodes "${_next_piece}" "${_cur_piece}")"
+        elif [[ "${_keyword}" == '$includes' ]]; then
+          _merged_piece_content="$(merge_object_nodes "${_cur_piece}" "${_next_piece}")"
+        else
+          abort "Unknown keyword: '${_keyword}' was specified."
+        fi
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge node:'$(trim "${_cur}")' with _nodeentry:'${_jj}'"
       else
@@ -133,6 +164,7 @@ function _expand_nodelevel_inheritances() {
   perf "end"
   echo "${_cur}" | jq -r -c .
 }
+
 # "
 function materialize_local_nodes() {
   local _content="${1}"
