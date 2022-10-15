@@ -15,7 +15,7 @@ function expand_inheritances() {
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
   validate_jf_json "${_jsonized_content}" "${_validation_mode}"
   if is_object "${_jsonized_content}"; then
-    local _local_nodes_dir _c _expanded
+    local _local_nodes_dir _c _extends_expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
@@ -24,11 +24,11 @@ function expand_inheritances() {
     debug "_nodeentry='${_nodeentry}', _absfile='${_absfile}'"
     _local_nodes_dir=$(materialize_local_nodes "${_c}")
     expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
-    _expanded="$(expand_nodelevel_inheritances "${_c}" \
+    _extends_expanded="$(expand_nodelevel_inheritances "${_c}" \
       "${_validation_mode}" \
       "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "Failed to expand node level inheritance for '${_nodeentry}'(3)"
-    _out="${_expanded}"
+    _out="${_extends_expanded}"
   else
     : # Clear $?
     _out="${_jsonized_content}"
@@ -80,7 +80,7 @@ function expand_filelevel_inheritances() {
   fi
   # END: reverse inheritance
   # remove reserved keywords
-  echo "${_cur}" | jq -r -c '.|del(.["$extends"])'| jq -r -c '.|del(.["$includes"])'
+  echo "${_cur}" | jq -r -c '.|del(.["$extends"])' | jq -r -c '.|del(.["$includes"])'
   perf "end"
 }
 
@@ -98,16 +98,18 @@ function expand_inheritances_for_local_nodes() {
 
 function expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
-  local _expanded _clean _content _ret
+  local _extends_expanded _clean _content _ret
   perf "begin"
-  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$extends')" ||
+  _clean="${_content}"
+  _clean="$(remove_nodes "${_clean}" '$extends')"
+  _clean="$(remove_nodes "${_clean}" '$includes')"
+  _extends_expanded="${_content}"
+  _extends_expanded="$(_expand_nodelevel_inheritances "${_extends_expanded}" "${_validation_mode}" "${_path}" '$extends')" ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)"
-  # shellcheck disable=SC2016
-  _clean="$(remove_nodes "${_content}" '$extends')"
-  # shellcheck disable=SC2016
-  _expanded="$(remove_nodes "${_expanded}" '$extends')"
-  _ret=$(merge_object_nodes "${_expanded}" "${_clean}") ||
+  _extends_expanded="$(remove_nodes "${_extends_expanded}" '$extends')"
+  _extends_expanded=$(merge_object_nodes "${_extends_expanded}" "${_clean}") ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(2)"
+  _ret="${_extends_expanded}"
   echo "${_ret}"
   perf "end"
 }
