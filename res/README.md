@@ -166,7 +166,7 @@ Also please do not forget removing your custom configuration made on `build_info
 ## Support
 
 * <a href="https://github.com/dakusui/jq-front/issues">Issues</a>
-* Twitter at <a href="http://twitter.com/\______HU">@\______HU</a>
+* Twitter at <a href="https://twitter.com/______HU">@______HU</a>
 
 ## License
 
