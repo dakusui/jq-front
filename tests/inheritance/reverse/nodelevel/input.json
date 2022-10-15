@@ -1,7 +1,15 @@
 {
   "nodeLevelInheritance": {
     "$extends": [
-      "C.json"
-    ]
+      "D.json",
+      "E.json"
+    ],
+    "$includes": [
+      "B.json",
+      "A.json"
+    ],
+    "attrA": "valueFromNode",
+    "attrB": "valueFromNode",
+    "attrC": "valueFromNode"
   }
 }
