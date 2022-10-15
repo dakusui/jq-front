@@ -109,7 +109,7 @@ function expand_nodelevel_inheritances() {
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(2)"
   _includes_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$includes')" ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(3)"
-  _ret=$(merge_object_nodes "${_includes_expanded}" "${_extends_expanded}") ||
+  _ret=$(merge_object_nodes "${_extends_expanded}" "${_includes_expanded}") ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(4)"
   _ret="$(remove_nodes "${_ret}" '$extends')"
   _ret="$(remove_nodes "${_ret}" '$includes')"
@@ -139,7 +139,13 @@ function _expand_nodelevel_inheritances() {
         local _cur_piece _next_piece
         _cur_piece="$(echo "${_cur}" | jq -r -c "${_p}")"
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
-        _merged_piece_content="$(merge_object_nodes "${_next_piece}" "${_cur_piece}")"
+        if [[ "${_keyword}" == '$extends' ]]; then
+          _merged_piece_content="$(merge_object_nodes "${_next_piece}" "${_cur_piece}")"
+        elif [[ "${_keyword}" == '$includes' ]]; then
+          _merged_piece_content="$(merge_object_nodes "${_cur_piece}" "${_next_piece}")"
+        else
+          abort "Unknown keyword: '${_keyword}' was specified."
+        fi
         # shellcheck disable=SC2181
         [[ $? == 0 ]] || abort "Failed to merge node:'$(trim "${_cur}")' with _nodeentry:'${_jj}'"
       else
