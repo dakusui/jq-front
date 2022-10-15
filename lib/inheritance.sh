@@ -100,7 +100,7 @@ function expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
   local _expanded _expanded_clean _clean _content _ret
   perf "begin"
-  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}")" ||
+  _expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$extends')" ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)"
   # shellcheck disable=SC2016
   _clean="$(remove_nodes "${_content}" '$extends')"
@@ -113,17 +113,16 @@ function expand_nodelevel_inheritances() {
 }
 
 function _expand_nodelevel_inheritances() {
-  local _content="${1}" _validation_mode="${2}" _path="${3}"
+  local _content="${1}" _validation_mode="${2}" _path="${3}" _keyword="${4}"
   local _cur='{}' i
   local -a _keys
   perf "begin"
   is_debug_enabled && debug "_content='${_content}'"
   # Intentional single quote to find a keyword that starts with '$'
-  # shellcheck disable=SC2016
-  mapfile -t _keys < <(paths_of "${_content}" '$extends')
+  mapfile -t _keys < <(paths_of "${_content}" "${_keyword}")
   is_effectively_empty_array "${_keys[@]}" && _keys=()
   for i in "${_keys[@]}"; do
-    local _jj _p="${i%.\"\$extends\"}"
+    local _jj _p="${i%.\"${_keyword}\"}"
     local -a _extendeds
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]")
     is_effectively_empty_array "${_extendeds[@]}" && _extendeds=()
