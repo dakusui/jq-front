@@ -107,9 +107,9 @@ function expand_nodelevel_inheritances() {
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)"
   _extends_expanded=$(merge_object_nodes "${_extends_expanded}" "${_clean}") ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(2)"
-  _includes_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$extends')" ||
+  _includes_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$includes')" ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(3)"
-  _ret=$(merge_object_nodes "${_includes_expanded}" "${_clean}") ||
+  _ret=$(merge_object_nodes "${_includes_expanded}" "${_extends_expanded}") ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(4)"
   _ret="$(remove_nodes "${_ret}" '$extends')"
   _ret="$(remove_nodes "${_ret}" '$includes')"
