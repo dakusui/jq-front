@@ -89,7 +89,7 @@ function _render_text_node() {
     export _path
     _original_err_handler="$(trap -p ERR)"
     trap _err_handler ERR
-    _error="$(mktemp "${TMPDIR:-/tmp}/templating-XXXXXXXXXX.stderr")"
+    _error="$(mktemp "$(_templating_files_dir)/templating-XXXXXXXXXX.stderr")"
     debug "error: '${_error}'"
     # Perform the 'templating'
     _ret="$(eval "echo ${_body}" 2>"${_error}")"
