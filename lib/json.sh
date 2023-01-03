@@ -39,9 +39,9 @@ function validate_jf_json() {
     debug "validation skipped"
     return 0
   elif [[ "${_mode}" == "strict" ]]; then
-    _validate_jf_json_with "$(mktemp_with_content "${_content}")" "strict"
+    _validate_jf_json_with "$(mktemp_with_content "${_content}" ".validate-strict.json")" "strict"
   elif [[ "${_mode}" == "lenient" ]]; then
-    _validate_jf_json_with "$(mktemp_with_content "${_content}")" "lenient"
+    _validate_jf_json_with "$(mktemp_with_content "${_content}" ".validate-lenient.json")" "lenient"
   else
     abort "Unknown validation mode:'${_mode}' was set."
   fi

@@ -38,15 +38,21 @@ function perform_jqfront() {
   function _sourced_files_dir() {
     echo "${_JF_SESSION_DIR}/source_files"
   }
+  function _inprogress_files_dir() {
+    echo "${_JF_SESSION_DIR}/inprogress"
+  }
+  function _misctemp_files_dir() {
+    echo "${_JF_SESSION_DIR}/misc"
+  }
   local _target="${1}" _templating="${2}" _templating_level="${3}" _validation_mode="${4}" _jf_path="${5}"
   local _content
   perf "begin"
-  mkdir -p "$(_sourced_files_dir)"
+  mkdir -p "$(_sourced_files_dir)" "$(_inprogress_files_dir)" "$(_misctemp_files_dir)"
   _content="$(expand_inheritances "${_target}" "${_validation_mode}" "${_jf_path}")"
   _content=$(echo "${_content}" | jq '.|del(."$local")')
   if [[ "${_templating}" == "yes" ]]; then
     local _out
-    _out=$(mktemp_with_content "${_content}")
+    _out=$(mktemp_with_content "${_content}" ".in.json")
     _content=$(perform_templating "${_out}" "${_templating_level}")
   fi
   echo "${_content}"
@@ -159,7 +165,7 @@ function main() {
       perform_jqfront "${_target}" "${_templating_enabled}" "${_nested_templating_levels}" "${_validation}" "${_JF_PATH}"
     }
     if [[ $# == 0 ]]; then
-      _target="$(mktemp_with_content "$(cat)")" || abort "Failed to create a temporary file"
+      _target="$(mktemp_with_content "$(cat)" ".stdin.json")" || abort "Failed to create a temporary file"
     else
       _target="${1}"
     fi

@@ -90,7 +90,11 @@ function expand_inheritances_for_local_nodes() {
   while IFS= read -r -d '' i; do
     local _f="${i}"
     debug "expanding inheritance of a local node:'${i}'"
-    mktemp_with_content "$(nodepool_read_nodeentry """${_f}""" "no" "${_local_nodes_dir}:${_jf_path}")" >"${_f}"
+    #                                                 nodeentry
+    #                                                 |        validation_mode
+    #                                                 |        |     path
+    #                                                 |        |     |
+    mktemp_with_content "$(nodepool_read_nodeentry """${_f}""" "no" "${_local_nodes_dir}:${_jf_path}")" ".local.json">"${_f}"
     debug "...expanded"
   done < <(find "${_local_nodes_dir}" -maxdepth 1 -type f -print0)
   debug "end"
@@ -180,9 +184,16 @@ function materialize_local_nodes() {
                                           |. as $v
                                           |[$k, $v]' 2>/dev/null)
   for _i in "${_local_nodes[@]}"; do
+    local _f _c
+    _f="$(echo "${_i}" | jq -r -c '.[0]')"
+    _c="$(echo "${_i}" | jq -c '.[1]')"
     debug "_i:'${_i}'"
-    echo "${_i}" | jq -c '.[1]' >"${_ret}/$(echo "${_i}" | jq -r -c '.[0]')"
+    debug "_f:'${_f}'"
+    debug "_c:'${_c}'"
+    debug "_out:${_ret}/${_f}"
+    echo "${_c}" >"${_ret}/${_f}"
   done
+  debug "_ret:${_ret}"
   echo "${_ret}"
   debug "end"
 }

@@ -4,7 +4,7 @@ _DEPENDENCY_SH=yes
 function _encode_filename() {
   local _filename="${1}" _dependency_space="${2}"
   local _ret
-  _ret="${_JF_SESSION_DIR}/${_dependency_space}-$(hashcode "${_filename}")"
+  _ret="${_JF_SESSION_DIR}/inprogress/${_dependency_space}-$(hashcode "${_filename}")"
   echo "${_ret}"
 }
 

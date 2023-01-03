@@ -501,7 +501,7 @@ body {font-family: Arial;}
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/pipeline.png" alt="pipeline" width="920" height="574"/>
+<img src="images/pipeline.png" alt="pipeline" width="930" height="798"/>
 </div>
 <div class="title">Figure 1. jq-front’s pipeline</div>
 </div>
@@ -571,12 +571,44 @@ The 'local node directory' and its contents are utilized by the "node-level inhe
 <div class="sect2">
 <h3 id="_templating">Templating</h3>
 <div class="paragraph">
-<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>eval:</code> in a JSON object <code>Work(2)</code>.
+<p>Templating is executed by performing <code>eval</code> on every text node whose value starts with <code>eval:</code> in JSON objects <code>Work(2 a)</code> and <code>Work(2 b)</code>.
 The order where it is applied is determined by <code>jq</code> 's <code>path(..)</code> function.
 Note that it is not defined in <code>jq</code> 's manual<a href="#jq">[jq]</a> how keys are sorted within an object node although they seem to be sorted by dictionary order.</p>
 </div>
+<div class="paragraph">
+<p>This happens in two steps.
+The first one only processes only "keys" in the JSON object, while the second only processes the other (values and arrays).</p>
+</div>
 <div class="paragraph text-right">
 <p><a href="index.html">top</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_t_b_d">t.b.d.</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><code>expand_inheritances</code></p>
+</li>
+<li>
+<p><code>expand_file_level_inheritances</code>: (t.b.d.)</p>
+</li>
+<li>
+<p><code>expand_inheritances_for_local_nodes</code>: (t.b.d.)</p>
+</li>
+<li>
+<p><code>expand_nodelevel_inheritances</code>: (t.b.d.)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>TMPDIR=/tmp/.jq-front-<strong>.</strong></code></p>
+</div>
+<div class="paragraph">
+<p><code>_JF_POOL_DIR=TMPDIR/nodepool</code>: Cache directory: A directory to store JSON files whose inheritances are expanded.</p>
+</div>
+<div class="paragraph">
+<p><code>_JF_POOL_DIR/localnodes-*</code>: a directory to store local node pointer files. (materialized localnode)</p>
 </div>
 </div>
 </div>

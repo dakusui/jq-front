@@ -62,9 +62,9 @@ function mktemp_with_content() {
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Preceding command is suspected to be failed already."
   local _content="${1:?No content was given}"
-  local _suffix="${2:-}"
+  local _suffix="${2:?A suffix must be set}"
   local _ret
-  _ret="$(mktemp --suffix="${_suffix}")"
+  _ret="$(mktemp -p "${TMPDIR}/misc" --suffix="${_suffix}")"
   echo "${_content}" >"${_ret}"
   echo "${_ret}"
 }
