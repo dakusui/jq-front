@@ -2,6 +2,5 @@
   "eval:$(echo a)": ["Hello"],
   "eval:$(echo b)": ["World"],
   "arr": [
-
   ]
 }

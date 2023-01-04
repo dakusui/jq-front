@@ -1,5 +1,5 @@
 {
-  "$(echo helloBase)": {
+  "eval:$(echo helloBase)": {
     "a": "Hello",
     "arr": "eval:string:\"$(ref $(cur).a)\""
   }
