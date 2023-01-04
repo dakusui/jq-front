@@ -48,7 +48,7 @@ readonly _JF_INFO=${JF_INFO:-"disabled"}
 readonly _JF_DEBUG=${JF_DEBUG:-"disabled"}
 readonly _JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
 readonly _JF_SESSION_ID="$(date +%s.%N)"
-readonly _JF_SESSION_DIR="${TMPDIR:-/tmp}/.jq-front-${_JF_SESSION_ID}"
+readonly _JF_SESSION_DIR="${TMPDIR:-/tmp}/.jq-front/session-${_JF_SESSION_ID}"
 
 function __jqfront__abort_jq_front() {
   abort "SIGINT TRAPPED!!!!"

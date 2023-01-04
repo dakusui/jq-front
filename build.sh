@@ -133,7 +133,7 @@ function execute_post_release() {
   local tmp
   git tag "${TARGET_VERSION}"
   git push origin "${TARGET_VERSION}"
-  tmp=$(mktemp)
+  tmp=$(mktemp --suffix=".jq-front.build")
   jq '.|.version.latestReleased.minor=.version.target.minor|.version.target.minor=.version.target.minor+1' build_info.json >"${tmp}" || abort "Failed to bump up the version."
   cp "${tmp}" build_info.json
   message "Updated build_info.json"

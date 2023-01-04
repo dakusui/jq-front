@@ -9,10 +9,10 @@ Inheritance mechanism
 +--------------------------------------------------------------------------------------+
 |                                                                                      |
 |          file-level inheritance             local node materialization               |
-|                 +----+                             +-----+                           |
-|   +-------------+ {o}+-=----------+   +------------+ {o} +-=------------+            |
-|   |             +----+            |   |            +-----+              | 0...n      |
-|   V                               V   V                                 V            |
+|                 +----+                               +-----+                         |
+|   +-------------+ {o}+-=----------+     +------------+ {o} +-=-----------+           |
+|   |             +----+            |     |            +-----+             | 0...n     |
+|   V                               V     V                                V           |
 | +------+                         +-------+                         +------------+    |
 | |Source|                         |Work(1)|                         |LocalNodes  |    |
 | |{d}   |                         |{d}    |                         |{d}         |    |
@@ -25,16 +25,32 @@ Inheritance mechanism
 +--------------------------------------------------------|-----------------------------+
                                                          :
                                                          V
-                                                     +---+---+
-                                                     |Work(2)|
-                                                     |{d}    |
-                                                     +---+---+
+                                                    +----+----+
+                                                    |Work(2 a)|
+                                                    |{d}      |
+                                                    +----+----+
                                                          ^
                                                          |
-                                                         |
-                                                      +--+--+
-                                                      | {o} | templating(optional)
-                                                      +--+--+
+                                              +----------|---------+templating (optional)
+                                              |          |         |
+                                              |       +--+--+      |
+                                              |       | {o} |      |key-side processing
+                                              |       +--+--+      |
+                                              |          |         |
+                                              |          :         |
+                                              |          V         |
+                                              |+---------+--------+|
+                                              ||    Work(2 b)     ||
+                                              ||internal variable ||
+                                              |+---------+--------+|
+                                              |          ^         |
+                                              |          |         |
+                                              |          |         |
+                                              |       +--+--+      |
+                                              |       | {o} |      |value-side processing
+                                              |       +--+--+      |
+                                              |          :         |
+                                              +----------|---------+
   +----+       +----+                                    |
   |A{o}+-=---->+B{o}| (A writes to B)                    :
   +----+       +----+                                    V
@@ -80,9 +96,37 @@ c. Assign the JSON node created in step b. to the parent of the `$extends` attri
 
 === Templating
 
-Templating is executed by performing `eval` on every text node whose value starts with `eval:` in a JSON object `Work(2)`.
+Templating is executed by performing `eval` on every text node whose value starts with `eval:` in JSON objects `Work(2 a)` and `Work(2 b)`.
 The order where it is applied is determined by `jq` 's `path(..)` function.
-Note that it is not defined in `jq` 's manual<<jq>> how keys are sorted within an object node although they seem to be sorted by dictionary order.
+Note that it is not defined in `jq` 's manual<<jq>> how keys are sorted within an object node, although they seem to be sorted by dictionary order.
+
+This happens in two steps.
+The first one processes "keys" in the JSON object, while the second only processes the other (values and arrays).
+
+See link:features.html#_templating[Templating] to know more about it.
+
+=== Temporary Files
+
+`jq-front` creates temporary files under a directory specified by `TMPDIR` environment variable.
+
+----
+TMPDIR/
+  .jq-front/
+    session-XXXXXX/      <1>
+      inprogress/        <2>
+      localnodes-XXXXX/  <3>
+      nodepool/          <4>
+      source_files/      <5>
+      templating/        <6>
+      misc/              <7>
+----
+<1> Tools used by `jq-front` write their temporary files.
+<2> a directory to store "mark" files to manage on-going inheritance processing.
+<3> a directory to store "local nodes" as files.
+<4> a directory to store cached files for inheritance processing.
+<5> a directory to store script files to be "sourced", when `SOURCE` specified in `$extends` or `$includes`.
+<6> a directory used during "templating"
+<7> other temporary files generated by `jq-front` itself.
 
 [.text-right]
 link:index.html[top]
