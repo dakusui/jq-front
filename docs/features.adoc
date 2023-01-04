@@ -369,5 +369,48 @@ And this will result in an output below.
 This feature can be disabled by `-d` (`--disable-templating`) option.
 And to enable it explicitly, you can use `-e` (`--enable-templating`) in case `JF_TEMPLATING_ENABLED` is set to `no`.
 
+This feature can be used for the key side, also.
+
+That is, if the following JSON object is given as input:
+
+[source, json]
+----
+{
+  "eval:$(echo helloBase)": {
+    "a": [
+      "Hello"
+    ],
+    "b": [
+      "World"
+    ],
+    "arr": "eval:array:$(array_append \"$(ref $(cur).a)\" \"$(ref $(cur).b)\")"
+  }
+}
+----
+
+it will be converted as as follows:
+
+[source, json]
+----
+{
+  "helloBase": {
+    "a": [
+      "Hello"
+    ],
+    "b": [
+      "World"
+    ],
+    "arr": [
+      "Hello",
+      "World"
+    ]
+  }
+}
+----
+
+Note that the key-side templating happens first and then the value-side templating will follow.
+Also note that you need to use key-side templating carefully, because it may  confuse you sometimes, otherwise.
+For instance, if you create a key which results in the same string as another key, the outcome isn't specified.
+
 [.text-right]
 link:index.html[top]
