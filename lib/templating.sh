@@ -15,6 +15,86 @@ function perform_templating() {
 
 function _perform_templating() {
   local _content="${1}" _levels="${2}"
+  _content="$(_perform_templating_key_side "${_content}")"
+  _content="$(_perform_templating_value_side "${_content}" "${_levels}")"
+  echo "${_content}"
+}
+
+function _perform_templating_key_side() {
+  local _content="${1}"
+  local _ret="${_content}"
+  local -a _entries
+  # Shorter path comes earlier than longer.
+  debug "begin"
+  mapfile -t _entries < <(_keys_to_perform_templating "${_ret}")
+  for _each in "${_entries[@]}"; do
+    local _p _key _path _templated_key _entry
+    perf "processing: entry:'${_each}'"
+    IFS=$'\t' read -r -a _entry <<<"${_each}"
+    _key="${_entry[2]}"
+    _p="${_entry[1]}"
+    _path="${_entry[0]}"
+    debug "processing: nodepath:'${_node_path}', nodevalue:'${_node_value}'"
+    _templated_key="$(_render_text_node "${_key}" "${_p}" "${_ret}")"
+    _ret="$(jq -r -c -M -n "input|${_p}.${_templated_key}=input" <(echo "${_ret}") <(echo "${_ret}" | jq -r -c -M "${_path}"))"
+    _ret="$(echo "${_ret}" | jq -r -c -M 'del('"${_path}"')')"
+  done
+  echo "${_ret}"
+  debug "end"
+}
+
+# $ echo '{"k1":"v","k2":[{"k21":"w"},{"k22":"x"}]}'
+#   | jq -c -M '
+#   . |paths
+#     |. as $p
+#     |$p    |.[0:-1]  |. as $path
+#     |$p[-1]|. as $key|select(type=="string" and (startswith("eval:") or
+#                                                  startswith("template:")))
+#     |[$p,$path,$key]'
+#   | jq -r -c -s -L lib '#---
+#   import "shared" as shared;
+#   . |sort_by(.0)
+#     |sort_by(.0|length)
+#     |reverse
+#     |.[]
+#     |[shared::path2pexp(.[0]),shared::path2pexp(.[1]),.[2]]
+#     |@tsv'
+# [".\"k2\"[1].\"k22\"",".\"k2\"[1]", "k22"]
+# [".\"k2\"[1]",        ".\"k2\"",    1]
+# [".\"k2\"[0].\"k21\"",".\"k2\"[0]", "k21"]
+# [".\"k2\"[0]",        ".\"k2\"",    0]
+# [".\"k2\"",           "",           "k2"]
+# [".\"k1\"",           "",           "k1"]
+#  ^                    ^             ^
+#  |                    |             |
+#  |                    |             +--- [2]: KEY:  The key string on which text rendering should happen.
+#  |                    +----------------- [1]: P:    The path to the parent of the key [2]
+#  +-------------------------------------- [0]: PATH: The path to the key [2] itself.
+#                                                     Remove this path from the current object.
+#  1. P[KEY] = getpath(PATH)
+#  2. del(PATH)
+function _keys_to_perform_templating() {
+  local _content="${1}"
+  echo "${_content}" |
+  jq -c -M '
+     . |paths
+       |. as $p
+       |$p    |.[0:-1]  |. as $path
+       |$p[-1]|. as $key|select(type=="string" and (startswith("eval:") or
+                                                    startswith("template:")))
+       |[$p,$path,$key]'   |
+  jq -r -c -s -L lib '#---
+     import "shared" as shared;
+     . |sort_by(.0)
+       |sort_by(.0|length)
+       |reverse
+       |.[]
+       |[shared::path2pexp(.[0]),shared::path2pexp(.[1]),.[2]]
+       |@tsv'
+}
+
+function _perform_templating_value_side() {
+  local _content="${1}" _levels="${2}"
   local _ret="${_content}" _c="${_levels}"
   local -a _entries
   # Shorter path comes earlier than longer.
