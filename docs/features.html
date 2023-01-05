@@ -932,6 +932,53 @@ Not only built-in functions but also any commands (bash expressions) valid on a 
 <p>This feature can be disabled by <code>-d</code> (<code>--disable-templating</code>) option.
 And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templating</code>) in case <code>JF_TEMPLATING_ENABLED</code> is set to <code>no</code>.</p>
 </div>
+<div class="paragraph">
+<p>This feature can be used for the key side, also.</p>
+</div>
+<div class="paragraph">
+<p>That is, if the following JSON object is given as input:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "eval:$(echo helloBase)": {
+    "a": [
+      "Hello"
+    ],
+    "b": [
+      "World"
+    ],
+    "arr": "eval:array:$(array_append \"$(ref $(cur).a)\" \"$(ref $(cur).b)\")"
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>it will be converted as as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "helloBase": {
+    "a": [
+      "Hello"
+    ],
+    "b": [
+      "World"
+    ],
+    "arr": [
+      "Hello",
+      "World"
+    ]
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the key-side templating happens first and then the value-side templating will follow.
+Also note that you need to use key-side templating carefully, because it may  confuse you sometimes, otherwise.
+For instance, if you create a key which results in the same string as another key, the outcome isn&#8217;t specified.</p>
+</div>
 <div class="paragraph text-right">
 <p><a href="index.html">top</a></p>
 </div>
@@ -941,7 +988,7 @@ And to enable it explicitly, you can use <code>-e</code> (<code>--enable-templat
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-15 08:02:28 UTC
+Last updated 2023-01-04 23:50:57 UTC
 </div>
 </div>
 </body>

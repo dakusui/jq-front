@@ -82,7 +82,7 @@ function _keys_to_perform_templating() {
        |$p[-1]|. as $key|select(type=="string" and (startswith("eval:") or
                                                     startswith("template:")))
        |[$p,$key,$path]'   |
-  jq -r -c -s -L lib '#---
+  jq -r -c -s -L "${JF_BASEDIR}/lib" '#---
      import "shared" as shared;
      . |sort_by(.0)
        |sort_by(.0|length)
