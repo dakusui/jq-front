@@ -57,7 +57,7 @@ function _normalize_nodeentry() {
 function jsonize() {
   local _absfile="${1}" _processor="${2}" _args="${3:-""}"
   local _ret
-  _ret="$(_jsonize "${_absfile}" "${_processor}" "${_args}")" ||
+  _ret="$(_jsonize "${_absfile}" "${_processor}" "${_args}" 2> /dev/null)" ||
     abort "Malformed JSON was given:'${_absfile}'(processor=${_processor}, args=${_args})"
   echo "${_ret}"
 }

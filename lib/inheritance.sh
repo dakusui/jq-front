@@ -10,7 +10,7 @@ function expand_inheritances() {
 
   mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
   _absfile="$(search_file_in "${_specifier[0]}" "${_jf_path}")"
-  _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")" 2>&1 /dev/null)"
+  _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
   [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
