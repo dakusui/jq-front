@@ -6,6 +6,7 @@ function expand_inheritances() {
   local _jsonized_content _out _absfile
   local -a _specifier
   perf "begin: ${_nodeentry}"
+  touch "$(_misctemp_files_dir_nodepool_logfile)"
 
   mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
   _absfile="$(search_file_in "${_specifier[0]}" "${_jf_path}")"
@@ -20,14 +21,14 @@ function expand_inheritances() {
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
     _c="$(expand_filelevel_inheritances "${_jsonized_content}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
-      abort "File-level expansion failed for '${_nodeentry}'"
+      abort "File-level expansion failed for '${_nodeentry}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
     debug "_nodeentry='${_nodeentry}', _absfile='${_absfile}'"
     _local_nodes_dir=$(materialize_local_nodes "${_c}")
     expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
     _extends_expanded="$(expand_nodelevel_inheritances "${_c}" \
       "${_validation_mode}" \
       "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
-      abort "Failed to expand node level inheritance for '${_nodeentry}'(3)"
+      abort "Failed to expand node level inheritance for '${_nodeentry}'(3)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
     _out="${_extends_expanded}"
   else
     : # Clear $?
@@ -54,11 +55,13 @@ function expand_filelevel_inheritances() {
     local i
     for i in "${_parents[@]}"; do
       local _c _parent
+      echo "extends:<${i}>" >> "$(_misctemp_files_dir_nodepool_logfile)"
       _parent="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
+      [[ $? == 0 ]] || return 1
       _c="$(merge_object_nodes "${_parent}" "${_cur}")"
       # Cannot check the exit code directly because of command substitution
       # shellcheck disable=SC2181
-      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'$(trim "${_cur}")'"
+      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'$(trim "${_cur}")'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
       _cur="${_c}"
     done
   fi
@@ -70,11 +73,12 @@ function expand_filelevel_inheritances() {
     local i
     for i in "${_children[@]}"; do
       local _c _child
+      echo "includes:<${i}>" >> "$(_misctemp_files_dir_nodepool_logfile)"
       _child="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
       _c="$(merge_object_nodes "${_cur}" "${_child}")"
       # Cannot check the exit code directly because of command substitution
       # shellcheck disable=SC2181
-      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'$(trim "${_cur}")'"
+      [[ $? == 0 ]] || abort "Failed to merge file:'${i}' with content:'$(trim "${_cur}")'\ninherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
       _cur="${_c}"
     done
   fi
@@ -108,13 +112,13 @@ function expand_nodelevel_inheritances() {
   _clean="$(remove_nodes "${_clean}" '$extends')"
   _clean="$(remove_nodes "${_clean}" '$includes')"
   _extends_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$extends')" ||
-    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)"
+    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
   _extends_expanded=$(merge_object_nodes "${_extends_expanded}" "${_clean}") ||
-    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(2)"
+    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(2)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
   _includes_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$includes')" ||
-    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(3)"
+    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(3)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
   _ret=$(merge_object_nodes "${_extends_expanded}" "${_includes_expanded}") ||
-    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(4)"
+    abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(4)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
   _ret="$(remove_nodes "${_ret}" '$extends')"
   _ret="$(remove_nodes "${_ret}" '$includes')"
   echo "${_ret}"
@@ -138,6 +142,7 @@ function _expand_nodelevel_inheritances() {
     for _jj in "${_extendeds[@]}"; do
       local _tmp_content
       debug "processing nodeentry: '${_jj}'"
+      echo "local:<${i}>:<${_jj}>" >> "$(_misctemp_files_dir_nodepool_logfile)"
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur}"; then
         local _cur_piece _next_piece
@@ -148,15 +153,15 @@ function _expand_nodelevel_inheritances() {
         elif [[ "${_keyword}" == '$includes' ]]; then
           _merged_piece_content="$(merge_object_nodes "${_cur_piece}" "${_next_piece}")"
         else
-          abort "Unknown keyword: '${_keyword}' was specified."
+          abort "Unknown keyword: '${_keyword}' was specified.\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
         fi
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to merge node:'$(trim "${_cur}")' with _nodeentry:'${_jj}'"
+        [[ $? == 0 ]] || abort "Failed to merge node:'$(trim "${_cur}")' with _nodeentry:'${_jj}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
       else
         local _expanded_tmp
         _expanded_tmp="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'"
+        [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
         _merged_piece_content="${_expanded_tmp}"
       fi
       is_debug_enabled && debug "_merged_piece_content:'${_merged_piece_content}'"

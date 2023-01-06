@@ -47,6 +47,16 @@ function perform_jqfront() {
   function _misctemp_files_dir() {
     echo "${_JF_SESSION_DIR}/misc"
   }
+  function _misctemp_files_dir_nodepool_logfile() {
+    echo "$(_misctemp_files_dir)/nodepool.txt"
+  }
+  function _misctemp_files_dir_nodepool_logfile_read() {
+    if [[ -e "$(_misctemp_files_dir_nodepool_logfile)" ]]; then
+      cat "$(_misctemp_files_dir_nodepool_logfile)"
+    else
+      echo "(none)"
+    fi
+  }
   local _target="${1}" _templating="${2}" _templating_level="${3}" _validation_mode="${4}" _jf_path="${5}"
   local _content
   perf "begin"

@@ -30,8 +30,10 @@ function nodepool_read_nodeentry() {
   local _cache
   perf "begin: '${_nodeentry}'"
   _nodeentry="$(_normalize_nodeentry "${_nodeentry}" "${_path}")"
+  [[ -e "${_nodeentry}" ]] || return 1
   _cache="${_pooldir}/$(hashcode "${_nodeentry}")"
   _check_cyclic_dependency "${_nodeentry}" inheritance
+  echo "- <${_nodeentry}>" >>"$(_misctemp_files_dir_nodepool_logfile)"
   if [[ -e "${_cache}" ]]; then
     perf "Cache hit for node entry: '${_nodeentry}'"
   else

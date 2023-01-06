@@ -164,7 +164,7 @@ function _render_text_node() {
     function _err_handler() {
       abort "Failed on eval: 'echo \"${_body}\"'"
     }
-    local _error_prefix="ERROR: " _error_file _error_out _original_err_handler _content_file _path_file _node_value_file
+    local _error_prefix="ERROR: " _error_file _error_out _original_err_handler _content_file _node_value_file
     export _path
     _original_err_handler="$(trap -p ERR)"
     trap _err_handler ERR
@@ -206,7 +206,7 @@ function _render_text_node() {
 
 function _compose_error_message_for_render_text_node() {
   local _nodepath_file="${1}" _nodevalue_file="${2}"  _content_file="${3}" _error_file="${4}"
-  printf "  nodepath: '%s'\n  nodevalue: '%s'\n  content: '%s'\n  error: '%s'" "$(cat "${_nodepath_file}")" "$(cat "${_nodevalue_file}")" "$(cat "${_content_file}")" "$(cat "${_error_file}")"
+  printf "  nodepath: '%s'\n  nodevalue: '%s'\n  content: '%s'\n error: '%s'\n  inherited files:\n%s" "$(cat "${_nodepath_file}")" "$(cat "${_nodevalue_file}")" "$(cat "${_content_file}")" "$(cat "${_error_file}")" "$(_misctemp_files_dir_nodepool_logfile_read)"
 }
 
 ####
