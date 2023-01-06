@@ -164,19 +164,28 @@ function _render_text_node() {
     function _err_handler() {
       abort "Failed on eval: 'echo \"${_body}\"'"
     }
-    local _error_prefix="ERROR: " _error _error_out _original_err_handler
+    local _error_prefix="ERROR: " _error_file _error_out _original_err_handler _content_file _path_file _node_value_file
     export _path
     _original_err_handler="$(trap -p ERR)"
     trap _err_handler ERR
-    _error="$(mktemp "$(_templating_files_dir)/templating-XXXXXXXXXX.stderr")"
-    debug "error: '${_error}'"
+    _node_value_file="$(_templating_files_dir)/templating.nodevalue"
+    _node_path_file="$(_templating_files_dir)/templating.path"
+    _content_file="$(_templating_files_dir)/templating.content"
+    _error_file="$(_templating_files_dir)/templating.stderr"
+    rm -f "${_error_file}" "${_node_value_file}" "${_node_path_file}" "${_content_file}"
+    touch "${_error_file}" "${_node_value_file}" "${_node_path_file}" "${_content_file}"
+    echo "${_node_value}" > "${_node_value_file}"
+    echo "${_path}" > "${_node_path_file}"
+    echo "${_self_content}" > "${_content_file}"
+    debug "error: '${_error_file}'"
     # Perform the 'templating'
-    _ret="$(eval "echo ${_body}" 2>"${_error}")"
+    _ret="$(eval "echo ${_body}" 2>"${_error_file}")"
     [[ -z "${_original_err_handler}" ]] || ${_original_err_handler}
     unset _path
     # shellcheck disable=SC2002
-    _error_out="$(cat "${_error}")"
-    [[ "${_error_out}" != *"${_error_prefix}"* ]] || abort "$(printf "Error was detected during templating: '${_body}'\n====\n%s\n----" "$(cat "${_error}")")"
+    _error_out="$(cat "${_error_file}")"
+    [[ "${_error_out}" != *"${_error_prefix}"* ]] ||
+      abort "Error was detected during templating:\n$(_compose_error_message_for_render_text_node "${_node_path_file}"  "${_node_value_file}" "${_content_file}" "${_error_file}")"
     debug "value: '${_ret}', stderr during eval:'${_error_out}'"
   elif [[ "${_mode}" == "raw" ]]; then
     _ret="${_body}"
@@ -187,12 +196,17 @@ function _render_text_node() {
   fi
   local _actual_type="(malformed)"
   _actual_type="$(echo "${_ret}" | jq -r '.|type')" ||
-    abort "'$(trim "${_node_value}")' was rendered into '${_ret}' and it seems not a wel-formed JSON."
+    abort "'$(trim "${_node_value}")' was rendered into '${_ret}' and it seems not a wel-formed JSON.\n$(_compose_error_message_for_render_text_node "${_node_path_file}"  "${_node_value_file}" "${_content_file}" "${_error_file}")"
   debug "expected type:'${_expected_type}' actual type:'${_actual_type}'"
   [[ "${_expected_type}" == "${_actual_type}" ]] ||
-    abort "Type mismatch was detected for:'$(trim "${_node_value}")' expected type:'${_expected_type}' actual type:'${_actual_type}'"
+    abort "Type mismatch was detected for:'$(trim "${_node_value}")' expected type:'${_expected_type}' actual type:'${_actual_type}'\n$(_compose_error_message_for_render_text_node "${_node_path_file}"  "${_node_value_file}" "${_content_file}" "${_error_file}")"
   echo "${_ret}"
   return "${_ret_code}"
+}
+
+function _compose_error_message_for_render_text_node() {
+  local _nodepath_file="${1}" _nodevalue_file="${2}"  _content_file="${3}" _error_file="${4}"
+  printf "  nodepath: '%s'\n  nodevalue: '%s'\n  content: '%s'\n  error: '%s'" "$(cat "${_nodepath_file}")" "$(cat "${_nodevalue_file}")" "$(cat "${_content_file}")" "$(cat "${_error_file}")"
 }
 
 ####
