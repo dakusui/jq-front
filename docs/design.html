@@ -460,7 +460,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="paragraph">
 <p>Following is a diagram that illustrates <code>jq-front</code> 's processing pipeline design.</p>
 </div>
-<div class="imageblock">
+<div id="Pipeline" class="imageblock">
 <div class="content">
 <img src="images/pipeline.png" alt="pipeline" width="930" height="798">
 </div>
@@ -552,8 +552,8 @@ The first one processes "keys" in the JSON object, while the second only process
 <div class="listingblock">
 <div class="content">
 <pre>TMPDIR/
-  .jq-front/
-    session-XXXXXX/      <b class="conum">(1)</b>
+  .jq-front/             <b class="conum">(1)</b>
+    session-XXXXXX/
       inprogress/        <b class="conum">(2)</b>
       localnodes-XXXXX/  <b class="conum">(3)</b>
       nodepool/          <b class="conum">(4)</b>
@@ -571,7 +571,7 @@ The first one processes "keys" in the JSON object, while the second only process
 <p>a directory to store "mark" files to manage on-going inheritance processing.</p>
 </li>
 <li>
-<p>a directory to store "local nodes" as files.</p>
+<p>a directory to store paths to "local nodes" as files.</p>
 </li>
 <li>
 <p>a directory to store cached files for inheritance processing.</p>
@@ -587,6 +587,97 @@ The first one processes "keys" in the JSON object, while the second only process
 </li>
 </ol>
 </div>
+<div class="sect3">
+<h4 id="_inprogress_directory"><code>inprogress</code> directory</h4>
+<div class="paragraph">
+<p>In this directory, empty files of the following names are created.:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>inheritance-$(hashcode _filename)</code></p>
+</li>
+<li>
+<p><code>reference-$(hashcode _filename)</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Those are to detect cyclic dependencies during <code>jq-front</code> 's processing.
+The <code>hashcode</code> part is computed by <code>md5sum</code> command from the absolute path of a file.
+If <code>jq-front</code> finds another file <code>/your/another/file</code> is inherited by a currently processed file, it will create a file <code>inheritance-$(hashcode /your/another/file)</code>.
+If a file to be created found existing already, <code>jq-front</code> will consider that there is a cyclic dependency and aborts the process with an error message.
+<code>jq-front</code> will then process <code>/your/another/file</code> recursively and once its process is finished, the temporary file will be removed.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_nodepool_directory"><code>nodepool</code> directory</h4>
+<div class="paragraph">
+<p>This is a directory to store files whose all inheritances are all expanded.
+Under this directory, <code>$(hashcode _filename)</code> is created with the expanded content.
+Following is an example of the file:</p>
+</div>
+<div class="listingblock">
+<div class="title">/tmp/.jq-front/session-XXXXXX/nodepool/$(hashcode parent.json)</div>
+<div class="content">
+<pre>{"a":{"a":"eval:string:$(echo 'A')","b":"eval:string:$(echo 'B')","o":"eval:string:$(ref $(cur).a)-$(ref $(cur).b)"}}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The content of the file <code>parent.json</code> and the file it extends before the inheritance expansion may look like following:</p>
+</div>
+<div class="listingblock">
+<div class="title">parent.json</div>
+<div class="content">
+<pre>{
+  "a": {
+    "$extends": [
+      "input/A.json"
+    ]
+  }
+}</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">A.json</div>
+<div class="content">
+<pre>{
+  "a": "eval:string:$(echo 'A')",
+  "b": "eval:string:$(echo 'B')",
+  "o": "eval:string:$(ref $(cur).a)-$(ref $(cur).b)"
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the references are not processed in the step of inheritance expansion yet as illustrated in the <a href="#Pipeline">jq-front&#8217;s pipeline</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_localnodes_xxxxx_directory"><code>localnodes-XXXXX</code> directory</h4>
+<div class="paragraph">
+<p>The node-level inheritance feature allows you to extend not only local nodes, which are defined inside JSON files, but also independent files[<a href="#NodeLevelInheritanceExample">Node level Inheritance Example</a>].</p>
+</div>
+<div id="NodeLevelInheritanceExample" class="listingblock">
+<div class="title">Node level Inheritance Example</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "$local": {
+    "localNode": {
+      "k": "v"
+    }
+  },
+  "A": {
+    "$extends": [
+      "localNode", "externalFile.json"
+    ]
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is a main difference between file level inheritance and node level inheritance mechanism.
+To make this possible, <code>jq-front</code> "materializes" the local nodes, that is, those local nodes are turned into files and then the files will be processed indifferently.</p>
+</div>
 <div class="paragraph text-right">
 <p><a href="index.html">top</a></p>
 </div>
@@ -594,9 +685,10 @@ The first one processes "keys" in the JSON object, while the second only process
 </div>
 </div>
 </div>
+</div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-01-04 23:50:57 UTC
+Last updated 2023-01-07 12:26:24 UTC
 </div>
 </div>
 </body>
