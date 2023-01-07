@@ -1,1 +1,1 @@
-ERROR: Cyclic inheritance was detected on
+ERROR: Cyclic inheritance was detected in

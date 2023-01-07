@@ -48,7 +48,8 @@ readonly _JF_INFO=${JF_INFO:-"disabled"}
 readonly _JF_DEBUG=${JF_DEBUG:-"disabled"}
 readonly _JF_PERF=${JF_PERF:-"${_JF_DEBUG}"}
 readonly _JF_SESSION_ID="$(date +%s.%N)"
-readonly _JF_SESSION_DIR="${TMPDIR:-/tmp}/.jq-front/session-${_JF_SESSION_ID}"
+readonly _JF_TMPDIR="${TMPDIR:-/tmp}/.jq-front"
+readonly _JF_SESSION_DIR="${_JF_TMPDIR}/session-${_JF_SESSION_ID}"
 
 function __jqfront__abort_jq_front() {
   abort "SIGINT TRAPPED!!!!"
@@ -60,7 +61,8 @@ if [[ ${_JF_DEBUG} == enabled ]]; then
   trap _debug_abort ERR
 fi
 
-export TMPDIR="${_JF_SESSION_DIR}"
+export TMPDIR="${_JF_TMPDIR}"
+export _JF_TMPDIR
 ####
 # Export JF_PATH_BASE, which is set for executions under Docker
 if [[ -n "${_JF_PATH_BASE}" ]]; then
