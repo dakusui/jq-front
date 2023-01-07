@@ -13,7 +13,10 @@ function expand_inheritances() {
   _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
-  [[ $? == 0 ]] || abort "Failed to convert a file:'${_absfile}' into to a json."
+  [[ $? == 0 ]] || {
+    error "Failed to convert a file:'${_absfile}' into to a json."
+    return 1
+  }
   validate_jf_json "${_jsonized_content}" "${_validation_mode}"
   if is_object "${_jsonized_content}"; then
     local _local_nodes_dir _c _extends_expanded
@@ -27,8 +30,10 @@ function expand_inheritances() {
     expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
     _extends_expanded="$(expand_nodelevel_inheritances "${_c}" \
       "${_validation_mode}" \
-      "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
-      abort "Failed to expand node level inheritance for '${_nodeentry}'(3)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
+      "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" || {
+        error "Failed to expand node level inheritance for '${_nodeentry}'(3)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
+        return 1
+      }
     _out="${_extends_expanded}"
   else
     : # Clear $?
@@ -55,9 +60,9 @@ function expand_filelevel_inheritances() {
     local i
     for i in "${_parents[@]}"; do
       local _c _parent
-      echo "extends:<${i}>" >> "$(_misctemp_files_dir_nodepool_logfile)"
+      echo "extends:<${i}>" >>"$(_misctemp_files_dir_nodepool_logfile)"
       _parent="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
-      [[ $? == 0 ]] || return 1
+      [[ "${_parent}" == "" ]] && return 1
       _c="$(merge_object_nodes "${_parent}" "${_cur}")"
       # Cannot check the exit code directly because of command substitution
       # shellcheck disable=SC2181
@@ -73,7 +78,7 @@ function expand_filelevel_inheritances() {
     local i
     for i in "${_children[@]}"; do
       local _c _child
-      echo "includes:<${i}>" >> "$(_misctemp_files_dir_nodepool_logfile)"
+      echo "includes:<${i}>" >>"$(_misctemp_files_dir_nodepool_logfile)"
       _child="$(nodepool_read_nodeentry "${i}" "${_validation_mode}" "${_path}")"
       _c="$(merge_object_nodes "${_cur}" "${_child}")"
       # Cannot check the exit code directly because of command substitution
@@ -98,7 +103,7 @@ function expand_inheritances_for_local_nodes() {
     #                                                 |        validation_mode
     #                                                 |        |     path
     #                                                 |        |     |
-    mktemp_with_content "$(nodepool_read_nodeentry """${_f}""" "no" "${_local_nodes_dir}:${_jf_path}")" ".local.json">"${_f}"
+    mktemp_with_content "$(nodepool_read_nodeentry """${_f}""" "no" "${_local_nodes_dir}:${_jf_path}")" ".local.json" >"${_f}"
     debug "...expanded"
   done < <(find "${_local_nodes_dir}" -maxdepth 1 -type f -print0)
   debug "end"
@@ -142,7 +147,7 @@ function _expand_nodelevel_inheritances() {
     for _jj in "${_extendeds[@]}"; do
       local _tmp_content
       debug "processing nodeentry: '${_jj}'"
-      echo "local:<${i}>:<${_jj}>" >> "$(_misctemp_files_dir_nodepool_logfile)"
+      echo "local:<${i}>:<${_jj}>" >>"$(_misctemp_files_dir_nodepool_logfile)"
       local _merged_piece_content
       if has_value_at "${_p}" "${_cur}"; then
         local _cur_piece _next_piece
@@ -161,7 +166,10 @@ function _expand_nodelevel_inheritances() {
         local _expanded_tmp
         _expanded_tmp="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to expand inheritances for '${_jj}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
+        [[ $? == 0 ]] || {
+          error "Failed to expand inheritances for '${_jj}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
+          return 1
+        } #"
         _merged_piece_content="${_expanded_tmp}"
       fi
       is_debug_enabled && debug "_merged_piece_content:'${_merged_piece_content}'"

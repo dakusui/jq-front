@@ -36,3 +36,7 @@ function perf() {
     message "PERF: $(date '+%Y-%m-%d %H:%M:%S.%3N'): ${FUNCNAME[1]}:" "${@}"
   fi
 }
+
+function error() {
+    message "ERROR: $(date '+%Y-%m-%d %H:%M:%S.%3N'): ${FUNCNAME[1]}:" "${@}"
+}

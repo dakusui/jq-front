@@ -1,10 +1,6 @@
 [[ "${_NODEPOOL_SH:-""}" == "yes" ]] && return 0
 _NODEPOOL_SH=yes
 
-# shellcheck disable=SC1090
-# source = lib/nodepool.sh
-source "${JF_BASEDIR}/lib/nodepool.sh"
-
 function nodepool_prepare() {
   local _pooldir
   debug "begin"
@@ -21,6 +17,7 @@ function define_nodeentry_reader() {
   function read_nodeentry() {
     local _nodeentry="${1}" _validation_mode="${2}" _path="${3}"
     "${_NODEPOOL_SH_DRIVER_FUNCNAME}" "${_nodeentry}" "${_validation_mode}" "${_path}"
+    [[ $? == 0 ]] || return 1
   }
   debug "read_nodeentry was defined:$(type read_nodeentry)"
 }
@@ -38,6 +35,7 @@ function nodepool_read_nodeentry() {
   else
     perf "Cache miss for node entry: '${_nodeentry}'"
     read_nodeentry "${_nodeentry}" "${_validation_mode}" "${_path}" >"${_cache}"
+    [[ $? == 0 ]] || return 1
   fi
   cat "${_cache}"
   _unmark_as_in_progress "${_nodeentry}" inheritance
@@ -57,8 +55,16 @@ function _normalize_nodeentry() {
 function jsonize() {
   local _absfile="${1}" _processor="${2}" _args="${3:-""}"
   local _ret
-  _ret="$(_jsonize "${_absfile}" "${_processor}" "${_args}" 2> /dev/null)" ||
-    abort "Malformed JSON was given:'${_absfile}'(processor=${_processor}, args=${_args})"
+  function __jsonize_read_file_if_possible() {
+    local _f="${1}"
+    [[ -f "${_f}" ]] && {
+      cat "${_f}" || echo "(failed to read: ${_f})"
+      return 0
+    }
+    echo "(not found: ${_f})"
+  }
+  _ret="$(_jsonize "${_absfile}" "${_processor}" "${_args}" 2>/dev/null)" ||
+    abort "Malformed JSON was given:\n  path: '${_absfile}'\n  processor: '${_processor}'\n  args: '${_args}'\n  content: '$(__jsonize_read_file_if_possible "${_absfile}")'"
   echo "${_ret}"
 }
 
