@@ -23,10 +23,10 @@ function expand_inheritances() {
     ####
     # Strangely the line above does not causes a quit on a failure.
     # Explitly check and abotrt this functino.
-    _c="$(expand_filelevel_inheritances "${_jsonized_content}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
+    _c="$(expand_filelevel_inheritances "${_absfile}" "${_jsonized_content}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_nodeentry}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
     debug "_nodeentry='${_nodeentry}', _absfile='${_absfile}'"
-    _local_nodes_dir=$(materialize_local_nodes "${_c}")
+    _local_nodes_dir=$(materialize_local_nodes "${_absfile}" "${_c}")
     expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
     _extends_expanded="$(expand_nodelevel_inheritances "${_c}" \
       "${_validation_mode}" \
@@ -44,7 +44,7 @@ function expand_inheritances() {
 }
 
 function expand_filelevel_inheritances() {
-  local _content="${1}" _validation_mode="${2}" _path="${3}"
+  local _absfile="${1}" _content="${2}" _validation_mode="${3}" _path="${4}"
   ####
   # This is intentionally using single quotes to pass quoted path expression to jq.
   # shellcheck disable=SC2016
@@ -184,10 +184,10 @@ function _expand_nodelevel_inheritances() {
 
 # "
 function materialize_local_nodes() {
-  local _content="${1}"
+  local _absfile="${1}" _content="${2}"
   local _ret _i
   debug "begin"
-  _ret="$(mk_localnodedir)"
+  _ret="$(mk_localnodedir "${_absfile}")"
   # Quickfix for Issue #98: Probably we should filter null, which can be produced by the first predicate (."$local")
   mapfile -t _local_nodes < <(echo "${_content}" | jq -r -c '."$local"
                                    |. as $local

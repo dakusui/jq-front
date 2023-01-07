@@ -73,7 +73,8 @@ function perform_jqfront() {
 }
 
 function prepare_temporary_directory() {
-  mkdir -p "${TMPDIR}"
+  mkdir -p "${_JF_TMPDIR}"
+  chmod 777 "${_JF_TMPDIR}"
 }
 
 function export_names() {

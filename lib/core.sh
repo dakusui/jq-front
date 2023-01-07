@@ -71,12 +71,16 @@ function mktemp_with_content() {
 
 function is_localnode() {
   local _absfile="${1}"
-  [[ "${_absfile}" == "${TMPDIR}/localnodes-"*/* ]] && return 0
+  [[ "${_absfile}" == "${_JF_SESSION_DIR}/localnodes-"*/* ]] && return 0
   return 1
 }
 
 function mk_localnodedir() {
-  mktemp -d "${TMPDIR}/localnodes-XXXXXXXXXX"
+  local _absfile="${1}"
+  local _ret
+  _ret="${_JF_SESSION_DIR}/localnodes-$(hashcode "${_absfile}")"
+  mkdir "${_ret}"
+  echo "${_ret}"
 }
 
 function search_file_in() {

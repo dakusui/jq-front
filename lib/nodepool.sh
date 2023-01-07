@@ -4,7 +4,7 @@ _NODEPOOL_SH=yes
 function nodepool_prepare() {
   local _pooldir
   debug "begin"
-  _pooldir="${TMPDIR}/nodepool"
+  _pooldir="${_JF_SESSION_DIR}/nodepool"
   mkdir -p "${_pooldir}"
   echo "${_pooldir}"
   debug "end"
