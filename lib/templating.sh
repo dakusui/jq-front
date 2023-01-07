@@ -206,7 +206,13 @@ function _render_text_node() {
 
 function _compose_error_message_for_render_text_node() {
   local _nodepath_file="${1}" _nodevalue_file="${2}"  _content_file="${3}" _error_file="${4}"
-  printf "  nodepath: '%s'\n  nodevalue: '%s'\n  content: '%s'\n error: '%s'\n  inherited files:\n%s" "$(cat "${_nodepath_file}")" "$(cat "${_nodevalue_file}")" "$(cat "${_content_file}")" "$(cat "${_error_file}")" "$(_misctemp_files_dir_nodepool_logfile_read)"
+  printf "    nodepath: '%s'
+    nodevalue: '%s'
+    content: '%s'
+    inherited files:
+    %s
+    error: '%s'
+    " "$(cat "${_nodepath_file}")" "$(cat "${_nodevalue_file}")" "$(cat "${_content_file}")" "$(_misctemp_files_dir_nodepool_logfile_read)" "$(cat "${_error_file}")"
 }
 
 ####

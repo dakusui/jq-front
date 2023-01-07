@@ -42,7 +42,7 @@ function _is_in_progress() {
 function _check_cyclic_dependency() {
   local _in="${1}" _dependency_space="${2}"
   if _is_in_progress "${_in}" "${_dependency_space}"; then
-    abort "Cyclic ${_dependency_space} was detected on:'${_in}'"
+    abort "Cyclic ${_dependency_space} was detected in:'${_in}'"
   else
     debug "mark '${_in}' as in progress"
     _mark_as_in_progress "${_in}" "${_dependency_space}"
