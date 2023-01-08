@@ -64,6 +64,8 @@ function mktemp_with_content() {
   local _content="${1:?No content was given}"
   local _suffix="${2:?A suffix must be set}"
   local _ret
+
+  mkdir -p "$(_misctemp_files_dir)"
   _ret="$(mktemp -p "$(_misctemp_files_dir)" --suffix="${_suffix}")"
   echo "${_content}" >"${_ret}"
   echo "${_ret}"
