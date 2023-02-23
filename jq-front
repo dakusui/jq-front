@@ -179,7 +179,8 @@ function main() {
       perform_jqfront "${_target}" "${_templating_enabled}" "${_nested_templating_levels}" "${_validation}" "${_JF_PATH}"
     }
     if [[ $# == 0 ]]; then
-      _target="$(mktemp_with_content "$(cat)" ".stdin.json")" || abort "Failed to create a temporary file"
+      mkdir -p "${_JF_SESSION_DIR}/misc"
+      _target="$(mktemp_with_content "$(cat)" ".stdin.json" "${_JF_SESSION_DIR}/misc")" || abort "Failed to create a temporary file"
     else
       _target="${1}"
     fi
