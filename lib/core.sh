@@ -44,6 +44,12 @@ function abort() {
   exit 1
 }
 
+# Use this to abort a function when you know that a failed procedure gives an stacktrace on a failure.
+function abort_no_stacktrace() {
+  message "ERROR:" "${@}"
+  exit 1
+}
+
 function print_stacktrace() {
   local _message="${1}"
   shift
@@ -79,7 +85,7 @@ function mk_localnodedir() {
   local _absfile="${1}"
   local _ret
   _ret="${_JF_SESSION_DIR}/localnodes-$(hashcode "${_absfile}")"
-  mkdir "${_ret}"
+  [[ -d "${_ret}" ]] || mkdir "${_ret}"
   echo "${_ret}"
 }
 
