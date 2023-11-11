@@ -1,6 +1,6 @@
 function jq-front() {
   docker run --rm -i \
-    -v /:/var/lib/jf \
+    -v "${HOME}:/var/lib/jf/${HOME}" \
     -v "${HOME}/.jq-front.rc:/root/.jq-front.rc" \
     -e JF_PATH_BASE="/var/lib/jf" \
     -e JF_PATH="${JF_PATH}" \
