@@ -30,10 +30,8 @@ function expand_inheritances() {
     expand_inheritances_for_local_nodes "${_local_nodes_dir}" "${_jf_path}"
     _extends_expanded="$(expand_nodelevel_inheritances "${_c}" \
       "${_validation_mode}" \
-      "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" || {
-        error "Failed to expand node level inheritance for '${_nodeentry}'(3)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
-        return 1
-      }
+      "${_local_nodes_dir}:$(dirname "${_absfile}"):${_jf_path}")" ||
+      abort_no_stacktrace "Failed to expand node level inheritance for '${_nodeentry}'(3)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
     _out="${_extends_expanded}"
   else
     : # Clear $?
@@ -161,15 +159,12 @@ function _expand_nodelevel_inheritances() {
           abort "Unknown keyword: '${_keyword}' was specified.\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
         fi
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || abort "Failed to merge node:'$(trim "${_cur}")' with _nodeentry:'${_jj}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
+        [[ $? == 0 ]] || abort_no_stacktrace "Failed to merge node:'$(trim "${_cur}")' with _nodeentry:'${_jj}'\nInherited files:\n" "$(_misctemp_files_dir_nodepool_logfile_read)"
       else
         local _expanded_tmp
         _expanded_tmp="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         # shellcheck disable=SC2181
-        [[ $? == 0 ]] || {
-          error "Failed to expand inheritances for '${_jj}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
-          return 1
-        } #"
+        [[ $? == 0 ]] || abort_no_stacktrace "Failed to expand inheritances for '${_jj}'\nInherited files:\n" "$(_misctemp_files_dir_nodepool_logfile_read)"
         _merged_piece_content="${_expanded_tmp}"
       fi
       is_debug_enabled && debug "_merged_piece_content:'${_merged_piece_content}'"
