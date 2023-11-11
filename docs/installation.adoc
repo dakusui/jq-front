@@ -34,6 +34,8 @@ Add a following entry to your `.bashrc` or a file sourced through it (such as `.
 [source,shell script]
 include::../jq-front_aliases[]
 
+NOTE:: This approach only allows you to process files under `$HOME` directory.
+
 To install `bash` on windows, https://itsfoss.com/install-bash-on-windows/[install-bash-on-windows] will be helpful.
 
 [.text-right]

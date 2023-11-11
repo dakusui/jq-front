@@ -75,6 +75,8 @@ $(cat jq-front_aliases)
 
 ```
 
+**NOTE:** This approach allows you to process files only under `$HOME` directory.
+
 ## Features
 
 * File Level Inheritance
