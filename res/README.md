@@ -2,6 +2,28 @@
 
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
 
+n testing, system configuration, gaming, music compositions, etc., we see a lot of data items that are similar to each others yet slightly different from each others.
+
+Test cases, deployment descriptors, mob characters, or Tetsuya Komuro's pieces.
+In general programming languages, many techniques have been developed such as class inheritance, interface, library function, macro, etc., etc.
+However, in recent data notations such as JSON, YAML, HCL, etc. this is a concern not seriously taken into account.
+One approach is HOCON, which is yet another data notation.
+The approach `jq-front` takes is a bit different.
+Instead of coming up with a new data notation, it introduces several keywords into JSON, which is used as a subset of newer notations and which you can always convert them into as a matter of fact.
+By taking this approach, you can write your YAML, HCL, HOCON files, using the keywords specified by `jq-front`.
+Thus, you can enjoy the benefit of the benefits of them and at the same time the functionalities of `jq-front`.
+
+It provides inheritance of JSON files, references between JSON nodes, computation of a node value from another, and more.
+
+But note that it's slow because it's written in `bash`.
+I didn't notice this tool can be useful this much when I started writing it.
+I am planning to re-write it in a full-fledge language like Java (or golang?) to create a faster version of `jq-front`.
+
+Maybe you wonder if it's tested enough.
+Don't worry about that.
+It's quite well tested and you can check the test suite here: https://github.com/dakusui/jq-front/tree/master/tests
+I hope your product is better tested than this ;)
+
 ## Usage
 
 ```shell script
