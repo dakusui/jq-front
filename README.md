@@ -2,7 +2,7 @@
 
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
 
-n testing, system configuration, gaming, music compositions, etc., we see a lot of data items that are similar to each others yet slightly different from each others.
+In testing, system configuration, gaming, music compositions, etc., we see a lot of data items that are similar to each others yet slightly different from each others.
 
 Test cases, deployment descriptors, mob characters, or Tetsuya Komuro's pieces.
 In general programming languages, many techniques have been developed such as class inheritance, interface, library function, macro, etc., etc.
