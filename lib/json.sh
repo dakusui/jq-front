@@ -203,6 +203,7 @@ function merge_object_nodes() {
   # shellcheck disable=SC2016
   jq -r -c -n --slurpfile a "${_afile}" --slurpfile b "${_bfile}" -L "${JF_BASEDIR}/lib" \
     'import "shared" as shared;
+
     def value_at($n; $p):
       $n | getpath($p);
 
@@ -223,7 +224,7 @@ function merge_object_nodes() {
            end;
 
     def merge_objects($a; $b):
-      $b | [paths(scalars_or_empty)]
+      $b | [paths(shared::scalars_or_empty)]
          | reduce .[] as $p ($a; setvalue_at(.; $p; value_at($b; $p)));
 
     merge_objects($a[0]; $b[0])' 2>"${_error}" || {
