@@ -129,7 +129,7 @@ function _string_node_entries_to_perform_templating() {
   echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---
 import "shared" as shared;
 . as $content
-|[paths(scalars_or_empty
+|[paths(shared::scalars_or_empty
        |select(type=="string" and (startswith("eval:") or
                                    startswith("template:"))))]
        |sort
