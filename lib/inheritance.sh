@@ -1,6 +1,7 @@
 [[ "${_INHERITANCE_SH:-""}" == "yes" ]] && return 0
 _INHERITANCE_SH=yes
 
+# 1: _nodeentry: A node entry to read. A string that appears in the array found under "$extends" or "$includes" fields.
 function expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
   local _jsonized_content _out _absfile
@@ -136,6 +137,7 @@ function expand_nodelevel_inheritances() {
 # 4: _keyword: Either '$extends' or '$includes'
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}" _keyword="${4}"
+  # _cur: A variable that stores a current content of the JSON object, which will be printed at the end.
   local _cur='{}' i
   local -a _keys
   perf "begin"
@@ -144,6 +146,8 @@ function _expand_nodelevel_inheritances() {
   mapfile -t _keys < <(paths_of "${_content}" "${_keyword}")
   is_effectively_empty_array "${_keys[@]}" && _keys=()
   for i in "${_keys[@]}"; do
+    # _jj id a variable that stores a path to a file specified by _keyword (`$extends` or `$includes`).
+    # _p is a path expression to the parent node of the file specified by _keyword (`$extends` or `$includes`).
     local _jj _p="${i%.\"${_keyword}\"}"
     local -a _extendeds
     # Creates an array that stores files specified by _keyword (`$extends` or by `$includes`).
@@ -158,6 +162,7 @@ function _expand_nodelevel_inheritances() {
       if has_value_at "${_p}" "${_cur}"; then
         local _cur_piece _next_piece
         _cur_piece="$(echo "${_cur}" | jq -r -c "${_p}")"
+        # The "nodepool" is a key-value pairs, which returns a content of a node entry for _jj.
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         if [[ "${_keyword}" == '$extends' ]]; then
           _merged_piece_content="$(merge_object_nodes "${_next_piece}" "${_cur_piece}")"
@@ -176,6 +181,7 @@ function _expand_nodelevel_inheritances() {
         _merged_piece_content="${_expanded_tmp}"
       fi
       is_debug_enabled && debug "_merged_piece_content:'${_merged_piece_content}'"
+      # This inserts a merged content (_merged_piece_content) at the path specified by _p in _cur.
       _tmp_content="$(jq -n "input | ${_p}=input" <(echo "${_cur}") <(echo "${_merged_piece_content}"))"
       _cur="${_tmp_content}"
       is_debug_enabled && debug "_cur(updated):'${_cur}'"
