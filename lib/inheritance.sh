@@ -22,7 +22,7 @@ function expand_inheritances() {
     local _local_nodes_dir _c _extends_expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
-    # Explitly check and abotrt this functino.
+    # Explicitly check and abort this function.
     _c="$(expand_filelevel_inheritances "${_absfile}" "${_jsonized_content}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_nodeentry}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
     debug "_nodeentry='${_nodeentry}', _absfile='${_absfile}'"
@@ -128,20 +128,28 @@ function expand_nodelevel_inheritances() {
   perf "end"
 }
 
+# Expands node level inheritances.
+#
+# 1: _content: A JSON object to be processed.
+# 2: _validation_mode: Either 'yes' or 'no'
+# 3: _path: Comma separated paths to search for a file to be inherited.
+# 4: _keyword: Either '$extends' or '$includes'
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}" _keyword="${4}"
   local _cur='{}' i
   local -a _keys
   perf "begin"
   is_debug_enabled && debug "_content='${_content}'"
-  # Intentional single quote to find a keyword that starts with '$'
+  # Creates an array that stores paths which end with _keyword: ('$extends' or '$includes').
   mapfile -t _keys < <(paths_of "${_content}" "${_keyword}")
   is_effectively_empty_array "${_keys[@]}" && _keys=()
   for i in "${_keys[@]}"; do
     local _jj _p="${i%.\"${_keyword}\"}"
     local -a _extendeds
+    # Creates an array that stores files specified by _keyword (`$extends` or by `$includes`).
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]")
     is_effectively_empty_array "${_extendeds[@]}" && _extendeds=()
+    # iterate over the referenced files
     for _jj in "${_extendeds[@]}"; do
       local _tmp_content
       debug "processing nodeentry: '${_jj}'"
