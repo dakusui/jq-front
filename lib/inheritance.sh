@@ -1,7 +1,16 @@
 [[ "${_INHERITANCE_SH:-""}" == "yes" ]] && return 0
 _INHERITANCE_SH=yes
 
+# A function that expands inheritances for a node entry.
+# It reads a node entry, expands its inheritances, and returns the resulting JSON object.
+# It is used to read a node entry by the node pool and expand its inheritances.
+#
 # 1: _nodeentry: A node entry to read. A string that appears in the array found under "$extends" or "$includes" fields.
+# 2: _validation_mode: A validation mode, either "yes" or "no".
+# 3: _jf_path: A path to search for a file to be inherited.
+#
+# See also: define_nodeentry_reader; This function is specified as a driver function for reading node entries.
+# See also: nodeentry; in README.adoc.
 function expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
   local _jsonized_content _out _absfile
@@ -11,6 +20,7 @@ function expand_inheritances() {
 
   mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
   _absfile="$(search_file_in "${_specifier[0]}" "${_jf_path}")"
+  # The file read from _absfile will be processed by jq/yq/others specified in _specifier[1].
   _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
@@ -191,7 +201,6 @@ function _expand_nodelevel_inheritances() {
   echo "${_cur}" | jq -r -c .
 }
 
-# "
 function materialize_local_nodes() {
   local _absfile="${1}" _content="${2}"
   local _ret _i
