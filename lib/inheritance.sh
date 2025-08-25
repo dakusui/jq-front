@@ -5,7 +5,16 @@ _INHERITANCE_SH=yes
 # It reads a node entry, expands its inheritances, and returns the resulting JSON object.
 # It is used to read a node entry by the node pool and expand its inheritances.
 #
-# 1: _nodeentry: A node entry to read. A string that appears in the array found under "$extends" or "$includes" fields.
+# file-level inheritance:
+#   t.b.d.
+# local node materialization:
+#   t.b.d.
+# node-level inheritance:
+#   t.b.d.
+#
+# Arguments:
+#
+# 1: _nodeentry: A name of a node entry to read. A string that appears in the array found under "$extends" or "$includes" fields.
 # 2: _validation_mode: A validation mode, either "yes" or "no".
 # 3: _jf_path: A path to search for a file to be inherited.
 #
@@ -51,6 +60,7 @@ function expand_inheritances() {
   echo "${_out}"
   perf "end: ${_nodeentry}"
 }
+
 
 function expand_filelevel_inheritances() {
   local _absfile="${1}" _content="${2}" _validation_mode="${3}" _path="${4}"
@@ -118,13 +128,18 @@ function expand_inheritances_for_local_nodes() {
   debug "end"
 }
 
+# Performs node level inheritance expansion for a given JSON object.
+#
+# 1: _content: A JSON object to be processed.
+# 2: _validation_mode: Either 'yes' or 'no'
+# 3: _path: Colon separated paths to search for a file to be inherited.
 function expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
   local _extends_expanded _includes_expanded _clean _content _ret
   perf "begin"
   _clean="${_content}"
-  _clean="$(remove_nodes "${_clean}" '$extends')"
-  _clean="$(remove_nodes "${_clean}" '$includes')"
+  # _clean="$(remove_nodes "${_clean}" '$extends')"
+  # _clean="$(remove_nodes "${_clean}" '$includes')"
   _extends_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$extends')" ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
   _extends_expanded=$(merge_object_nodes "${_extends_expanded}" "${_clean}") ||
