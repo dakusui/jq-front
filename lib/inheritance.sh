@@ -1,16 +1,23 @@
 [[ "${_INHERITANCE_SH:-""}" == "yes" ]] && return 0
 _INHERITANCE_SH=yes
 
-# A function that expands inheritances for a node entry.
-# It reads a node entry, expands its inheritances, and returns the resulting JSON object.
-# It is used to read a node entry by the node pool and expand its inheritances.
+# A function that performs inheritance expansion specified by "$extends" and "$includes" fields.
 #
 # file-level inheritance:
-#   t.b.d.
+#   Performs the toplevel inheritance expansion in the specified file (nodeentry).
+#   At this point, only the top-level "$extends" and "$includes" fields are processed.
+#   Neither, "$local" nodes are not yet processed because they cannot be referenced by the file-level inheritance in the same file.
+#   Implemented as expand_filelevel_inheritances  function.
 # local node materialization:
-#   t.b.d.
+#   Under "$local" field, local nodes can be defined.
+#   Each local node is materialized as a separate file in a temporary directory, which is automatically inserted to
+#   the head of the search path only during node-level inheritance.
+#   Note that the object associated with the "$local" field is also subject to node-level inheritance expansion.
+#   Implemented as materialize_local_nodes function.
 # node-level inheritance:
-#   t.b.d.
+#   Nodes inside the JSON object in process are expanded.
+#   Note that by the file-level inheritance, the "$extends" and "$includes" keys can be inserted at any level of the JSON object.
+#   Implemented as expand_nodelevel_inheritances  function.
 #
 # Arguments:
 #
