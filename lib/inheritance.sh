@@ -145,8 +145,8 @@ function expand_nodelevel_inheritances() {
   local _extends_expanded _includes_expanded _clean _content _ret
   perf "begin"
   _clean="${_content}"
-  # _clean="$(remove_nodes "${_clean}" '$extends')"
-  # _clean="$(remove_nodes "${_clean}" '$includes')"
+  _clean="$(remove_nodes "${_clean}" '$extends')"
+  _clean="$(remove_nodes "${_clean}" '$includes')"
   _extends_expanded="$(_expand_nodelevel_inheritances "${_content}" "${_validation_mode}" "${_path}" '$extends')" ||
     abort "Failed to expand node level inheritance for node:'$(trim "${_content}")'(1)\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
   _extends_expanded=$(merge_object_nodes "${_extends_expanded}" "${_clean}") ||
