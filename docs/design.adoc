@@ -32,7 +32,7 @@ Inheritance mechanism
                                                     +----+----+
                                                          ^
                                                          |
-                                              +----------|---------+templating (optional)
+                                              +----------|---------+evaluation (optional)
                                               |          |         |
                                               |       +--+--+      |
                                               |       | {o} |      |key-side processing
