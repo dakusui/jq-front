@@ -10,6 +10,8 @@ function nodepool_prepare() {
   debug "end"
 }
 
+# 1: _driver_funcname: The function name to call for reading node entries. Usually "expand_inheritances"
+# 2: _pooldir: The directory where node entries are cached.
 function define_nodeentry_reader() {
   local _driver_funcname="${1}" _pooldir="${2}"
   readonly _NODEPOOL_SH_DRIVER_FUNCNAME="${_driver_funcname}"
@@ -22,6 +24,8 @@ function define_nodeentry_reader() {
   debug "read_nodeentry was defined:$(type read_nodeentry)"
 }
 
+# 1: _nodeentry: A node entry to read. A string that appears in the array found under "$extends" or "$inherits" fields.
+# 2: _validation_mode: A validation mode, either "yes" or "no".
 function nodepool_read_nodeentry() {
   local _nodeentry="${1}" _validation_mode="${2}" _path="${3}" _pooldir="${4:-${_JF_POOL_DIR}}"
   local _cache

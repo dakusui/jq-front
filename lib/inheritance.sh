@@ -1,6 +1,32 @@
 [[ "${_INHERITANCE_SH:-""}" == "yes" ]] && return 0
 _INHERITANCE_SH=yes
 
+# A function that performs inheritance expansion specified by "$extends" and "$includes" fields.
+#
+# file-level inheritance:
+#   Performs the toplevel inheritance expansion in the specified file (nodeentry).
+#   At this point, only the top-level "$extends" and "$includes" fields are processed.
+#   Neither, "$local" nodes are not yet processed because they cannot be referenced by the file-level inheritance in the same file.
+#   Implemented as expand_filelevel_inheritances  function.
+# local node materialization:
+#   Under "$local" field, local nodes can be defined.
+#   Each local node is materialized as a separate file in a temporary directory, which is automatically inserted to
+#   the head of the search path only during node-level inheritance.
+#   Note that the object associated with the "$local" field is also subject to node-level inheritance expansion.
+#   Implemented as materialize_local_nodes function.
+# node-level inheritance:
+#   Nodes inside the JSON object in process are expanded.
+#   Note that by the file-level inheritance, the "$extends" and "$includes" keys can be inserted at any level of the JSON object.
+#   Implemented as expand_nodelevel_inheritances  function.
+#
+# Arguments:
+#
+# 1: _nodeentry: A name of a node entry to read. A string that appears in the array found under "$extends" or "$includes" fields.
+# 2: _validation_mode: A validation mode, either "yes" or "no".
+# 3: _jf_path: A path to search for a file to be inherited.
+#
+# See also: define_nodeentry_reader; This function is specified as a driver function for reading node entries.
+# See also: nodeentry; in README.adoc.
 function expand_inheritances() {
   local _nodeentry="${1}" _validation_mode="${2}" _jf_path="${3}"
   local _jsonized_content _out _absfile
@@ -10,6 +36,7 @@ function expand_inheritances() {
 
   mapfile -d ';' -t _specifier <<<"$(_normalize_nodeentry "${_nodeentry}" "${_jf_path}")"
   _absfile="$(search_file_in "${_specifier[0]}" "${_jf_path}")"
+  # The file read from _absfile will be processed by jq/yq/others specified in _specifier[1].
   _jsonized_content="$(jsonize "${_absfile}" "${_specifier[1]}" "$(join_by ';' "${_specifier[@]:2}")")"
   # Fail on command substitution cannot be checked directly
   # shellcheck disable=SC2181
@@ -22,7 +49,7 @@ function expand_inheritances() {
     local _local_nodes_dir _c _extends_expanded
     ####
     # Strangely the line above does not causes a quit on a failure.
-    # Explitly check and abotrt this functino.
+    # Explicitly check and abort this function.
     _c="$(expand_filelevel_inheritances "${_absfile}" "${_jsonized_content}" "${_validation_mode}" "$(dirname "${_absfile}"):${_jf_path}")" ||
       abort "File-level expansion failed for '${_nodeentry}'\nInherited files:\n$(_misctemp_files_dir_nodepool_logfile_read)"
     debug "_nodeentry='${_nodeentry}', _absfile='${_absfile}'"
@@ -40,6 +67,7 @@ function expand_inheritances() {
   echo "${_out}"
   perf "end: ${_nodeentry}"
 }
+
 
 function expand_filelevel_inheritances() {
   local _absfile="${1}" _content="${2}" _validation_mode="${3}" _path="${4}"
@@ -107,6 +135,11 @@ function expand_inheritances_for_local_nodes() {
   debug "end"
 }
 
+# Performs node level inheritance expansion for a given JSON object.
+#
+# 1: _content: A JSON object to be processed.
+# 2: _validation_mode: Either 'yes' or 'no'
+# 3: _path: Colon separated paths to search for a file to be inherited.
 function expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}"
   local _extends_expanded _includes_expanded _clean _content _ret
@@ -128,20 +161,31 @@ function expand_nodelevel_inheritances() {
   perf "end"
 }
 
+# Expands node level inheritances.
+#
+# 1: _content: A JSON object to be processed.
+# 2: _validation_mode: Either 'yes' or 'no'
+# 3: _path: Comma separated paths to search for a file to be inherited.
+# 4: _keyword: Either '$extends' or '$includes'
 function _expand_nodelevel_inheritances() {
   local _content="${1}" _validation_mode="${2}" _path="${3}" _keyword="${4}"
+  # _cur: A variable that stores a current content of the JSON object, which will be printed at the end.
   local _cur='{}' i
   local -a _keys
   perf "begin"
   is_debug_enabled && debug "_content='${_content}'"
-  # Intentional single quote to find a keyword that starts with '$'
+  # Creates an array that stores paths which end with _keyword: ('$extends' or '$includes').
   mapfile -t _keys < <(paths_of "${_content}" "${_keyword}")
   is_effectively_empty_array "${_keys[@]}" && _keys=()
   for i in "${_keys[@]}"; do
+    # _jj id a variable that stores a path to a file specified by _keyword (`$extends` or `$includes`).
+    # _p is a path expression to the parent node of the file specified by _keyword (`$extends` or `$includes`).
     local _jj _p="${i%.\"${_keyword}\"}"
     local -a _extendeds
+    # Creates an array that stores files specified by _keyword (`$extends` or by `$includes`).
     mapfile -t _extendeds < <(echo "${_content}" | jq -r -c "${i}[]")
     is_effectively_empty_array "${_extendeds[@]}" && _extendeds=()
+    # iterate over the referenced files
     for _jj in "${_extendeds[@]}"; do
       local _tmp_content
       debug "processing nodeentry: '${_jj}'"
@@ -150,6 +194,7 @@ function _expand_nodelevel_inheritances() {
       if has_value_at "${_p}" "${_cur}"; then
         local _cur_piece _next_piece
         _cur_piece="$(echo "${_cur}" | jq -r -c "${_p}")"
+        # The "nodepool" is a key-value pairs, which returns a content of a node entry for _jj.
         _next_piece="$(nodepool_read_nodeentry "${_jj}" "${_validation_mode}" "${_path}")"
         if [[ "${_keyword}" == '$extends' ]]; then
           _merged_piece_content="$(merge_object_nodes "${_next_piece}" "${_cur_piece}")"
@@ -168,6 +213,7 @@ function _expand_nodelevel_inheritances() {
         _merged_piece_content="${_expanded_tmp}"
       fi
       is_debug_enabled && debug "_merged_piece_content:'${_merged_piece_content}'"
+      # This inserts a merged content (_merged_piece_content) at the path specified by _p in _cur.
       _tmp_content="$(jq -n "input | ${_p}=input" <(echo "${_cur}") <(echo "${_merged_piece_content}"))"
       _cur="${_tmp_content}"
       is_debug_enabled && debug "_cur(updated):'${_cur}'"
@@ -177,7 +223,6 @@ function _expand_nodelevel_inheritances() {
   echo "${_cur}" | jq -r -c .
 }
 
-# "
 function materialize_local_nodes() {
   local _absfile="${1}" _content="${2}"
   local _ret _i

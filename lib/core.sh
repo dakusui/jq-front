@@ -5,6 +5,9 @@ _SHARED_SH=yes
 # source = lib/logging.sh
 source "${JF_BASEDIR}/lib/logging.sh"
 
+# Succeeds when an empty array or an array whose length is 1 and its sole element is a string of length 0
+# This function is useful (necessary), when you load data to an array variable using "mapfile" or "read", because
+# they create an array whose sole element is a string whose length is 0.
 function is_effectively_empty_array() {
   [[ "${#}" == 0 ]] && return 0
   [[ "${#}" == 1 && "${1}" == "" ]] && return 0

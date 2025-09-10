@@ -21,6 +21,10 @@ function remove_nodes() {
 }
 
 # List paths in a json object which end with a given keyword.
+# The returned array is ordered by length, then lexicographically.
+# Each element is represented in the "pexp" format.
+#
+# See also: shared::path2pexp
 function paths_of() {
   local _content="${1}" _keyword="${2}"
   echo "${_content}" | jq -r -c -L "${JF_BASEDIR}/lib" '#---

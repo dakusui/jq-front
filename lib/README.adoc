@@ -1,0 +1,22 @@
+= Internal Design
+
+The `lib` directory contains the core logic of the application. It is designed to be modular and reusable, allowing for easy integration with different parts of the system.
+
+== Basic Concepts
+
+=== pexp
+
+The string "path expression" (pexp) is a string that represents a path in a JSON element.
+
+=== nodeentry
+
+The nodeentry string format is as follows:
+
+`{file specifier};{processor};{args}`
+
+The `file specifier` is a string that identifies the file to be processed.
+It is a relative path to the file from:
+
+- the pool directory for local nodes of the current file.
+- the directory the current file is in.
+- an element in `JF_PATH` environment variable.
