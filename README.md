@@ -1,5 +1,7 @@
 # `jq-front`: JSON with inheritance and templating
 
+**NOTE**: [jq++](https://github.com/dakusui/jqplusplus) project, which aims at implementing jq-front in Go, is going on!
+
 `jq-front` is a simple tool to give your JSON files a power of inheritance and templating.
 
 In testing, system configuration, gaming, music compositions, etc., we see a lot of data items that are similar to each others yet slightly different from each others.
